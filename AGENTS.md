@@ -4,6 +4,8 @@
 
 This is a full-stack web application built with Rust backend and Vue.js frontend. The project features a modern, type-safe architecture with comprehensive testing and development tooling.
 
+The goal of this project is to serve as a demo/template for Rext, a fullstack, rust powered, batteries-included framework in active development.
+
 ### Architecture
 - **Backend**: Rust with Axum web framework, Sea-ORM, SQLite database
 - **Frontend**: Vue 3 with TypeScript, Vite build tool, Pinia state management
