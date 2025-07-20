@@ -43,29 +43,96 @@ The goal of this project is to serve as a demo/template for Rext, a fullstack, r
 ```
 project_rext_1/
 ├── src/                        # Rust backend source
-│   └── main.rs                 # Backend entry point
+│   ├── main.rs                 # Backend entry point
+│   └── entities/               # Sea-ORM entity definitions
+│       ├── mod.rs              # Entity module exports
+│       ├── prelude.rs          # Common entity imports
+│       └── users.rs            # User entity model
 ├── migration/                  # Sea-ORM database migrations
 │   ├── src/
 │   │   ├── lib.rs             # Migration registry
 │   │   ├── main.rs            # Migration runner
-│   │   └── m*.rs              # Individual migration files
+│   │   └── m20250720_000001_create_users.rs  # Users table migration
 │   └── Cargo.toml
 ├── frontend/                   # Vue.js frontend
 │   ├── src/
 │   │   ├── main.ts            # Frontend entry point
 │   │   ├── App.vue            # Root component
 │   │   ├── components/        # Reusable components
+│   │   │   ├── __tests__/     # Component unit tests
+│   │   │   └── icons/         # Icon components
 │   │   ├── views/             # Page components
+│   │   │   ├── HomeView.vue   # Home/landing page
+│   │   │   ├── LoginView.vue  # User login form
+│   │   │   ├── RegisterView.vue # User registration form
+│   │   │   └── ProfileView.vue # User profile page
 │   │   ├── router/            # Vue Router config
-│   │   ├── stores/            # Pinia stores
+│   │   ├── stores/            # Pinia stores (state management)
 │   │   └── assets/            # Static assets
 │   ├── e2e/                   # Playwright e2e tests
+│   │   ├── tsconfig.json      # E2E TypeScript config
+│   │   └── vue.spec.ts        # E2E test specs
 │   ├── public/                # Public static files
 │   └── package.json
 ├── Cargo.toml                 # Rust workspace config
 ├── sqlite.db                  # SQLite database file
 └── .gitignore                 # Git ignore patterns
 ```
+
+## 🗄️ Database Schema
+
+### Users Table
+The project currently implements a users table with the following schema:
+
+```sql
+CREATE TABLE users (
+    id UUID PRIMARY KEY,           -- Unique user identifier
+    email VARCHAR UNIQUE NOT NULL, -- User email (unique constraint)
+    password_hash VARCHAR NOT NULL, -- Argon2 hashed password
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+**Entity Model** (`src/entities/users.rs`):
+- Uses Sea-ORM derive macros for automatic entity generation
+- UUID primary key for better security and scalability
+- Email uniqueness enforced at database level
+- Password stored as Argon2 hash (never plaintext)
+- Timestamps for audit trails
+
+## 🔐 Authentication System
+
+The project includes a complete authentication flow:
+
+### Frontend Components
+- **LoginView.vue**: User login form with email/password validation
+- **RegisterView.vue**: User registration with form validation
+- **ProfileView.vue**: User profile management page
+- **HomeView.vue**: Landing/welcome page
+
+### Authentication Features
+- Form validation and error handling
+- Loading states during authentication requests
+- Router integration for protected routes
+- Responsive form design
+
+## 🎯 Current Development State
+
+This project is beyond a basic template - it includes:
+
+✅ **Implemented Features:**
+- Complete user authentication UI (login, register, profile)
+- Database schema with users table
+- Sea-ORM entity models and migrations
+- TypeScript frontend with Vue 3
+- Routing between authentication pages
+
+🚧 **In Progress/Planned:**
+- Backend API endpoints for authentication
+- JWT token handling and validation
+- Password hashing with Argon2
+- API integration with frontend forms
+- User session management
 
 ## 🚀 Quick Start
 
@@ -273,6 +340,29 @@ cd frontend && npm run dev
 # Terminal 3: Available for commands
 ```
 
+### Authentication Development
+```bash
+# Work with user entity
+cargo run  # Start backend with user routes
+
+# Test authentication flow
+cd frontend && npm run dev  # Start frontend
+# Navigate to /login, /register, /profile
+```
+
+### Database Workflow
+```bash
+# Current migration (already exists)
+cd migration
+cargo run  # Runs m20250720_000001_create_users
+
+# Create new migration
+sea-orm-cli migrate generate create_new_table
+
+# Reset database (CAUTION: deletes all data)
+rm sqlite.db && cargo run
+```
+
 ### Running Tests
 ```bash
 # Backend tests
@@ -292,20 +382,6 @@ cargo fmt --check && cargo clippy && cargo test
 
 # Frontend
 cd frontend && npm run lint && npm run type-check && npm run test:unit
-```
-
-### Database Workflow
-```bash
-# Create migration
-cd migration
-sea-orm-cli migrate generate create_users_table
-
-# Edit the migration file
-# Then run migrations
-cargo run
-
-# Go back to root
-cd ..
 ```
 
 ### Production Build
@@ -335,20 +411,38 @@ cd frontend && npm run build
    cd migration && cargo run
    ```
 
-3. **Frontend build errors**
+3. **Authentication flow issues**
+   ```bash
+   # Check if users table exists
+   sqlite3 sqlite.db ".schema users"
+
+   # Verify migration status
+   cd migration && cargo run
+   ```
+
+4. **Frontend build errors**
    ```bash
    cd frontend
    rm -rf node_modules package-lock.json
    npm install
    ```
 
-4. **Port already in use**
+5. **Port already in use**
    ```bash
    # Kill process on port 3000 (backend)
    lsof -ti:3000 | xargs kill -9
 
    # Kill process on port 5173 (frontend)
    lsof -ti:5173 | xargs kill -9
+   ```
+
+6. **Entity/Database sync issues**
+   ```bash
+   # Regenerate entities from current database
+   sea-orm-cli generate entity -o src/entities
+
+   # Fresh database setup
+   rm sqlite.db && cd migration && cargo run
    ```
 
 ### Performance Tips
