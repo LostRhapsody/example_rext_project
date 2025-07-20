@@ -1,4 +1,4 @@
-use axum::{routing::get, Router};
+use axum::{routing::{get, post}, Router};
 use sea_orm::{Database, DatabaseConnection};
 use std::env;
 
@@ -20,7 +20,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create router with a simple root route
     let app = Router::new()
-        .route("/", get(root_handler));
+        .route("/", get(root_handler))
+        // .route("/register", post(register_handler))
+        // .route("/login", post(login_handler))
+        // .route("/logout", post(logout_handler))
+        // .route("/profile", get(profile_handler))
+        .with_state(db);
 
     // Start the server
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
@@ -37,3 +42,4 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 async fn root_handler() -> &'static str {
     "Hello from Axum server with SQLite connection!"
 }
+

@@ -1,18 +1,20 @@
 # frontend
 
-This template should help get you started developing with Vue 3 in Vite.
+The frontend for a Rext demo project.
 
-## Recommended IDE Setup
+[Rext](https://rextstack.org), the fullstack, rust powered, batteries-included framework.
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+## What is this?
 
-## Type Support for `.vue` Imports in TS
+This is a simple demo project that showcases all the features Rext *will* incorporate. This project was *not* created by Rext, but it is a good example of what Rext *will* be able to do.
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+## Features
 
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
+- **Database** - a sqlite database for getting up and running quickly. Suport for MySQL, Postgresql, and sqlite will be goals.
+- **ORM** - an object relational model for accessing the database via [sea-orm](https://www.sea-ql.org/SeaORM/)
+- **Web Server** - powered by [axum](https://crates.io/crates/axum)
+- **Routing** - powered by the web server
+- **Authentication** - simple yet secure authentication with [argon2](https://crates.io/crates/argon2) and [jsonwebtoken](https://crates.io/crates/jsonwebtoken).
 
 ## Project Setup
 
