@@ -2,12 +2,13 @@ mod entities;
 use entities::{prelude::*, *};
 use axum::{
     extract::{Request, State},
-    http::{header, StatusCode},
+    http::{header, Method, StatusCode},
     middleware::{self, Next},
     response::{IntoResponse, Response},
     routing::{get, post},
     Json, Router,
 };
+use tower_http::cors::{CorsLayer, Any};
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use argon2::password_hash::SaltString;
 use rand_core::OsRng;
@@ -326,6 +327,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Connected to database: {}", database_url);
 
+    // Create CORS layer for development
+    let cors = CorsLayer::new()
+        .allow_origin("http://localhost:5173".parse::<axum::http::HeaderValue>().unwrap())
+        .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
+        .allow_headers(Any);
+
     // Create router with authentication routes
     let app = Router::new()
         .route("/", get(root_handler))
@@ -336,6 +343,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "/profile",
             get(profile_handler).layer(middleware::from_fn(auth_middleware)),
         )
+        .layer(cors)
         .with_state(db);
 
     // Start the server

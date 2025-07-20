@@ -2,6 +2,11 @@
 
 This is a simple demo project that showcases all the features Rext *will* incorporate. This project was *not* created by Rext, but it is a good example of what Rext *will* be able to do.
 
+## Example User
+
+evan@example.com
+pasword (I spelt it wrong so I need to write it down.)
+
 ## Features
 
 - **Database** - a sqlite database for getting up and running quickly. Suport for MySQL, Postgresql, and sqlite will be goals.
