@@ -1,18 +1,29 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
+const route = useRoute()
+const router = useRouter()
 const isLoggedIn = ref(false)
 
-onMounted(() => {
-  // Check if user has a token
+const checkAuthState = () => {
   isLoggedIn.value = !!localStorage.getItem('token')
+}
+
+onMounted(() => {
+  checkAuthState()
+})
+
+// Watch for route changes and update auth state
+watch(route, () => {
+  checkAuthState()
 })
 
 const logout = () => {
   localStorage.removeItem('token')
   isLoggedIn.value = false
-  window.location.href = '/'
+  router.push('/')
 }
 </script>
 
