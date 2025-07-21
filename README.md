@@ -13,6 +13,7 @@ The Rust server has a CORS bypass that allows these two ports to communicate via
 
 ## Features
 
+- **Frontend** - Written in Vue with Vue Router
 - **Database** - a sqlite database for getting up and running quickly. Support for MySQL, Postgresql, and sqlite will be goals.
 - **ORM** - an object relational model for accessing the database via [sea-orm](https://www.sea-ql.org/SeaORM/)
 - **Web Server** - powered by [axum](https://crates.io/crates/axum)
