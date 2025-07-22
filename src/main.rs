@@ -1,28 +1,29 @@
 mod entities;
-use entities::{prelude::*, *};
+use argon2::password_hash::SaltString;
+use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use axum::{
+    Json, Router,
     extract::{Request, State},
-    http::{header, Method, StatusCode},
+    http::{Method, StatusCode, header},
     middleware::{self, Next},
     response::{IntoResponse, Response},
     routing::{get, post},
-    Json, Router,
 };
-use tower_http::cors::{CorsLayer, Any};
-use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
-use argon2::password_hash::SaltString;
+use entities::{prelude::*, *};
+use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use rand_core::OsRng;
-use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 use sea_orm::*;
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::time::{SystemTime, UNIX_EPOCH};
+use tower_http::cors::{Any, CorsLayer};
+use utoipa::OpenApi;
 
 // JWT Claims
 #[derive(Debug, Serialize, Deserialize)]
 struct Claims {
-    sub: String,  // subject (user id)
-    exp: usize,   // expiration time
+    sub: String, // subject (user id)
+    exp: usize,  // expiration time
 }
 
 // Request/Response types
@@ -78,10 +79,7 @@ struct AuthUser {
 }
 
 // JWT middleware
-async fn auth_middleware(
-    mut request: Request,
-    next: Next,
-) -> Result<Response, AppError> {
+async fn auth_middleware(mut request: Request, next: Next) -> Result<Response, AppError> {
     let auth_header = request
         .headers()
         .get(header::AUTHORIZATION)
@@ -142,6 +140,13 @@ async fn auth_middleware(
 }
 
 // Handler functions
+#[utoipa::path(
+    post,
+    path = "/register",
+    responses(
+        (status = 200, description = "User created successfully")
+    ),
+)]
 async fn register_handler(
     State(db): State<DatabaseConnection>,
     Json(payload): Json<RegisterRequest>,
@@ -194,10 +199,13 @@ async fn register_handler(
         created_at: Set(Some(chrono::Utc::now().fixed_offset())),
     };
 
-    Users::insert(new_user).exec(&db).await.map_err(|_| AppError {
-        message: "Failed to create user".to_string(),
-        status_code: StatusCode::INTERNAL_SERVER_ERROR,
-    })?;
+    Users::insert(new_user)
+        .exec(&db)
+        .await
+        .map_err(|_| AppError {
+            message: "Failed to create user".to_string(),
+            status_code: StatusCode::INTERNAL_SERVER_ERROR,
+        })?;
 
     Ok((
         StatusCode::CREATED,
@@ -211,7 +219,6 @@ async fn login_handler(
     State(db): State<DatabaseConnection>,
     Json(payload): Json<LoginRequest>,
 ) -> Result<impl IntoResponse, AppError> {
-
     let user: Option<users::Model> = Users::find()
         .filter(users::Column::Email.eq(payload.email.clone()))
         .one(&db)
@@ -307,6 +314,10 @@ async fn profile_handler(
     }))
 }
 
+#[derive(OpenApi)]
+#[openapi(paths(register_handler))]
+struct ApiDoc;
+
 async fn root_handler() -> &'static str {
     "Hello from Axum server with authentication!"
 }
@@ -317,8 +328,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenvy::dotenv().ok();
 
     // Get database URL from environment
-    let database_url = env::var("DATABASE_URL")
-        .expect("DATABASE_URL must be set in .env file");
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set in .env file");
 
     // Connect to database
     let db: DatabaseConnection = Database::connect(&database_url)
@@ -329,7 +339,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create CORS layer for development
     let cors = CorsLayer::new()
-        .allow_origin("http://localhost:5173".parse::<axum::http::HeaderValue>().unwrap())
+        .allow_origin(
+            "http://localhost:5173"
+                .parse::<axum::http::HeaderValue>()
+                .unwrap(),
+        )
         .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
         .allow_headers(Any);
 
@@ -355,9 +369,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("  POST /login    - Login and get JWT token");
     println!("  POST /logout   - Logout (placeholder)");
     println!("  GET  /profile  - Get user profile (requires authentication)");
+    println!("{}", ApiDoc::openapi().to_pretty_json().unwrap());
 
     axum::serve(listener, app).await?;
 
     Ok(())
 }
-
