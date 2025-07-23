@@ -363,7 +363,7 @@ pub async fn login_handler(
         ))
     ),
     summary = "Logout user",
-    description = "Logs out the current user. Since JWT is stateless, this just returns a success message. In production, you might maintain a token blacklist.",
+    description = "Logs out the current user. Since JWT is stateless, this just returns a success message.",
     tag = AUTH_TAG
 )]
 pub async fn logout_handler() -> impl IntoResponse {
