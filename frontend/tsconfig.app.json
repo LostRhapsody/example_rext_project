@@ -6,7 +6,6 @@
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
 
     "paths": {
-      "@/*": ["./src/*"],
       "@/appearance/*": ["./src/appearance/*"],
       "@/bridge/*": ["./src/bridge/*"],
       "@/components/*": ["./src/appearance/components/*"],
@@ -17,7 +16,8 @@
       "@/api/*": ["./src/bridge/api/*"],
       "@/stores/*": ["./src/bridge/stores/*"],
       "@/types/*": ["./src/bridge/types/*"],
-      "@/router/*": ["./src/bridge/router/*"]
+      "@/router/*": ["./src/bridge/router/*"],
+      "@/*": ["./src/*"]
     }
   }
 }
