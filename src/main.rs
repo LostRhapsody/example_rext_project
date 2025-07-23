@@ -2,7 +2,6 @@ mod entities;
 mod auth;
 
 use axum::{
-    Router,
     http::Method,
     routing::get,
 };
@@ -22,7 +21,6 @@ use auth::handlers::{RegisterRequest, RegisterResponse, MessageResponse, ErrorRe
 
 pub const AUTH_TAG: &str = "Authentication";
 
-
 #[derive(OpenApi)]
 #[openapi(
     tags(
@@ -35,7 +33,7 @@ pub const AUTH_TAG: &str = "Authentication";
 struct ApiDoc;
 
 async fn root_handler() -> &'static str {
-    "Hello from Axum server with authentication!"
+    "Rext Example Server Root, API docs at /scalar, frontend at http://localhost:5173"
 }
 
 #[tokio::main]
@@ -73,12 +71,14 @@ async fn main() -> Result<(), Error> {
         .merge(Redoc::with_url("/redoc", api.clone()))
         .merge(RapiDoc::new("/api-docs/openapi.json").path("/rapidoc"))
         .merge(Scalar::with_url("/scalar", api))
+        .route("/", get(root_handler))
         .layer(cors);
 
     // Start the server
     let address = SocketAddr::from((Ipv4Addr::UNSPECIFIED, 3000));
     let listener = TcpListener::bind(&address).await?;
     println!("Server running on http://localhost:{}", address.port());
+    println!("Frontend running on http://localhost:5173");
     println!("View API docs at:");
     println!("  http://localhost:{}/swagger-ui 📱 Swagger UI", address.port());
     println!("  http://localhost:{}/redoc 📖 Redoc", address.port());
