@@ -86,6 +86,4 @@ async fn main() -> Result<(), Error> {
     println!("  http://localhost:{}/scalar ⭐ Recommended for API testing", address.port());
 
     axum::serve(listener, router.into_make_service()).await
-
-    // Ok(())
 }
