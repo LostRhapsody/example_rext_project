@@ -41,7 +41,8 @@ The Rust server has a CORS bypass that allows these two ports to communicate via
 - Generate Types for the front-end
 - Generate API handlers
 - Generate API documentation (Frontend and backend)
-- Establish sub-domains for local dev
+- Establish sub-domains for local dev 
+    - This will be tested in this project, but it cannot be automated 100% by Rext. We can generate templates and self-signed certs, then provide a guide for the remaining steps. That's it.
 - prepare deployment process
 - Asset optimization
 - Project organization
