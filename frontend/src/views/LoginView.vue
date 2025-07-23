@@ -35,6 +35,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { loginHandler, type LoginRequest } from '../client'
 
 const router = useRouter()
 
@@ -48,27 +49,27 @@ const handleLogin = async () => {
   error.value = ''
 
   try {
-    const response = await fetch('http://127.0.0.1:3000/api/v1/auth/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email: email.value,
-        password: password.value,
-      }),
+    const loginData: LoginRequest = {
+      email: email.value,
+      password: password.value,
+    }
+
+    const response = await loginHandler({
+      body: loginData,
     })
 
-    const data = await response.json()
-
-    if (response.ok) {
-      localStorage.setItem('token', data.token)
+    if (response.data) {
+      localStorage.setItem('token', response.data.token)
       router.push('/profile')
     } else {
-      error.value = data.message || 'Login failed'
+      error.value = 'Login failed'
     }
-  } catch (err) {
-    error.value = 'Network error. Please make sure the backend server is running.'
+  } catch (err: any) {
+    if (err.error?.message) {
+      error.value = err.error.message
+    } else {
+      error.value = 'Network error. Please make sure the backend server is running.'
+    }
   } finally {
     loading.value = false
   }

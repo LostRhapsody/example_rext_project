@@ -21,20 +21,15 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { profileHandler, type ProfileResponse } from '../client'
 
 const router = useRouter()
 
-interface Profile {
-  id: string
-  email: string
-  created_at?: string
-}
-
-const profile = ref<Profile | null>(null)
+const profile = ref<ProfileResponse | null>(null)
 const loading = ref(true)
 const error = ref('')
 
-const formatDate = (dateString?: string) => {
+const formatDate = (dateString?: string | null) => {
   if (!dateString) return 'N/A'
   return new Date(dateString).toLocaleString()
 }
@@ -48,26 +43,26 @@ const fetchProfile = async () => {
   }
 
   try {
-    const response = await fetch('http://127.0.0.1:3000/api/v1/auth/profile', {
+    const response = await profileHandler({
       headers: {
-        'Authorization': `Bearer ${token}`,
-      },
+        Authorization: `Bearer ${token}`
+      }
     })
-
-    const data = await response.json()
-
-    if (response.ok) {
-      profile.value = data
-    } else {
-      if (response.status === 401) {
+    
+    if (response.data) {
+      profile.value = response.data
+    }
+  } catch (err: any) {
+    if (err.error?.message) {
+      if (err.status === 401) {
         localStorage.removeItem('token')
         router.push('/login')
       } else {
-        error.value = data.message || 'Failed to fetch profile'
+        error.value = err.error.message
       }
+    } else {
+      error.value = 'Network error. Please make sure the backend server is running.'
     }
-  } catch (err) {
-    error.value = 'Network error. Please make sure the backend server is running.'
   } finally {
     loading.value = false
   }

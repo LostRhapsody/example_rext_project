@@ -40,6 +40,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { registerHandler, type RegisterRequest } from '../client'
 
 const router = useRouter()
 
@@ -55,29 +56,27 @@ const handleRegister = async () => {
   success.value = ''
 
   try {
-    const response = await fetch('http://127.0.0.1:3000/api/v1/auth/register', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email: email.value,
-        password: password.value,
-      }),
+    const registerData: RegisterRequest = {
+      email: email.value,
+      password: password.value,
+    }
+
+    const response = await registerHandler({
+      body: registerData,
     })
-
-    const data = await response.json()
-
-    if (response.ok) {
-      success.value = 'Account created successfully! Redirecting to login...'
+    
+    if (response.data) {
+      success.value = response.data.message + ' Redirecting to login...'
       setTimeout(() => {
         router.push('/login')
       }, 2000)
-    } else {
-      error.value = data.message || 'Registration failed'
     }
-  } catch (err) {
-    error.value = 'Network error. Please make sure the backend server is running.'
+  } catch (err: any) {
+    if (err.error?.message) {
+      error.value = err.error.message
+    } else {
+      error.value = 'Network error. Please make sure the backend server is running.'
+    }
   } finally {
     loading.value = false
   }
