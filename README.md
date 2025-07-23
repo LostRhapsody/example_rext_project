@@ -20,6 +20,8 @@ The Rust server has a CORS bypass that allows these two ports to communicate via
 - **Routing** - powered by the web server
 - **Authentication** - simple yet secure authentication with [argon2](https://crates.io/crates/argon2) and [jsonwebtoken](https://crates.io/crates/jsonwebtoken).
 - **SPA Navigation** - reactive authentication state with seamless single-page app experience
+- **OpenAPI Generation** - Generates an OpenAPI document and serves SwaggerUI, Redoc, and Scalar pages
+- **Middleware** - A simple middleware implementation for authentication
 
 ## How to use
 
@@ -32,10 +34,10 @@ The Rust server has a CORS bypass that allows these two ports to communicate via
 - This should route you to `/profile`.
     - This is a protected route, you can only access it when logged in. Should redirect to `/login` if logged out.
 - Logout using the "Logout" button in the navigation bar, which removes the token from your browser and updates the UI in real-time.
+- Visit the API docs at localhost:3000/scalar
 
 ## Next Steps
 *A quick outline of the upcoming goals for this project*
-- OpenAPI Schema generation
 - Generate Types for the front-end
 - Generate API handlers
 - Generate API documentation (Frontend and backend)
