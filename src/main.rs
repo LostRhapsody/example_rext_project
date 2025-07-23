@@ -17,7 +17,16 @@ use serde::{Deserialize, Serialize};
 use std::env;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tower_http::cors::{Any, CorsLayer};
-use utoipa::OpenApi;
+use utoipa::{OpenApi, ToSchema};
+
+#[derive(OpenApi)]
+#[openapi(
+    paths(register_handler),
+    components(
+        schemas(RegisterRequest, RegisterResponse, MessageResponse, ErrorResponse)
+    )
+)]
+struct ApiDoc;
 
 // JWT Claims
 #[derive(Debug, Serialize, Deserialize)]
@@ -27,9 +36,15 @@ struct Claims {
 }
 
 // Request/Response types
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
 struct RegisterRequest {
+    /// User's email address
+    #[schema(example = "user@example.com")]
     email: String,
+
+    /// User's password
+    #[schema(example = "securepassword123")]
     password: String,
 }
 
@@ -44,8 +59,40 @@ struct LoginResponse {
     token: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+struct RegisterResponse {
+    /// Success message
+    #[schema(example = "User created successfully")]
+    message: String,
+
+    /// The newly created user's ID
+    #[schema(example = "550e8400-e29b-41d4-a716-446655440000")]
+    user_id: String,
+
+    /// User's email address
+    #[schema(example = "user@example.com")]
+    email: String,
+
+    /// Timestamp when the user was created (ISO 8601 format)
+    #[schema(example = "2024-01-20T15:30:00Z", format = "date-time", nullable = true)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    created_at: Option<String>,
+}
+
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
 struct MessageResponse {
+    /// Response message
+    #[schema(example = "Operation completed successfully")]
+    message: String,
+}
+
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+struct ErrorResponse {
+    /// Error message describing what went wrong
+    #[schema(example = "Email and password are required")]
     message: String,
 }
 
@@ -65,7 +112,7 @@ struct AppError {
 
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
-        let body = Json(MessageResponse {
+        let body = Json(ErrorResponse {
             message: self.message,
         });
         (self.status_code, body).into_response()
@@ -143,9 +190,23 @@ async fn auth_middleware(mut request: Request, next: Next) -> Result<Response, A
 #[utoipa::path(
     post,
     path = "/register",
+    request_body = RegisterRequest,
     responses(
-        (status = 200, description = "User created successfully")
+        (status = 201, description = "User created successfully", body = RegisterResponse),
+        (status = 400, description = "Bad request - validation errors", body = ErrorResponse, examples(
+            ("empty_fields" = (value = json!({"message": "Email and password are required"}))),
+        )),
+        (status = 409, description = "Conflict - user already exists", body = ErrorResponse, examples(
+            ("user_exists" = (value = json!({"message": "User already exists"})))
+        )),
+        (status = 500, description = "Internal server error", body = ErrorResponse, examples(
+            ("hash_error" = (value = json!({"message": "Failed to hash password"}))),
+            ("database_error" = (value = json!({"message": "Failed to create user"})))
+        ))
     ),
+    summary = "Register a new user",
+    description = "Creates a new user account with email and password. Password is securely hashed using Argon2.",
+    tag = "Authentication"
 )]
 async fn register_handler(
     State(db): State<DatabaseConnection>,
@@ -192,11 +253,12 @@ async fn register_handler(
 
     // Create user
     let user_id = uuid::Uuid::new_v4();
+    let created_at = chrono::Utc::now().fixed_offset();
     let new_user = users::ActiveModel {
         id: Set(user_id),
         email: Set(payload.email.clone()),
         password_hash: Set(password_hash),
-        created_at: Set(Some(chrono::Utc::now().fixed_offset())),
+        created_at: Set(Some(created_at)),
     };
 
     Users::insert(new_user)
@@ -207,10 +269,14 @@ async fn register_handler(
             status_code: StatusCode::INTERNAL_SERVER_ERROR,
         })?;
 
+    // Return comprehensive response
     Ok((
         StatusCode::CREATED,
-        Json(MessageResponse {
+        Json(RegisterResponse {
             message: "User created successfully".to_string(),
+            user_id: user_id.to_string(),
+            email: payload.email,
+            created_at: Some(created_at.to_utc().to_rfc3339()),
         }),
     ))
 }
@@ -314,10 +380,6 @@ async fn profile_handler(
     }))
 }
 
-#[derive(OpenApi)]
-#[openapi(paths(register_handler))]
-struct ApiDoc;
-
 async fn root_handler() -> &'static str {
     "Hello from Axum server with authentication!"
 }
@@ -349,6 +411,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create router with authentication routes
     let app = Router::new()
+        // TODO: Add swagger ui
+        // .merge(SwaggerUi::new("/swagger-ui")
+        // .url("/api-docs/openapi.json", ApiDoc::openapi()))
         .route("/", get(root_handler))
         .route("/register", post(register_handler))
         .route("/login", post(login_handler))
