@@ -1,5 +1,12 @@
-use argon2::password_hash::SaltString;
-use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
+use argon2::{
+    password_hash::{
+        PasswordHasher,
+        PasswordVerifier,
+        PasswordHash,
+        SaltString,
+    },
+    Argon2,
+};
 use axum::{
     Json,
     extract::{Request, State},
@@ -8,7 +15,6 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
-use rand_core::OsRng;
 use sea_orm::*;
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -235,7 +241,7 @@ pub async fn register_handler(
     }
 
     // Hash password
-    let salt = SaltString::generate(&mut OsRng);
+    let salt = SaltString::generate(&mut rand_core::OsRng);
     let argon2 = Argon2::default();
     let password_hash = argon2
         .hash_password(payload.password.as_bytes(), &salt)

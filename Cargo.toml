@@ -9,16 +9,16 @@ apalis-cron = "0.7.2"
 apalis-sql = { version = "0.7.2", features = ["sqlite","tokio"] }
 argon2 = "0.5.3"
 axum = "0.8.4"
-chrono = { version = "0.4", features = ["serde"] }
+rand_core = { version = "0.6", features = ["std"] }
+chrono = { version = "0.4.41", features = ["serde"] }
 dotenvy = "0.15.7"
 jsonwebtoken = "9.3.1"
-rand_core = { version = "0.6", features = ["std"] }
-sea-orm = { version = "1.1.13", features = ["sqlx-sqlite", "runtime-tokio-rustls", "macros"] }
+sea-orm = { version = "1.1.14", features = ["sqlx-sqlite", "runtime-tokio-rustls", "macros"] }
 serde = "1.0.219"
 serde_json = "1.0.141"
 tokio = { version = "1.46.1", features = ["full"] }
-tower = "0.5.1"
-tower-http = { version = "0.6.2", features = ["cors", "fs"] }
+tower = "0.5.2"
+tower-http = { version = "0.6.6", features = ["cors", "fs"] }
 utoipa = { version = "5.4.0", features = ["axum_extras", "chrono"] }
 utoipa-axum = "0.2.0"
 utoipa-rapidoc = {version = "6.0.0", features = ["axum"] }
@@ -28,4 +28,4 @@ utoipa-swagger-ui = { version = "9.0.2", features = [
     "axum",
 ] }
 
-uuid = { version = "1.0", features = ["v4", "serde"] }
+uuid = { version = "1.17.0", features = ["v4", "serde"] }
