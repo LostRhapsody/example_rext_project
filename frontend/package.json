@@ -4,7 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "run-p \"generate:client:watch\" \"dev:server\"",
+    "dev:server": "vite",
+    "predev": "wait-on http://localhost:3000/api-docs/openapi.json",
+    "dev:full": "echo 'Starting full development workflow...' && npm run predev && npm run dev",
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
     "test:unit": "vitest",
@@ -13,7 +16,9 @@
     "type-check": "vue-tsc --build",
     "lint": "eslint . --fix",
     "format": "prettier --write src/",
-    "generate:client": "npx @hey-api/openapi-ts -i http://localhost:3000/api-docs/openapi.json -o src/client"
+    "generate:client": "npx @hey-api/openapi-ts -i http://localhost:3000/api-docs/openapi.json -o src/client -w",
+    "generate:client:watch": "npx @hey-api/openapi-ts -i http://localhost:3000/api-docs/openapi.json -o src/client -w",
+    "client": "openapi-ts"
   },
   "dependencies": {
     "axios": "1.11.0",
@@ -46,6 +51,7 @@
     "vite": "7.0.5",
     "vite-plugin-vue-devtools": "7.7.7",
     "vitest": "3.2.4",
-    "vue-tsc": "^2.2.10"
+    "vue-tsc": "^2.2.10",
+    "wait-on": "^7.2.0"
   }
 }
