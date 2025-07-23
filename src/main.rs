@@ -78,14 +78,12 @@ async fn main() -> Result<(), Error> {
     // Start the server
     let address = SocketAddr::from((Ipv4Addr::UNSPECIFIED, 3000));
     let listener = TcpListener::bind(&address).await?;
-    println!("Server running on http://127.0.0.1:3000");
-    println!("Endpoints:");
-    println!("  POST /register - Register a new user");
-    println!("  POST /login    - Login and get JWT token");
-    println!("  POST /logout   - Logout (placeholder)");
-    println!("  GET  /profile  - Get user profile (requires authentication)");
-    println!("API Documentation:");
-    println!("  /api/v1/auth/* - Auth endpoints with OpenAPI docs");
+    println!("Server running on http://localhost:{}", address.port());
+    println!("View API docs at:");
+    println!("  http://localhost:{}/swagger-ui 📱 Swagger UI", address.port());
+    println!("  http://localhost:{}/redoc 📖 Redoc", address.port());
+    println!("  http://localhost:{}/api-docs/openapi.json ✏️ The OpenAPI JSON file", address.port());
+    println!("  http://localhost:{}/scalar ⭐ Recommended for API testing", address.port());
 
     axum::serve(listener, router.into_make_service()).await
 
