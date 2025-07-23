@@ -33,9 +33,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { loginHandler, type LoginRequest } from '@/bridge/client'
 
 const router = useRouter()
 

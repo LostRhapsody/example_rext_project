@@ -38,10 +38,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { registerHandler, type RegisterRequest } from '@/bridge/client'
-
 const router = useRouter()
 
 const email = ref('')

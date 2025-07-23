@@ -19,10 +19,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { profileHandler, type ProfileResponse } from '@/bridge/client'
-
 const router = useRouter()
 
 const profile = ref<ProfileResponse | null>(null)
