@@ -456,7 +456,16 @@ Create a `.env` file in the project root:
 DATABASE_URL=sqlite:sqlite.db
 JWT_SECRET=your-secret-key-here
 RUST_LOG=debug
+ENVIRONMENT=development
+ALLOWED_ORIGIN=https://yourdomain.com
 ```
+
+**CORS Configuration:**
+- **Development**: Allows `http://localhost:5173` (Vue dev server)
+- **Production**: Uses `ALLOWED_ORIGIN` environment variable
+- **Headers**: Restricted to essential headers only (authorization, content-type, etc.)
+- **Credentials**: Enabled for authentication
+- **Cache**: 1-hour preflight cache in production
 
 ## 📝 Additional Notes
 
