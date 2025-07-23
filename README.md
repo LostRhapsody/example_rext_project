@@ -45,7 +45,7 @@ The Rust server has a CORS bypass that allows these two ports to communicate via
     - This will be tested in this project, but it cannot be automated 100% by Rext. We can generate templates and self-signed certs, then provide a guide for the remaining steps. That's it.
 - prepare deployment process
 - Asset optimization - mostly build step, rust just needs to serve the proper headers and files
-- Project organization
+- Project organization - WORK IN PROCESS: Frontend mostly done, need to work on backend
 - Email Server - https://crates.io/crates/lettre
 - Admin panel
 - Tracing
