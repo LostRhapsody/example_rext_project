@@ -39,14 +39,12 @@ The Rust server has a CORS bypass that allows these two ports to communicate via
 
 ## Next Steps
 *A quick outline of the upcoming goals for this project*
-- Generate Types for the front-end
-- Generate API handlers
-- Generate API documentation (Frontend and backend)
-- Establish sub-domains for local dev 
+- Establish sub-domains for local dev
     - This will be tested in this project, but it cannot be automated 100% by Rext. We can generate templates and self-signed certs, then provide a guide for the remaining steps. That's it.
 - prepare deployment process
-- Asset optimization
+- Asset optimization - mostly build step, rust just needs to serve the proper headers and files
 - Project organization
-- Email Server
-- Job queue
-- Task scheduler
+- Email Server - https://crates.io/crates/lettre
+- Job queue - https://crates.io/crates/apalis
+- Task scheduler - build on top of apalis
+- Admin panel
