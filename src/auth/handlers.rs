@@ -1,3 +1,5 @@
+use argon2::password_hash::SaltString;
+use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use axum::{
     Json,
     extract::{Request, State},
@@ -5,18 +7,16 @@ use axum::{
     middleware::Next,
     response::{IntoResponse, Response},
 };
-use sea_orm::*;
-use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
-use argon2::password_hash::SaltString;
-use rand_core::OsRng;
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
+use rand_core::OsRng;
+use sea_orm::*;
+use serde::{Deserialize, Serialize};
 use std::env;
 use std::time::{SystemTime, UNIX_EPOCH};
-use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-use crate::entities::{prelude::*, *};
 use crate::AUTH_TAG;
+use crate::entities::{prelude::*, *};
 
 // JWT Claims
 #[derive(Debug, Serialize, Deserialize)]
@@ -65,7 +65,11 @@ pub struct RegisterResponse {
     pub email: String,
 
     /// Timestamp when the user was created (ISO 8601 format)
-    #[schema(example = "2024-01-20T15:30:00Z", format = "date-time", nullable = true)]
+    #[schema(
+        example = "2024-01-20T15:30:00Z",
+        format = "date-time",
+        nullable = true
+    )]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
 }
@@ -424,4 +428,4 @@ pub async fn profile_handler(
         email: user.email,
         created_at: user.created_at.map(|dt| dt.to_utc()),
     }))
-} 
+}
