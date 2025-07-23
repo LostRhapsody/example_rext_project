@@ -13,6 +13,7 @@ use utoipa_scalar::{Scalar, Servable as ScalarServable};
 use utoipa_swagger_ui::SwaggerUi;
 use std::{env, io::Error, net::{Ipv4Addr, SocketAddr}};
 use tower_http::cors::{Any, CorsLayer};
+use tower_http::services::ServeDir;
 use utoipa::OpenApi;
 use utoipa_axum::router::OpenApiRouter;
 
@@ -66,13 +67,23 @@ async fn main() -> Result<(), Error> {
         .nest("/api/v1/auth", auth::router(db.clone()))
         .split_for_parts();
 
-    let router = router
+    let mut router = router
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", api.clone()))
         .merge(Redoc::with_url("/redoc", api.clone()))
         .merge(RapiDoc::new("/api-docs/openapi.json").path("/rapidoc"))
         .merge(Scalar::with_url("/scalar", api))
         .route("/", get(root_handler))
         .layer(cors);
+
+    // Check if we're in production mode and serve static files
+    let environment = env::var("ENVIRONMENT").unwrap_or_else(|_| "development".to_string());
+    if environment == "production" {
+        println!("Production mode detected - serving static files from /dist directory");
+        // Serve the Vue dist/ directory as a fallback for unmatched routes
+        router = router.fallback_service(ServeDir::new("dist"));
+    } else {
+        println!("Development mode - static files not served by backend");
+    }
 
     // Start the server
     let address = SocketAddr::from((Ipv4Addr::UNSPECIFIED, 3000));
