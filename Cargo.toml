@@ -4,6 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+apalis = { version = "0.7.2", features = ["retry"] }
+apalis-cron = "0.7.2"
+apalis-sql = { version = "0.7.2", features = ["sqlite","tokio"] }
 argon2 = "0.5.3"
 axum = "0.8.4"
 chrono = { version = "0.4", features = ["serde"] }

@@ -6,6 +6,11 @@
 # sea-orm
 migration/target
 
+# sqlite
+sqlite.db
+sqlite.db-shm
+sqlite.db-wal
+
 # Cargo
 Cargo.lock
 
