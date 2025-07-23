@@ -1,8 +1,8 @@
 <template>
   <div>
-    <h2>Login</h2>
+    <h2>Register</h2>
 
-    <form @submit.prevent="handleLogin">
+    <form @submit.prevent="handleRegister">
       <div>
         <label for="email">Email:</label>
         <br>
@@ -12,12 +12,13 @@
       <div>
         <label for="password">Password:</label>
         <br>
-        <input type="password" id="password" v-model="password" required>
+        <input type="password" id="password" v-model="password" required minlength="6">
+        <small>Password must be at least 6 characters</small>
       </div>
 
       <div>
         <button type="submit" :disabled="loading">
-          {{ loading ? 'Logging in...' : 'Login' }}
+          {{ loading ? 'Creating account...' : 'Register' }}
         </button>
       </div>
     </form>
@@ -26,8 +27,12 @@
       {{ error }}
     </div>
 
+    <div v-if="success" style="color: green; margin-top: 1rem;">
+      {{ success }}
+    </div>
+
     <p>
-      Don't have an account? <router-link to="/register">Register here</router-link>
+      Already have an account? <router-link to="/login">Login here</router-link>
     </p>
   </div>
 </template>
@@ -35,7 +40,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { loginHandler, type LoginRequest } from '../client'
+import { registerHandler, type RegisterRequest } from '@/bridge/client'
 
 const router = useRouter()
 
@@ -43,26 +48,28 @@ const email = ref('')
 const password = ref('')
 const loading = ref(false)
 const error = ref('')
+const success = ref('')
 
-const handleLogin = async () => {
+const handleRegister = async () => {
   loading.value = true
   error.value = ''
+  success.value = ''
 
   try {
-    const loginData: LoginRequest = {
+    const registerData: RegisterRequest = {
       email: email.value,
       password: password.value,
     }
 
-    const response = await loginHandler({
-      body: loginData,
+    const response = await registerHandler({
+      body: registerData,
     })
 
     if (response.data) {
-      localStorage.setItem('token', response.data.token)
-      router.push('/profile')
-    } else {
-      error.value = 'Login failed'
+      success.value = response.data.message + ' Redirecting to login...'
+      setTimeout(() => {
+        router.push('/login')
+      }, 2000)
     }
   } catch (err: any) {
     if (err.error?.message) {
@@ -87,10 +94,16 @@ input {
   width: 250px;
 }
 
+small {
+  display: block;
+  color: #666;
+  margin-top: 0.25rem;
+}
+
 button {
   padding: 0.5rem 1rem;
   font-size: 1rem;
-  background-color: #007bff;
+  background-color: #28a745;
   color: white;
   border: none;
   cursor: pointer;
@@ -102,6 +115,6 @@ button:disabled {
 }
 
 button:hover:not(:disabled) {
-  background-color: #0056b3;
+  background-color: #218838;
 }
 </style>

@@ -21,7 +21,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { profileHandler, type ProfileResponse } from '../client'
+import { profileHandler, type ProfileResponse } from '@/bridge/client'
 
 const router = useRouter()
 
@@ -48,7 +48,7 @@ const fetchProfile = async () => {
         Authorization: `Bearer ${token}`
       }
     })
-    
+
     if (response.data) {
       profile.value = response.data
     }
