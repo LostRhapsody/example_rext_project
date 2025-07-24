@@ -107,7 +107,6 @@
     "triggerRef": true,
     "unref": true,
     "useAttrs": true,
-    "useCounter": true,
     "useCssModule": true,
     "useCssVars": true,
     "useId": true,

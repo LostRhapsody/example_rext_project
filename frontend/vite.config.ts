@@ -1,13 +1,14 @@
 import { fileURLToPath, URL } from 'node:url'
-
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
 import vueDevTools from 'vite-plugin-vue-devtools'
 import AutoImport from 'unplugin-auto-import/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
+import { getConfig } from './config/unified.config'
 
-// https://vite.dev/config/
+// Unified configuration that consolidates multiple config files
+const config = getConfig()
 export default defineConfig({
   plugins: [
     vue(),
@@ -45,5 +46,42 @@ export default defineConfig({
       '@/router': fileURLToPath(new URL('./src/bridge/router', import.meta.url)),
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
+  },
+  // Unified TypeScript configuration
+  esbuild: {
+    target: 'ESNext',
+  },
+  // Unified testing configuration
+  test: {
+    environment: config.testing.unit.environment,
+    exclude: config.testing.unit.exclude,
+    root: fileURLToPath(new URL('./', import.meta.url)),
+    globals: config.testing.unit.globals,
+  },
+  // Unified formatting configuration
+  css: {
+    devSourcemap: true,
+  },
+  // Unified build configuration
+  build: {
+    target: 'ESNext',
+    sourcemap: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['vue', 'vue-router', 'pinia'],
+          ui: ['element-plus'],
+        },
+      },
+    },
+  },
+  // Unified development server configuration
+  server: {
+    port: 5173,
+    host: true,
+  },
+  preview: {
+    port: 4173,
+    host: true,
   },
 })
