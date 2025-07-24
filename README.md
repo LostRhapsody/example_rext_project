@@ -50,3 +50,107 @@ The Rust server has a CORS bypass that allows these two ports to communicate via
 - Admin panel
 - Tracing
 - logging
+
+## Architecture
+
+This project takes a layered approach to architecture with clear separation of concerns between frontend, backend, and database layers.
+
+### Project Structure
+
+```
+example_rext_project/
+├── backend/                   # Rust backend application
+│   ├── main.rs                # Application entry point and server setup
+│   ├── bridge/                # Web API layer (HTTP handlers, routes, middleware)
+│   │   ├── mod.rs
+│   │   ├── handlers/          # HTTP request handlers
+│   │   │   ├── mod.rs
+│   │   │   └── auth.rs        # Authentication handlers
+│   │   ├── routes/            # API route definitions
+│   │   │   ├── mod.rs
+│   │   │   └── auth.rs        # Authentication routes
+│   │   ├── middleware/        # HTTP middleware
+│   │   │   ├── mod.rs
+│   │   │   └── auth.rs        # Authentication middleware
+│   │   └── types/             # API-specific types
+│   │       ├── mod.rs
+│   │       └── auth.rs        # Authentication types
+│   ├── control/               # Business logic layer
+│   │   └── services/          # Service implementations
+│   ├── domain/                # Domain models and business rules
+│   ├── entity/                # Database entity layer (Sea-ORM)
+│   │   ├── mod.rs
+│   │   └── models/            # Database entity models
+│   │       ├── mod.rs
+│   │       ├── prelude.rs     # Common entity imports
+│   │       └── users.rs       # User entity model
+│   └── infrastructure/        # Infrastructure concerns
+│       ├── mod.rs
+│       ├── app_error.rs       # Application error types
+│       └── jwt_claims.rs      # JWT token claims
+├── frontend/                  # Vue.js frontend application
+│   ├── src/
+│   │   ├── main.ts            # Frontend entry point
+│   │   ├── App.vue            # Root Vue component
+│   │   ├── appearance/        # Presentation layer
+│   │   │   ├── components/    # Reusable Vue components
+│   │   │   └── views/         # Page views
+│   │   │       ├── HomeView.vue      # Landing page
+│   │   │       ├── LoginView.vue     # User login form
+│   │   │       ├── RegisterView.vue  # User registration form
+│   │   │       └── ProfileView.vue   # User profile page
+│   │   └── bridge/            # API client layer
+│   │       ├── client/        # Generated API client
+│   │       │   ├── client/    # Core client implementation
+│   │       │   ├── core/      # Client utilities and types
+│   │       │   ├── client.gen.ts     # Generated client code
+│   │       │   ├── sdk.gen.ts # Generated SDK
+│   │       │   └── types.gen.ts      # Generated types
+│   │       └── router/        # Vue Router configuration
+│   ├── e2e/                   # End-to-end tests (Playwright)
+│   │   ├── tsconfig.json      # E2E TypeScript config
+│   │   └── vue.spec.ts        # E2E test specifications
+│   ├── config/                # Build and tooling configuration
+│   │   └── unified.config.ts  # Unified configuration
+│   ├── package.json           # Frontend dependencies
+│   ├── vite.config.ts         # Vite build configuration
+│   ├── tsconfig.json          # TypeScript configuration
+│   └── eslint.config.ts       # ESLint configuration
+├── migration/                 # Database migration system (Sea-ORM)
+│   ├── src/
+│   │   ├── lib.rs             # Migration registry and setup
+│   │   ├── main.rs            # Migration runner
+│   │   └── m20250720_000001_create_users.rs  # Users table migration
+│   ├── Cargo.toml             # Migration dependencies
+│   └── README.md              # Migration documentation
+├── Cargo.toml                 # Rust workspace configuration
+├── rext.toml                  # Rext framework configuration
+├── example.env                # Environment variables template
+└── README.md                  # Project documentation
+```
+
+### Architecture Layers
+
+#### Backend (Rust)
+- **Bridge Layer**: HTTP API endpoints, middleware, and request/response handling
+- **Control Layer**: Business logic and service orchestration
+- **Domain Layer**: Core business models and rules
+- **Entity Layer**: Database models and ORM integration (Sea-ORM)
+- **Infrastructure Layer**: Cross-cutting concerns (errors, JWT, etc.)
+
+#### Frontend (Vue.js)
+- **Appearance Layer**: UI components and page views
+- **Bridge Layer**: API client and routing
+- **Client Layer**: Generated type-safe API client
+
+#### Database
+- **Migration System**: Version-controlled database schema changes
+- **Entity Models**: Type-safe database access with Sea-ORM
+
+### Key Design Principles
+
+1. **Separation of Concerns**: Clear boundaries between presentation, business logic, and data layers
+2. **Type Safety**: Full TypeScript on frontend, strong typing in Rust backend
+3. **API-First**: OpenAPI specification with generated clients
+4. **Layered Architecture**: Clean separation between HTTP, business logic, and data access
+5. **Generated Code**: Type-safe API clients and database entities generated from specifications

@@ -40,43 +40,44 @@ The goal of this project is to serve as a demo/template for Rext, a fullstack, r
 
 ## 📁 Project Structure
 
+### Quick Reference for Agents
+
+**Where to add code:**
+- **Backend API**: `backend/bridge/` (handlers, routes, middleware, types)
+- **Business Logic**: `backend/control/services/`
+- **Database Models**: `backend/entity/models/`
+- **Frontend Views**: `frontend/src/appearance/views/`
+- **Frontend Components**: `frontend/src/appearance/components/`
+- **API Client**: `frontend/src/bridge/client/` (generated)
+- **Database Migrations**: `migration/src/`
+
+### Current Structure
+
 ```
-project_rext_1/
-├── src/                        # Rust backend source
-│   ├── main.rs                 # Backend entry point
-│   └── entities/               # Sea-ORM entity definitions
-│       ├── mod.rs              # Entity module exports
-│       ├── prelude.rs          # Common entity imports
-│       └── users.rs            # User entity model
-├── migration/                  # Sea-ORM database migrations
+example_rext_project/
+├── backend/                   # Rust backend (layered architecture)
+│   ├── main.rs               # Server entry point
+│   ├── bridge/               # HTTP API layer
+│   │   ├── handlers/         # Request handlers (add new endpoints here)
+│   │   ├── routes/           # Route definitions
+│   │   ├── middleware/       # HTTP middleware
+│   │   └── types/            # API types
+│   ├── control/              # Business logic layer
+│   │   └── services/         # Service implementations
+│   ├── domain/               # Domain models
+│   ├── entity/               # Database layer (Sea-ORM)
+│   │   └── models/           # Entity models (add new tables here)
+│   └── infrastructure/       # Cross-cutting concerns
+├── frontend/                 # Vue.js frontend
 │   ├── src/
-│   │   ├── lib.rs             # Migration registry
-│   │   ├── main.rs            # Migration runner
-│   │   └── m20250720_000001_create_users.rs  # Users table migration
-│   └── Cargo.toml
-├── frontend/                   # Vue.js frontend
-│   ├── src/
-│   │   ├── main.ts            # Frontend entry point
-│   │   ├── App.vue            # Root component
-│   │   ├── components/        # Reusable components
-│   │   │   ├── __tests__/     # Component unit tests
-│   │   │   └── icons/         # Icon components
-│   │   ├── views/             # Page components
-│   │   │   ├── HomeView.vue   # Home/landing page
-│   │   │   ├── LoginView.vue  # User login form
-│   │   │   ├── RegisterView.vue # User registration form
-│   │   │   └── ProfileView.vue # User profile page
-│   │   ├── router/            # Vue Router config
-│   │   ├── stores/            # Pinia stores (state management)
-│   │   └── assets/            # Static assets
-│   ├── e2e/                   # Playwright e2e tests
-│   │   ├── tsconfig.json      # E2E TypeScript config
-│   │   └── vue.spec.ts        # E2E test specs
-│   ├── public/                # Public static files
-│   └── package.json
-├── Cargo.toml                 # Rust workspace config
-├── sqlite.db                  # SQLite database file
-└── .gitignore                 # Git ignore patterns
+│   │   ├── appearance/       # UI layer
+│   │   │   ├── views/        # Page components (add new pages here)
+│   │   │   └── components/   # Reusable components
+│   │   └── bridge/           # API client layer (generated)
+│   └── e2e/                  # End-to-end tests
+├── migration/                # Database migrations (Sea-ORM)
+│   └── src/                  # Migration files (add new migrations here)
+└── Cargo.toml               # Rust workspace config
 ```
 
 ## 🗄️ Database Schema
