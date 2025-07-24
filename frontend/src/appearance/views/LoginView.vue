@@ -33,8 +33,8 @@
 </template>
 
 <script setup lang="ts">
-
 const router = useRouter()
+const { login } = useAuth()
 
 const email = ref('')
 const password = ref('')
@@ -56,7 +56,7 @@ const handleLogin = async () => {
     })
 
     if (response.data) {
-      localStorage.setItem('token', response.data.token)
+      login(response.data.token)
       router.push('/profile')
     } else {
       error.value = 'Login failed'

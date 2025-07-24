@@ -1,24 +1,9 @@
 <script setup lang="ts">
-const route = useRoute()
 const router = useRouter()
-const isLoggedIn = ref(false)
-
-const checkAuthState = () => {
-  isLoggedIn.value = !!localStorage.getItem('token')
-}
-
-onMounted(() => {
-  checkAuthState()
-})
-
-// Watch for route changes and update auth state
-watch(route, () => {
-  checkAuthState()
-})
+const { isLoggedIn, logout: authLogout } = useAuth()
 
 const logout = () => {
-  localStorage.removeItem('token')
-  isLoggedIn.value = false
+  authLogout()
   router.push('/')
 }
 </script>

@@ -92,6 +92,7 @@ declare global {
   const unref: typeof import('vue')['unref']
   const urlSearchParamsBodySerializer: typeof import('./src/bridge/client/core/bodySerializer')['urlSearchParamsBodySerializer']
   const useAttrs: typeof import('vue')['useAttrs']
+  const useAuth: typeof import('./src/appearance/composables/useAuth')['useAuth']
   const useCounter: typeof import('./src/composables/useCounter')['useCounter']
   const useCssModule: typeof import('vue')['useCssModule']
   const useCssVars: typeof import('vue')['useCssVars']
@@ -189,6 +190,7 @@ declare module 'vue' {
     readonly triggerRef: UnwrapRef<typeof import('vue')['triggerRef']>
     readonly unref: UnwrapRef<typeof import('vue')['unref']>
     readonly useAttrs: UnwrapRef<typeof import('vue')['useAttrs']>
+    readonly useAuth: UnwrapRef<typeof import('./src/appearance/composables/useAuth')['useAuth']>
     readonly useCssModule: UnwrapRef<typeof import('vue')['useCssModule']>
     readonly useCssVars: UnwrapRef<typeof import('vue')['useCssVars']>
     readonly useId: UnwrapRef<typeof import('vue')['useId']>

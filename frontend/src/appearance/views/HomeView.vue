@@ -14,19 +14,5 @@
 </template>
 
 <script setup lang="ts">
-const route = useRoute()
-const isLoggedIn = ref(false)
-
-const checkAuthState = () => {
-  isLoggedIn.value = !!localStorage.getItem('token')
-}
-
-onMounted(() => {
-  checkAuthState()
-})
-
-// Watch for route changes and update auth state
-watch(route, () => {
-  checkAuthState()
-})
+const { isLoggedIn } = useAuth()
 </script>

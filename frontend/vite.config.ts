@@ -20,8 +20,8 @@ export default defineConfig({
         ElementPlusResolver(),
       ],
       dirs: [
-        './src/composables/**',
-        './src/directives/**',
+        './src/appearance/composables/**',
+        './src/appearance/directives/**',
         './src/bridge/client/index.ts'
       ],
       vueTemplate: true,
