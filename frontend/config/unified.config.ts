@@ -109,6 +109,16 @@ export interface UnifiedConfig {
     dts: boolean
     eslintrc: boolean
   }
+
+  // OpenAPI/HeyAPI configuration
+  openapi: {
+    input: string
+    output: {
+      path: string
+      // Add other output options as needed
+    }
+    watch: boolean
+  }
 }
 
 // Default configuration values
@@ -230,6 +240,14 @@ export const defaultConfig: UnifiedConfig = {
     vueTemplate: true,
     dts: true,
     eslintrc: true
+  },
+
+  openapi: {
+    input: 'http://localhost:3000/api-docs/openapi.json',
+    output: {
+      path: 'src/bridge/client'
+    },
+    watch: true
   }
 }
 

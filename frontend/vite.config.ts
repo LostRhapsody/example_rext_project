@@ -4,7 +4,6 @@ import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
 import vueDevTools from 'vite-plugin-vue-devtools'
 import AutoImport from 'unplugin-auto-import/vite'
-import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 import { getConfig } from './config/unified.config'
 
 // Unified configuration that consolidates multiple config files
@@ -16,9 +15,6 @@ export default defineConfig({
     vueDevTools(),
     AutoImport({
       imports: ['vue', 'vue-router', 'pinia'],
-      resolvers: [
-        ElementPlusResolver(),
-      ],
       dirs: [
         './src/appearance/composables/**',
         './src/appearance/directives/**',
@@ -70,7 +66,6 @@ export default defineConfig({
       output: {
         manualChunks: {
           vendor: ['vue', 'vue-router', 'pinia'],
-          ui: ['element-plus'],
         },
       },
     },

@@ -16,8 +16,8 @@
     "type-check": "vue-tsc --build",
     "lint": "eslint . --fix",
     "format": "prettier --write src/",
-    "generate:client": "npx @hey-api/openapi-ts -i http://localhost:3000/api-docs/openapi.json -o src/bridge/client -w",
-    "generate:client:watch": "npx @hey-api/openapi-ts -i http://localhost:3000/api-docs/openapi.json -o src/bridge/client -w",
+    "generate:client": "npx @hey-api/openapi-ts",
+    "generate:client:watch": "npx @hey-api/openapi-ts --watch",
     "client": "openapi-ts"
   },
   "dependencies": {
