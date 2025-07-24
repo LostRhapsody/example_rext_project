@@ -18,7 +18,8 @@ export default defineConfig({
       dirs: [
         './src/appearance/composables/**',
         './src/appearance/directives/**',
-        './src/bridge/client/index.ts'
+        './src/bridge/client/index.ts',
+        './src/bridge/client/zod.gen.ts',
       ],
       vueTemplate: true,
       dts: true,

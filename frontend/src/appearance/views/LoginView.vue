@@ -6,17 +6,35 @@
       <div>
         <label for="email">Email:</label>
         <br>
-        <input type="email" id="email" v-model="email" required>
+        <input 
+          type="email" 
+          id="email" 
+          v-model="email" 
+          :class="{ 'error': emailError }"
+          @blur="validateEmail"
+          required
+          autocomplete="email"
+        >
+        <div v-if="emailError" class="error-message">{{ emailError }}</div>
       </div>
 
       <div>
         <label for="password">Password:</label>
         <br>
-        <input type="password" id="password" v-model="password" required>
+        <input 
+          type="password" 
+          id="password" 
+          v-model="password" 
+          :class="{ 'error': passwordError }"
+          @blur="validatePassword"
+          required
+          autocomplete="current-password"
+        >
+        <div v-if="passwordError" class="error-message">{{ passwordError }}</div>
       </div>
 
       <div>
-        <button type="submit" :disabled="loading">
+        <button type="submit" :disabled="loading || hasValidationErrors">
           {{ loading ? 'Logging in...' : 'Login' }}
         </button>
       </div>
@@ -40,10 +58,71 @@ const email = ref('')
 const password = ref('')
 const loading = ref(false)
 const error = ref('')
+const emailError = ref('')
+const passwordError = ref('')
+
+// Computed property to check if there are any validation errors
+const hasValidationErrors = computed(() => {
+  if (emailError.value !== '' || passwordError.value !== '') {
+    return true
+  }
+  return false
+})
+
+// Validate email using Zod schema
+const validateEmail = () => {
+  try {
+    zLoginRequest.shape.email.parse(email.value)
+    emailError.value = ''
+  } catch (err) {
+    if (err instanceof Error) {
+      emailError.value = err.message
+    } else {
+      emailError.value = 'Invalid email format'
+    }
+  }
+}
+
+// Validate password using Zod schema
+const validatePassword = () => {
+  try {
+    zLoginRequest.shape.password.parse(password.value)
+    passwordError.value = ''
+  } catch (err) {
+    if (err instanceof Error) {
+      passwordError.value = err.message
+    } else {
+      passwordError.value = 'Password is required'
+    }
+  }
+}
+
+// Validate entire form using Zod schema
+const validateForm = () => {
+  validateEmail()
+  validatePassword()
+  
+  try {
+    zLoginRequest.parse({
+      email: email.value,
+      password: password.value
+    })
+    return true
+  } catch (err) {
+    return false
+  }
+}
 
 const handleLogin = async () => {
-  loading.value = true
+  // Clear previous errors
   error.value = ''
+  
+  // Validate form before submission
+  if (!validateForm()) {
+    return
+  }
+
+  loading.value = true
 
   try {
     const loginData: LoginRequest = {
@@ -82,6 +161,17 @@ input {
   padding: 0.5rem;
   font-size: 1rem;
   width: 250px;
+}
+
+input.error {
+  border-color: #dc3545;
+  border-width: 2px;
+}
+
+.error-message {
+  color: #dc3545;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
 }
 
 button {

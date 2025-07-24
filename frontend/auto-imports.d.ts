@@ -107,6 +107,21 @@ declare global {
   const watchEffect: typeof import('vue')['watchEffect']
   const watchPostEffect: typeof import('vue')['watchPostEffect']
   const watchSyncEffect: typeof import('vue')['watchSyncEffect']
+  const zErrorResponse: typeof import('./src/bridge/client/zod.gen')['zErrorResponse']
+  const zLoginHandlerData: typeof import('./src/bridge/client/zod.gen')['zLoginHandlerData']
+  const zLoginHandlerResponse: typeof import('./src/bridge/client/zod.gen')['zLoginHandlerResponse']
+  const zLoginRequest: typeof import('./src/bridge/client/zod.gen')['zLoginRequest']
+  const zLoginResponse: typeof import('./src/bridge/client/zod.gen')['zLoginResponse']
+  const zLogoutHandlerData: typeof import('./src/bridge/client/zod.gen')['zLogoutHandlerData']
+  const zLogoutHandlerResponse: typeof import('./src/bridge/client/zod.gen')['zLogoutHandlerResponse']
+  const zMessageResponse: typeof import('./src/bridge/client/zod.gen')['zMessageResponse']
+  const zProfileHandlerData: typeof import('./src/bridge/client/zod.gen')['zProfileHandlerData']
+  const zProfileHandlerResponse: typeof import('./src/bridge/client/zod.gen')['zProfileHandlerResponse']
+  const zProfileResponse: typeof import('./src/bridge/client/zod.gen')['zProfileResponse']
+  const zRegisterHandlerData: typeof import('./src/bridge/client/zod.gen')['zRegisterHandlerData']
+  const zRegisterHandlerResponse: typeof import('./src/bridge/client/zod.gen')['zRegisterHandlerResponse']
+  const zRegisterRequest: typeof import('./src/bridge/client/zod.gen')['zRegisterRequest']
+  const zRegisterResponse: typeof import('./src/bridge/client/zod.gen')['zRegisterResponse']
 }
 // for type re-export
 declare global {
@@ -204,5 +219,20 @@ declare module 'vue' {
     readonly watchEffect: UnwrapRef<typeof import('vue')['watchEffect']>
     readonly watchPostEffect: UnwrapRef<typeof import('vue')['watchPostEffect']>
     readonly watchSyncEffect: UnwrapRef<typeof import('vue')['watchSyncEffect']>
+    readonly zErrorResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zErrorResponse']>
+    readonly zLoginHandlerData: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zLoginHandlerData']>
+    readonly zLoginHandlerResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zLoginHandlerResponse']>
+    readonly zLoginRequest: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zLoginRequest']>
+    readonly zLoginResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zLoginResponse']>
+    readonly zLogoutHandlerData: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zLogoutHandlerData']>
+    readonly zLogoutHandlerResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zLogoutHandlerResponse']>
+    readonly zMessageResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zMessageResponse']>
+    readonly zProfileHandlerData: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zProfileHandlerData']>
+    readonly zProfileHandlerResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zProfileHandlerResponse']>
+    readonly zProfileResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zProfileResponse']>
+    readonly zRegisterHandlerData: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zRegisterHandlerData']>
+    readonly zRegisterHandlerResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zRegisterHandlerResponse']>
+    readonly zRegisterRequest: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zRegisterRequest']>
+    readonly zRegisterResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zRegisterResponse']>
   }
 }

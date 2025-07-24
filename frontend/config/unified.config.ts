@@ -117,7 +117,14 @@ export interface UnifiedConfig {
       path: string
       // Add other output options as needed
     },
-    plugins: string[]
+    plugins: ReadonlyArray<
+      | string
+      | {
+          [K in string]: any & {
+            name: K;
+          };
+        }[string]
+    >
     watch: boolean
   }
 }
@@ -248,7 +255,17 @@ export const defaultConfig: UnifiedConfig = {
     output: {
       path: 'src/bridge/client'
     },
-    plugins: ['zod'],
+    plugins: [
+      'zod',
+      {
+        name: '@hey-api/sdk', 
+        requests: true,
+        responses: true,
+        definitions: true,
+        metadata: true,
+        validator: true, 
+      },
+    ],
     watch: true
   }
 }

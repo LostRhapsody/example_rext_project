@@ -7,12 +7,6 @@ const config = getConfig()
 export default defineConfig({
   input: config.openapi.input,
   output: config.openapi.output,
-  // Optional: Add parser configuration if needed
-  // parser: {
-  //   // Custom parser options
-  // },
-  // Optional: Add plugins configuration if needed
-  // plugins: [
-  //   // Custom plugins
-  // ],
+  plugins: config.openapi.plugins,
+  watch: config.openapi.watch,
 }) 

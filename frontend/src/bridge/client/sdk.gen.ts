@@ -2,6 +2,7 @@
 
 import type { Options as ClientOptions, TDataShape, Client } from './client';
 import type { LoginHandlerData, LoginHandlerResponses, LoginHandlerErrors, LogoutHandlerData, LogoutHandlerResponses, ProfileHandlerData, ProfileHandlerResponses, ProfileHandlerErrors, RegisterHandlerData, RegisterHandlerResponses, RegisterHandlerErrors } from './types.gen';
+import { zLoginHandlerData, zLoginHandlerResponse, zLogoutHandlerData, zLogoutHandlerResponse, zProfileHandlerData, zProfileHandlerResponse, zRegisterHandlerData, zRegisterHandlerResponse } from './zod.gen';
 import { client as _heyApiClient } from './client.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = ClientOptions<TData, ThrowOnError> & {
@@ -24,6 +25,12 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
  */
 export const loginHandler = <ThrowOnError extends boolean = false>(options: Options<LoginHandlerData, ThrowOnError>) => {
     return (options.client ?? _heyApiClient).post<LoginHandlerResponses, LoginHandlerErrors, ThrowOnError>({
+        requestValidator: async (data) => {
+            return await zLoginHandlerData.parseAsync(data);
+        },
+        responseValidator: async (data) => {
+            return await zLoginHandlerResponse.parseAsync(data);
+        },
         url: '/api/v1/auth/login',
         ...options,
         headers: {
@@ -39,6 +46,12 @@ export const loginHandler = <ThrowOnError extends boolean = false>(options: Opti
  */
 export const logoutHandler = <ThrowOnError extends boolean = false>(options?: Options<LogoutHandlerData, ThrowOnError>) => {
     return (options?.client ?? _heyApiClient).post<LogoutHandlerResponses, unknown, ThrowOnError>({
+        requestValidator: async (data) => {
+            return await zLogoutHandlerData.parseAsync(data);
+        },
+        responseValidator: async (data) => {
+            return await zLogoutHandlerResponse.parseAsync(data);
+        },
         url: '/api/v1/auth/logout',
         ...options
     });
@@ -50,6 +63,12 @@ export const logoutHandler = <ThrowOnError extends boolean = false>(options?: Op
  */
 export const profileHandler = <ThrowOnError extends boolean = false>(options?: Options<ProfileHandlerData, ThrowOnError>) => {
     return (options?.client ?? _heyApiClient).get<ProfileHandlerResponses, ProfileHandlerErrors, ThrowOnError>({
+        requestValidator: async (data) => {
+            return await zProfileHandlerData.parseAsync(data);
+        },
+        responseValidator: async (data) => {
+            return await zProfileHandlerResponse.parseAsync(data);
+        },
         url: '/api/v1/auth/profile',
         ...options
     });
@@ -61,6 +80,12 @@ export const profileHandler = <ThrowOnError extends boolean = false>(options?: O
  */
 export const registerHandler = <ThrowOnError extends boolean = false>(options: Options<RegisterHandlerData, ThrowOnError>) => {
     return (options.client ?? _heyApiClient).post<RegisterHandlerResponses, RegisterHandlerErrors, ThrowOnError>({
+        requestValidator: async (data) => {
+            return await zRegisterHandlerData.parseAsync(data);
+        },
+        responseValidator: async (data) => {
+            return await zRegisterHandlerResponse.parseAsync(data);
+        },
         url: '/api/v1/auth/register',
         ...options,
         headers: {

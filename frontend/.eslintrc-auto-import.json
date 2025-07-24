@@ -120,6 +120,21 @@
     "watch": true,
     "watchEffect": true,
     "watchPostEffect": true,
-    "watchSyncEffect": true
+    "watchSyncEffect": true,
+    "zErrorResponse": true,
+    "zLoginHandlerData": true,
+    "zLoginHandlerResponse": true,
+    "zLoginRequest": true,
+    "zLoginResponse": true,
+    "zLogoutHandlerData": true,
+    "zLogoutHandlerResponse": true,
+    "zMessageResponse": true,
+    "zProfileHandlerData": true,
+    "zProfileHandlerResponse": true,
+    "zProfileResponse": true,
+    "zRegisterHandlerData": true,
+    "zRegisterHandlerResponse": true,
+    "zRegisterRequest": true,
+    "zRegisterResponse": true
   }
 }
