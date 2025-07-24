@@ -1,27 +1,18 @@
-use argon2::{
-    password_hash::{
-        PasswordHasher,
-        PasswordVerifier,
-        PasswordHash,
-        SaltString,
-    },
-    Argon2,
-};
 use axum::{
     Json,
     extract::{Request, State},
     http::StatusCode,
     response::IntoResponse,
 };
-use jsonwebtoken::{EncodingKey, Header, encode};
 use sea_orm::*;
-use std::env;
-use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::entity::models::{prelude::*, *};
+use crate::bridge::types::auth::{
+    AUTH_TAG, AuthUser, LoginRequest, LoginResponse, ProfileResponse, RegisterRequest,
+    RegisterResponse,
+};
+use crate::control::services::{auth_service::AuthService, user_service::UserService};
+use crate::domain::user::*;
 use crate::infrastructure::app_error::{AppError, ErrorResponse, MessageResponse};
-use crate::infrastructure::jwt_claims::Claims;
-use crate::bridge::types::auth::{RegisterRequest, RegisterResponse, LoginRequest, LoginResponse, ProfileResponse, AuthUser, AUTH_TAG};
 
 /// Registers a new user
 #[utoipa::path(
@@ -49,71 +40,19 @@ pub async fn register_handler(
     State(db): State<DatabaseConnection>,
     Json(payload): Json<RegisterRequest>,
 ) -> Result<impl IntoResponse, AppError> {
-    // Validate input
-    if payload.email.is_empty() || payload.password.is_empty() {
-        return Err(AppError {
-            message: "Email and password are required".to_string(),
-            status_code: StatusCode::BAD_REQUEST,
-        });
-    }
+    // Convert request to user domain model
+    let registration = UserRegistration::new(payload.email, payload.password);
 
-    if payload.password.len() < 6 {
-        return Err(AppError {
-            message: "Password must be at least 6 characters".to_string(),
-            status_code: StatusCode::BAD_REQUEST,
-        });
-    }
+    // Delegate to user service, errors bubble up correctl
+    let user = UserService::create_user(&db, registration).await?;
 
-    let existing_user: Option<users::Model> = Users::find()
-        .filter(users::Column::Email.eq(payload.email.clone()))
-        .one(&db)
-        .await
-        .unwrap();
-
-    if existing_user.is_some() {
-        return Err(AppError {
-            message: "User already exists".to_string(),
-            status_code: StatusCode::CONFLICT,
-        });
-    }
-
-    // Hash password
-    let salt = SaltString::generate(&mut rand_core::OsRng);
-    let argon2 = Argon2::default();
-    let password_hash = argon2
-        .hash_password(payload.password.as_bytes(), &salt)
-        .map_err(|_| AppError {
-            message: "Failed to hash password".to_string(),
-            status_code: StatusCode::INTERNAL_SERVER_ERROR,
-        })?
-        .to_string();
-
-    // Create user
-    let user_id = uuid::Uuid::new_v4();
-    let created_at = chrono::Utc::now().fixed_offset();
-    let new_user = users::ActiveModel {
-        id: Set(user_id),
-        email: Set(payload.email.clone()),
-        password_hash: Set(password_hash),
-        created_at: Set(Some(created_at)),
-    };
-
-    Users::insert(new_user)
-        .exec(&db)
-        .await
-        .map_err(|_| AppError {
-            message: "Failed to create user".to_string(),
-            status_code: StatusCode::INTERNAL_SERVER_ERROR,
-        })?;
-
-    // Return comprehensive response
     Ok((
         StatusCode::CREATED,
         Json(RegisterResponse {
             message: "User created successfully".to_string(),
-            user_id: user_id.to_string(),
-            email: payload.email,
-            created_at: Some(created_at.to_utc().to_rfc3339()),
+            user_id: user.id.to_string(),
+            email: user.email,
+            created_at: user.created_at.map(|dt| dt.to_rfc3339()),
         }),
     ))
 }
@@ -144,60 +83,15 @@ pub async fn login_handler(
     State(db): State<DatabaseConnection>,
     Json(payload): Json<LoginRequest>,
 ) -> Result<impl IntoResponse, AppError> {
-    let user: Option<users::Model> = Users::find()
-        .filter(users::Column::Email.eq(payload.email.clone()))
-        .one(&db)
-        .await
-        .unwrap();
+    // Convert request to user domain model
+    let login = UserLogin::new(payload.email, payload.password);
 
-    let user = match user {
-        Some(user) => user,
-        None => {
-            return Err(AppError {
-                message: "Invalid credentials".to_string(),
-                status_code: StatusCode::UNAUTHORIZED,
-            });
-        }
-    };
+    // Delegate to user service, errors bubble up correctly
+    let auth_token = AuthService::authenticate_user(&db, login).await?;
 
-    // Verify password
-    let parsed_hash = PasswordHash::new(&user.password_hash).map_err(|_| AppError {
-        message: "Invalid password hash".to_string(),
-        status_code: StatusCode::INTERNAL_SERVER_ERROR,
-    })?;
-
-    let argon2 = Argon2::default();
-    if argon2
-        .verify_password(payload.password.as_bytes(), &parsed_hash)
-        .is_err()
-    {
-        return Err(AppError {
-            message: "Invalid credentials".to_string(),
-            status_code: StatusCode::UNAUTHORIZED,
-        });
-    }
-
-    // Generate JWT
-    let jwt_secret = env::var("JWT_SECRET").unwrap_or_else(|_| "default-secret".to_string());
-    let encoding_key = EncodingKey::from_secret(jwt_secret.as_ref());
-
-    let expiration = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_secs()
-        + 24 * 60 * 60; // 24 hours
-
-    let claims = Claims {
-        sub: user.id.to_string(),
-        exp: expiration as usize,
-    };
-
-    let token = encode(&Header::default(), &claims, &encoding_key).map_err(|_| AppError {
-        message: "Failed to generate token".to_string(),
-        status_code: StatusCode::INTERNAL_SERVER_ERROR,
-    })?;
-
-    Ok(Json(LoginResponse { token }))
+    Ok(Json(LoginResponse {
+        token: auth_token.token,
+    }))
 }
 
 /// Logs out the current user
@@ -214,9 +108,7 @@ pub async fn login_handler(
     tag = AUTH_TAG
 )]
 pub async fn logout_handler() -> impl IntoResponse {
-    // Since JWT is stateless, we can't really invalidate it on the server side
-    // In a production app, you might maintain a blacklist of tokens
-    // For now, we just return a success message
+    // This is mostly done on the client, as JWT is stateless. Might add a blacklist in the future.
     Json(MessageResponse {
         message: "Logged out successfully".to_string(),
     })
@@ -253,22 +145,17 @@ pub async fn profile_handler(
         status_code: StatusCode::UNAUTHORIZED,
     })?;
 
-    // Find user in database
-    let user: Option<users::Model> = Users::find_by_id(auth_user.user_id).one(&db).await.unwrap();
-
-    let user = match user {
-        Some(user) => user,
-        None => {
-            return Err(AppError {
-                message: "User not found".to_string(),
-                status_code: StatusCode::NOT_FOUND,
-            });
-        }
-    };
+    // Delegate to user service, errors bubble up correctly
+    let user = UserService::find_user_by_id(&db, auth_user.user_id)
+        .await?
+        .ok_or(AppError {
+            message: "User not found".to_string(),
+            status_code: StatusCode::NOT_FOUND,
+        })?;
 
     Ok(Json(ProfileResponse {
         id: user.id.to_string(),
         email: user.email,
-        created_at: user.created_at.map(|dt| dt.to_utc()),
+        created_at: user.created_at,
     }))
 }

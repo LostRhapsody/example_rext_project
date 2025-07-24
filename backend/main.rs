@@ -1,5 +1,7 @@
-mod entity;
 mod bridge;
+mod control;
+mod domain;
+mod entity;
 mod infrastructure;
 
 use apalis::prelude::*;
@@ -29,9 +31,9 @@ use utoipa_scalar::{Scalar, Servable as ScalarServable};
 use utoipa_swagger_ui::SwaggerUi;
 
 // Re-export types from auth module for OpenAPI documentation
-use bridge::types::auth::{RegisterRequest, RegisterResponse, AUTH_TAG};
-use infrastructure::app_error::{ErrorResponse, MessageResponse};
 use bridge::routes::auth::auth_router;
+use bridge::types::auth::{AUTH_TAG, RegisterRequest, RegisterResponse};
+use infrastructure::app_error::{ErrorResponse, MessageResponse};
 
 #[derive(OpenApi)]
 #[openapi(
