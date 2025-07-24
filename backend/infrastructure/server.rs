@@ -1,4 +1,4 @@
-use axum::{Router, routing::get};
+use axum::{Router, routing::get, middleware};
 use sea_orm::DatabaseConnection;
 use std::{
     env,
@@ -15,6 +15,7 @@ use utoipa_scalar::{Scalar, Servable as ScalarServable};
 use utoipa_swagger_ui::SwaggerUi;
 
 use crate::bridge::routes::auth::auth_router;
+use crate::bridge::middleware::logging::request_logging_middleware;
 use crate::infrastructure::cors::CorsManager;
 use crate::infrastructure::openapi::ApiDoc;
 
@@ -33,7 +34,7 @@ impl ServerManager {
 
         // Create the OpenAPI Router
         let (router, api) = OpenApiRouter::with_openapi(ApiDoc::openapi())
-            .nest("/api/v1/auth", auth_router(db))
+            .nest("/api/v1/auth", auth_router(db.clone()))
             .split_for_parts();
 
         let mut router = router
@@ -42,6 +43,9 @@ impl ServerManager {
             .merge(RapiDoc::new("/api-docs/openapi.json").path("/rapidoc"))
             .merge(Scalar::with_url("/scalar", api))
             .route("/", get(Self::root_handler));
+
+        // Add request logging middleware to all routes
+        router = router.layer(middleware::from_fn_with_state(db.clone(), request_logging_middleware));
 
         // Add CORS layer for development
         if environment == "development" {

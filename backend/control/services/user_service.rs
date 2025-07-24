@@ -50,6 +50,7 @@ impl UserService {
             email: Set(user.email.clone()),
             password_hash: Set(user.password_hash.clone()),
             created_at: Set(user.created_at.map(|dt| dt.fixed_offset())),
+            is_admin: Set(Some(false)), // Default to non-admin
         };
 
         Users::insert(user_active_model)

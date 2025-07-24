@@ -5,10 +5,14 @@ mod entity;
 mod infrastructure;
 
 use control::services::startup::StartupService;
+use infrastructure::logging::LoggingManager;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("Starting the Rext Server 🦖");
+    // Initialize logging first
+    LoggingManager::initialize();
+    
+    tracing::info!("Starting the Rext Server 🦖");
 
     // Initialize the application
     let db = StartupService::initialize().await?;

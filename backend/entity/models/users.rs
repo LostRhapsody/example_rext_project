@@ -16,6 +16,7 @@ pub struct Model {
     pub password_hash: String,
     #[schema(value_type = String)]
     pub created_at: Option<DateTimeWithTimeZone>,
+    pub is_admin: Option<bool>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

@@ -161,12 +161,7 @@ This project is beyond a basic template - it includes:
    ```
 
 3. **Database setup:**
-   ```bash
-   # Run migrations
-   cd migration
-   cargo run
-   cd ..
-   ```
+   use the sea-orm-cli to setup and run migrations, never the native migration runner
 
 4. **Frontend setup:**
    ```bash
@@ -301,13 +296,11 @@ npm run build
 
 #### Migration Commands
 ```bash
-cd migration
-
-# Run all pending migrations
-cargo run
-
 # Create a new migration
 sea-orm-cli migrate generate create_table_name
+
+# Apply pending migrations
+sea-orm-cli migrate up
 
 # Check migration status
 sea-orm-cli migrate status
@@ -320,13 +313,7 @@ sea-orm-cli migrate fresh
 ```
 
 #### Entity Generation
-```bash
-# Generate entities from database
-sea-orm-cli generate entity -o src/entities
-
-# Generate entities for specific tables
-sea-orm-cli generate entity -t users,posts -o src/entities
-```
+Don't generate entities, prompt the user, must be generated through the rext-core lib and rext-tui interface
 
 ## 🔄 Common Development Workflows
 
@@ -349,19 +336,6 @@ cargo run  # Start backend with user routes
 # Test authentication flow
 cd frontend && npm run dev  # Start frontend
 # Navigate to /login, /register, /profile
-```
-
-### Database Workflow
-```bash
-# Current migration (already exists)
-cd migration
-cargo run  # Runs m20250720_000001_create_users
-
-# Create new migration
-sea-orm-cli migrate generate create_new_table
-
-# Reset database (CAUTION: deletes all data)
-rm sqlite.db && cargo run
 ```
 
 ### Running Tests
@@ -406,11 +380,7 @@ cd frontend && npm run build
    ```
 
 2. **Migration errors**
-   ```bash
-   # Reset database (CAUTION: deletes all data)
-   rm sqlite.db
-   cd migration && cargo run
-   ```
+   Ask the user to resolve errors, apply migrations, and roll back.
 
 3. **Authentication flow issues**
    ```bash
@@ -435,15 +405,6 @@ cd frontend && npm run build
 
    # Kill process on port 5173 (frontend)
    lsof -ti:5173 | xargs kill -9
-   ```
-
-6. **Entity/Database sync issues**
-   ```bash
-   # Regenerate entities from current database
-   sea-orm-cli generate entity -o src/entities
-
-   # Fresh database setup
-   rm sqlite.db && cd migration && cargo run
    ```
 
 ### Performance Tips
