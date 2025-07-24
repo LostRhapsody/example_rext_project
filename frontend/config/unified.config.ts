@@ -116,7 +116,8 @@ export interface UnifiedConfig {
     output: {
       path: string
       // Add other output options as needed
-    }
+    },
+    plugins: string[]
     watch: boolean
   }
 }
@@ -247,6 +248,7 @@ export const defaultConfig: UnifiedConfig = {
     output: {
       path: 'src/bridge/client'
     },
+    plugins: ['zod'],
     watch: true
   }
 }
