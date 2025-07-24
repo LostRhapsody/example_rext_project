@@ -10,181 +10,18 @@ use argon2::{
 use axum::{
     Json,
     extract::{Request, State},
-    http::{StatusCode, header},
-    middleware::Next,
-    response::{IntoResponse, Response},
+    http::StatusCode,
+    response::IntoResponse,
 };
-use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
+use jsonwebtoken::{EncodingKey, Header, encode};
 use sea_orm::*;
-use serde::{Deserialize, Serialize};
 use std::env;
 use std::time::{SystemTime, UNIX_EPOCH};
-use utoipa::ToSchema;
 
-use crate::AUTH_TAG;
-use crate::entities::{prelude::*, *};
-
-// JWT Claims
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Claims {
-    pub sub: String, // subject (user id)
-    pub exp: usize,  // expiration time
-}
-
-// Request/Response types
-#[derive(Deserialize, ToSchema)]
-#[serde(rename_all = "camelCase")]
-pub struct RegisterRequest {
-    /// User's email address
-    #[schema(example = "user@example.com")]
-    pub email: String,
-
-    /// User's password
-    #[schema(example = "securepassword123")]
-    pub password: String,
-}
-
-#[derive(Deserialize, ToSchema)]
-pub struct LoginRequest {
-    pub email: String,
-    pub password: String,
-}
-
-#[derive(Serialize, ToSchema)]
-pub struct LoginResponse {
-    pub token: String,
-}
-
-#[derive(Serialize, ToSchema)]
-#[serde(rename_all = "camelCase")]
-pub struct RegisterResponse {
-    /// Success message
-    #[schema(example = "User created successfully")]
-    pub message: String,
-
-    /// The newly created user's ID
-    #[schema(example = "550e8400-e29b-41d4-a716-446655440000")]
-    pub user_id: String,
-
-    /// User's email address
-    #[schema(example = "user@example.com")]
-    pub email: String,
-
-    /// Timestamp when the user was created (ISO 8601 format)
-    #[schema(
-        example = "2024-01-20T15:30:00Z",
-        format = "date-time",
-        nullable = true
-    )]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub created_at: Option<String>,
-}
-
-#[derive(Serialize, ToSchema)]
-#[serde(rename_all = "camelCase")]
-pub struct MessageResponse {
-    /// Response message
-    #[schema(example = "Operation completed successfully")]
-    pub message: String,
-}
-
-#[derive(Serialize, ToSchema)]
-#[serde(rename_all = "camelCase")]
-pub struct ErrorResponse {
-    /// Error message describing what went wrong
-    #[schema(example = "Email and password are required")]
-    pub message: String,
-}
-
-#[derive(Serialize, ToSchema)]
-pub struct ProfileResponse {
-    pub id: String,
-    pub email: String,
-    pub created_at: Option<chrono::DateTime<chrono::Utc>>,
-}
-
-// Custom error type
-#[derive(Debug)]
-pub struct AppError {
-    pub message: String,
-    pub status_code: StatusCode,
-}
-
-impl IntoResponse for AppError {
-    fn into_response(self) -> Response {
-        let body = Json(ErrorResponse {
-            message: self.message,
-        });
-        (self.status_code, body).into_response()
-    }
-}
-
-// JWT token extractor
-#[derive(Clone)]
-pub struct AuthUser {
-    pub user_id: uuid::Uuid,
-}
-
-// JWT middleware
-pub async fn auth_middleware(mut request: Request, next: Next) -> Result<Response, AppError> {
-    let auth_header = request
-        .headers()
-        .get(header::AUTHORIZATION)
-        .and_then(|header| header.to_str().ok());
-
-    let auth_header = match auth_header {
-        Some(header) => header,
-        None => {
-            return Err(AppError {
-                message: "Missing Authorization header".to_string(),
-                status_code: StatusCode::UNAUTHORIZED,
-            });
-        }
-    };
-
-    let token = match auth_header.strip_prefix("Bearer ") {
-        Some(token) => token,
-        None => {
-            return Err(AppError {
-                message: "Invalid Authorization header format".to_string(),
-                status_code: StatusCode::UNAUTHORIZED,
-            });
-        }
-    };
-
-    let jwt_secret = env::var("JWT_SECRET").unwrap_or_else(|_| "default-secret".to_string());
-    let decoding_key = DecodingKey::from_secret(jwt_secret.as_ref());
-
-    let token_data = match decode::<Claims>(token, &decoding_key, &Validation::default()) {
-        Ok(data) => data,
-        Err(_) => {
-            return Err(AppError {
-                message: "Invalid token".to_string(),
-                status_code: StatusCode::UNAUTHORIZED,
-            });
-        }
-    };
-
-    // Check if token is expired
-    let current_time = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_secs() as usize;
-
-    if token_data.claims.exp < current_time {
-        return Err(AppError {
-            message: "Token expired".to_string(),
-            status_code: StatusCode::UNAUTHORIZED,
-        });
-    }
-
-    // Add user to request extensions
-    request.extensions_mut().insert(AuthUser {
-        user_id: uuid::Uuid::parse_str(&token_data.claims.sub).unwrap(),
-    });
-
-    Ok(next.run(request).await)
-}
+use crate::entity::models::{prelude::*, *};
+use crate::infrastructure::app_error::{AppError, ErrorResponse, MessageResponse};
+use crate::infrastructure::jwt_claims::Claims;
+use crate::bridge::types::auth::{RegisterRequest, RegisterResponse, LoginRequest, LoginResponse, ProfileResponse, AuthUser, AUTH_TAG};
 
 /// Registers a new user
 #[utoipa::path(

@@ -1,5 +1,6 @@
-mod auth;
-mod entities;
+mod entity;
+mod bridge;
+mod infrastructure;
 
 use apalis::prelude::*;
 use apalis_cron::{CronStream, Schedule};
@@ -28,9 +29,9 @@ use utoipa_scalar::{Scalar, Servable as ScalarServable};
 use utoipa_swagger_ui::SwaggerUi;
 
 // Re-export types from auth module for OpenAPI documentation
-use auth::handlers::{ErrorResponse, MessageResponse, RegisterRequest, RegisterResponse};
-
-pub const AUTH_TAG: &str = "Authentication";
+use bridge::types::auth::{RegisterRequest, RegisterResponse, AUTH_TAG};
+use infrastructure::app_error::{ErrorResponse, MessageResponse};
+use bridge::routes::auth::auth_router;
 
 #[derive(OpenApi)]
 #[openapi(
@@ -162,7 +163,7 @@ async fn main() -> Result<(), Error> {
 
         // Create the OpenAPI Router
         let (router, api) = OpenApiRouter::with_openapi(ApiDoc::openapi())
-            .nest("/api/v1/auth", auth::router(db.clone()))
+            .nest("/api/v1/auth", auth_router(db.clone()))
             .split_for_parts();
 
         let mut router = router
