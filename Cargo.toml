@@ -3,6 +3,10 @@ name = "project_rext_1"
 version = "0.1.0"
 edition = "2024"
 
+[[bin]]
+name = "project_rext_1"
+path = "backend/main.rs"
+
 [dependencies]
 apalis = { version = "0.7.2", features = ["retry"] }
 apalis-cron = "0.7.2"
