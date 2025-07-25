@@ -1,4 +1,4 @@
-use axum::{body::{to_bytes, Body}, extract::{Request, State}, http::StatusCode, middleware::Next, response::Response};
+use axum::{body::Body, extract::{Request, State}, http::StatusCode, middleware::Next, response::Response};
 use sea_orm::{ActiveModelTrait, DatabaseConnection, Set};
 use std::time::Instant;
 use tracing::{error, info};
@@ -50,6 +50,73 @@ fn sanitize_json_content(content: &str) -> String {
     }
 }
 
+/// Extracts, copies, and sanitizes the request and response bodies so we can log them
+/// without interfering with the original request and response.
+///
+/// Returns a tuple of the response, the sanitized request body, and the sanitized response body.
+///
+/// The request and response bodies are not consumed, so we can reconstruct the original request and response.
+///
+/// The request and response bodies are sanitized by redacting sensitive fields.
+///
+/// The request and response bodies are truncated to MAX_BODY_LOG_BYTES.
+pub async fn extract_request_response(
+    req: Request<Body>,
+    next: Next,
+) -> Result<(Response, Option<String>, Option<String>), (StatusCode, String)> {
+
+    // extract parts of the request so we can reconstruct it later
+    let (req_parts, req_body) = req.into_parts();
+    
+    // read the entire request body
+    let req_bytes = match axum::body::to_bytes(req_body, usize::MAX).await {
+        Ok(bytes) => bytes,
+        Err(err) => return Err((StatusCode::BAD_REQUEST, format!("failed to read request body: {}", err))),
+    };
+
+    // clonse the request body and truncate the clone to MAX_BODY_LOG_BYTES
+    let copy_req_bytes = req_bytes.clone();
+    let copy_req_bytes = if copy_req_bytes.len() > MAX_BODY_LOG_BYTES {
+        &copy_req_bytes[..MAX_BODY_LOG_BYTES]
+    } else {
+        &copy_req_bytes
+    };
+
+    // stringify the cloned request body and sanitize it
+    let copy_req_string = String::from_utf8_lossy(copy_req_bytes).to_string();
+    let copy_req_sanitized = Some(sanitize_json_content(&copy_req_string));
+
+    // reconstruct the request with the original parts and original body
+    let req = Request::from_parts(req_parts, Body::from(req_bytes));
+
+    // send the request to the next middleware
+    let response = next.run(req).await;
+
+    // do the same thing for the response
+    let (res_parts, res_body) = response.into_parts();
+    let res_bytes = match axum::body::to_bytes(res_body, usize::MAX).await {
+        Ok(bytes) => bytes,
+        Err(err) => return Err((StatusCode::BAD_REQUEST, format!("failed to read response body: {}", err))),
+    };
+
+    // clone the response body and truncate the clone to MAX_BODY_LOG_BYTES
+    let copy_res_bytes = res_bytes.clone();
+    let copy_res_bytes = if copy_res_bytes.len() > MAX_BODY_LOG_BYTES {
+        &copy_res_bytes[..MAX_BODY_LOG_BYTES]
+    } else {
+        &copy_res_bytes
+    };
+
+    // stringify the cloned response body and sanitize it
+    let copy_res_string = String::from_utf8_lossy(copy_res_bytes).to_string();
+    let copy_res_sanitized = Some(sanitize_json_content(&copy_res_string));
+
+    // reconstruct the response with the original parts and original body
+    let res = Response::from_parts(res_parts, Body::from(res_bytes));
+
+    Ok((res, copy_req_sanitized, copy_res_sanitized))
+}
+
 /// Request logging middleware for auditing all API requests
 pub async fn request_logging_middleware(
     State(db): State<DatabaseConnection>,
@@ -80,27 +147,15 @@ pub async fn request_logging_middleware(
         .get::<AuthUser>()
         .map(|u| u.user_id);
 
-    // Capture request body up to MAX_BODY_LOG_BYTES
-    let (parts, body) = request.into_parts();
-    let body_bytes = to_bytes(body, MAX_BODY_LOG_BYTES).await.unwrap_or_default();
-    let truncated = &body_bytes[..]; // Already limited by to_bytes
-    let raw_body = String::from_utf8_lossy(truncated).to_string();
-    let request_body = Some(sanitize_json_content(&raw_body));
-    let request = Request::from_parts(parts, Body::from(body_bytes));
+    // Capture request and response bodies (runs the next handler so we get the response)
+    let (response, request_body, response_body) = extract_request_response(request, next).await.map_err(|(status, message)| {
+        error!(request_id = %request_id, error = %message, "Failed to extract request and response bodies");
+        status
+    })?;
 
-    // Run the next handler and capture response
-    let result = next.run(request).await;
     let duration = start.elapsed();
     let response_time_ms = duration.as_millis() as i32;
-    let status_code = result.status().as_u16() as i32;
-
-    // Capture response body up to MAX_BODY_LOG_BYTES
-    let (parts, body) = result.into_parts();
-    let body_bytes = to_bytes(body, MAX_BODY_LOG_BYTES).await.unwrap_or_default();
-    let truncated = &body_bytes[..]; // Already limited by to_bytes
-    let raw_body = String::from_utf8_lossy(truncated).to_string();
-    let response_body = Some(sanitize_json_content(&raw_body));
-    let result = Response::from_parts(parts, Body::from(body_bytes));
+    let status_code = response.status().as_u16() as i32;
 
     // Error message if status is error
     let error_message = if status_code >= 400 {
@@ -117,7 +172,6 @@ pub async fn request_logging_middleware(
     let request_id_clone = request_id.clone();
     let error_message_clone = error_message.clone();
     let user_id_clone = user_id.clone();
-    let response_body_clone = response_body.clone();
 
     // Insert audit log asynchronously (don't block response)
     let audit_log = audit_logs::ActiveModel {
@@ -131,7 +185,7 @@ pub async fn request_logging_middleware(
         ip_address: Set(ip_address),
         user_agent: Set(user_agent),
         request_body: Set(request_body),
-        response_body: Set(response_body_clone),
+        response_body: Set(response_body),
         error_message: Set(error_message_clone.clone()),
     };
     let db_clone = db.clone();
@@ -143,7 +197,7 @@ pub async fn request_logging_middleware(
         }
     });
 
-    // Optionally log to tracing with admin label
+    // log to tracing with admin label if the path starts with /api/v1/admin
     let is_admin_request = path_clone.starts_with("/api/v1/admin");
     if let Some(ref err) = error_message_clone {
         error!(
@@ -174,5 +228,5 @@ pub async fn request_logging_middleware(
         );
     }
 
-    Ok(result)
+    Ok(response)
 }
