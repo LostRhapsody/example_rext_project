@@ -1,41 +1,89 @@
 use axum::{
-    extract::Request,
-    http::StatusCode,
+    extract::{Request, State},
+    http::{StatusCode, header},
     middleware::Next,
     response::Response,
 };
+use jsonwebtoken::{DecodingKey, Validation, decode};
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
+use std::env;
+use std::time::{SystemTime, UNIX_EPOCH};
 use tracing::{error, info, warn};
 
 use crate::{
     bridge::types::auth::AuthUser,
     entity::models::users,
-    infrastructure::{app_error::AppError, logging::LoggingManager},
+    infrastructure::{app_error::AppError, jwt_claims::Claims, logging::LoggingManager},
 };
 
-/// Admin authentication middleware that requires admin privileges
+/// Admin middleware that handles JWT extraction and admin verification
 pub async fn admin_middleware(
+    State(db): State<DatabaseConnection>,
     mut request: Request,
     next: Next,
 ) -> Result<Response, AppError> {
     let request_id = LoggingManager::generate_request_id();
 
-    // Extract user from request extensions (set by auth middleware)
-    let auth_user = request.extensions().get::<AuthUser>().ok_or(AppError {
-        message: "User not authenticated".to_string(),
-        status_code: StatusCode::UNAUTHORIZED,
-    })?;
+    // Extract JWT token from Authorization header
+    let auth_header = request
+        .headers()
+        .get(header::AUTHORIZATION)
+        .and_then(|header| header.to_str().ok());
 
-    // Get database connection from request extensions
-    let db = request.extensions().get::<DatabaseConnection>().ok_or(AppError {
-        message: "Database connection not available".to_string(),
-        status_code: StatusCode::INTERNAL_SERVER_ERROR,
-    })?;
+    let auth_header = match auth_header {
+        Some(header) => header,
+        None => {
+            return Err(AppError {
+                message: "Missing Authorization header".to_string(),
+                status_code: StatusCode::UNAUTHORIZED,
+            });
+        }
+    };
+
+    let token = match auth_header.strip_prefix("Bearer ") {
+        Some(token) => token,
+        None => {
+            return Err(AppError {
+                message: "Invalid Authorization header format".to_string(),
+                status_code: StatusCode::UNAUTHORIZED,
+            });
+        }
+    };
+
+    // Verify JWT token
+    let jwt_secret = env::var("JWT_SECRET").unwrap_or_else(|_| "default-secret".to_string());
+    let decoding_key = DecodingKey::from_secret(jwt_secret.as_ref());
+
+    let token_data = match decode::<Claims>(token, &decoding_key, &Validation::default()) {
+        Ok(data) => data,
+        Err(_) => {
+            return Err(AppError {
+                message: "Invalid token".to_string(),
+                status_code: StatusCode::UNAUTHORIZED,
+            });
+        }
+    };
+
+    // Check if token is expired
+    let current_time = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs() as usize;
+
+    if token_data.claims.exp < current_time {
+        return Err(AppError {
+            message: "Token expired".to_string(),
+            status_code: StatusCode::UNAUTHORIZED,
+        });
+    }
+
+    // Extract user ID from token
+    let user_id = uuid::Uuid::parse_str(&token_data.claims.sub).unwrap();
 
     // Check if user has admin privileges
-    let user = users::Entity::find_by_id(auth_user.user_id)
+    let user = users::Entity::find_by_id(user_id)
         .filter(users::Column::IsAdmin.eq(true))
-        .one(db)
+        .one(&db)
         .await
         .map_err(|e| {
             error!(request_id = %request_id, error = ?e, "Database error checking admin status");
@@ -51,21 +99,25 @@ pub async fn admin_middleware(
 
     info!(
         request_id = %request_id,
-        user_id = %auth_user.user_id,
+        user_id = %user_id,
         email = %user.email,
         "Admin access granted"
     );
 
-    // Add admin user info to request extensions for downstream handlers
-    let user_id = auth_user.user_id;
-    let email = user.email.clone();
+    // Add both AuthUser and AdminUser to request extensions for downstream handlers
+    request.extensions_mut().insert(AuthUser {
+        user_id,
+    });
+    
     request.extensions_mut().insert(AdminUser {
         user_id,
-        email,
+        email: user.email.clone(),
     });
 
     Ok(next.run(request).await)
 }
+
+
 
 /// Admin user information for downstream handlers
 #[allow(dead_code)]
