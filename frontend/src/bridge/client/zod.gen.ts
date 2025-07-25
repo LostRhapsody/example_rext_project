@@ -204,7 +204,7 @@ export const zRegisterRequest = z.object({
 
 export const zRegisterResponse = z.object({
     createdAt: z.optional(z.union([
-        z.iso.datetime(),
+        z.string(),
         z.null()
     ])),
     email: z.string(),
