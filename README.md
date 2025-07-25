@@ -74,7 +74,6 @@ This project will implement a custom admin panel with request logging, user mana
 ### BREAK TIME!
 
 - [ ] It seems the OpenAPI documentation is no longer working, we need to investigate why before moving on.
-- [ ] The Vue frontend is having issues as well, errors are not showing, this started happening after we added Zod validation, maybe try to roll that back.
 
 #### Phase 3: Admin Frontend
 - [ ] Admin layout and navigation
