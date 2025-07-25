@@ -68,6 +68,7 @@ pub async fn admin_middleware(
 }
 
 /// Admin user information for downstream handlers
+#[allow(dead_code)]
 #[derive(Clone)]
 pub struct AdminUser {
     pub user_id: uuid::Uuid,
@@ -75,7 +76,7 @@ pub struct AdminUser {
 }
 
 /// Log admin access attempts (for security monitoring)
-pub fn log_admin_access_attempt(
+pub fn _log_admin_access_attempt(
     user_id: Option<uuid::Uuid>,
     success: bool,
     path: &str,

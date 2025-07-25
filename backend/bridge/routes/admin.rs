@@ -18,12 +18,12 @@ pub fn admin_router(db: DatabaseConnection) -> OpenApiRouter {
         // User management
         .route("/users", get(get_users_handler))
         .route("/users", post(create_user_handler))
-        .route("/users/:id", get(get_user_handler))
-        .route("/users/:id", put(update_user_handler))
-        .route("/users/:id", delete(delete_user_handler))
+        .route("/users/{id}", get(get_user_handler))
+        .route("/users/{id}", put(update_user_handler))
+        .route("/users/{id}", delete(delete_user_handler))
         // Database inspection
         .route("/database/tables", get(get_database_tables_handler))
-        .route("/database/tables/:table_name", get(get_table_records_handler))
+        .route("/database/tables/{table_name}", get(get_table_records_handler))
         // System health
         .route("/health", get(health_handler))
         .route_layer(middleware::from_fn(admin_middleware));

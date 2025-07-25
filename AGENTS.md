@@ -13,6 +13,11 @@ The goal of this project is to serve as a demo/template for Rext, a fullstack, r
 - **Authentication**: JWT-based authentication with Argon2 password hashing
 - **API Documentation**: OpenAPI/Swagger with utoipa
 
+### Philosophy
+
+- **Layered Architecture**: Always consider the layered architecture when adding new features and think about where to add code.
+- **Services**: Services and functions should be single purpose. Ensure that whatever you're adding is not an existing service, don't duplicate code, for instance if you're writing user logic, check the user service first to make sure we're not duplicating code.
+
 ## 🛠️ Technology Stack
 
 ### Backend (Rust)

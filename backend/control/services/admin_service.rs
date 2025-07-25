@@ -1,13 +1,12 @@
-use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use sea_orm::*;
-use std::collections::HashMap;
 use uuid::Uuid;
 
 use crate::{
     bridge::types::admin::*,
-    domain::{auth::*, user::*, validation::*},
+    domain::{validation::*},
     entity::models::{audit_logs, users},
     infrastructure::{app_error::AppError, jwt_claims::Claims},
+    control::services::user_service::UserService,
 };
 use axum::http::StatusCode;
 use jsonwebtoken::{EncodingKey, Header, encode};
@@ -25,39 +24,38 @@ impl AdminService {
         // Validate input
         validate_login_input(&login.email, &login.password)?;
 
-        // Find user by email
-        let user = users::Entity::find()
+        // Find user by email using UserService
+        let user = UserService::find_user_by_email(db, &login.email)
+            .await?
+            .ok_or(AppError {
+                message: "Invalid credentials".to_string(),
+                status_code: StatusCode::UNAUTHORIZED,
+            })?;
+
+        // Check if user is admin by querying the database directly for the is_admin field
+        let user_model = users::Entity::find()
             .filter(users::Column::Email.eq(&login.email))
             .one(db)
             .await
             .map_err(|e| AppError {
                 message: format!("Database error: {}", e),
                 status_code: StatusCode::INTERNAL_SERVER_ERROR,
-            })?
-            .ok_or(AppError {
-                message: "Invalid credentials".to_string(),
-                status_code: StatusCode::UNAUTHORIZED,
             })?;
 
-        // Check if user is admin
-        if !user.is_admin.unwrap_or(false) {
+        let user_model = user_model.ok_or(AppError {
+            message: "Invalid credentials".to_string(),
+            status_code: StatusCode::UNAUTHORIZED,
+        })?;
+
+        if !user_model.is_admin.unwrap_or(false) {
             return Err(AppError {
                 message: "Access denied: Admin privileges required".to_string(),
                 status_code: StatusCode::FORBIDDEN,
             });
         }
 
-        // Verify password
-        let parsed_hash = PasswordHash::new(&user.password_hash)
-            .map_err(|_| AppError {
-                message: "Invalid password hash".to_string(),
-                status_code: StatusCode::INTERNAL_SERVER_ERROR,
-            })?;
-
-        let is_valid = Argon2::default()
-            .verify_password(login.password.as_bytes(), &parsed_hash)
-            .is_ok();
-
+        // Verify password using UserService
+        let is_valid = UserService::verify_password(&user, &login.password)?;
         if !is_valid {
             return Err(AppError {
                 message: "Invalid credentials".to_string(),
@@ -167,7 +165,7 @@ impl AdminService {
                 page: params.page,
                 limit: params.limit,
                 total,
-                total_pages: total_pages,
+                total_pages,
             },
         })
     }
@@ -226,47 +224,25 @@ impl AdminService {
                 page: params.page,
                 limit: params.limit,
                 total,
-                total_pages: total_pages,
+                total_pages,
             },
         })
     }
 
-    /// Get specific user by ID
+    /// Get specific user by ID using UserService
     pub async fn get_user(
         db: &DatabaseConnection,
         user_id: Uuid,
     ) -> Result<UserResponse, AppError> {
-        let user = users::Entity::find_by_id(user_id)
-            .one(db)
-            .await
-            .map_err(|e| AppError {
-                message: format!("Database error: {}", e),
-                status_code: StatusCode::INTERNAL_SERVER_ERROR,
-            })?
+        let user = UserService::find_user_by_id(db, user_id)
+            .await?
             .ok_or(AppError {
                 message: "User not found".to_string(),
                 status_code: StatusCode::NOT_FOUND,
             })?;
 
-        Ok(UserResponse {
-            id: user.id.to_string(),
-            email: user.email,
-            created_at: user.created_at.map(|t| t.to_rfc3339()),
-            is_admin: user.is_admin,
-        })
-    }
-
-    /// Create a new user
-    pub async fn create_user(
-        db: &DatabaseConnection,
-        request: CreateUserRequest,
-    ) -> Result<UserResponse, AppError> {
-        // Validate input
-        validate_registration_input(&request.email, &request.password)?;
-
-        // Check if user already exists
-        let existing_user = users::Entity::find()
-            .filter(users::Column::Email.eq(&request.email))
+        // Get admin status from database
+        let user_model = users::Entity::find_by_id(user_id)
             .one(db)
             .await
             .map_err(|e| AppError {
@@ -274,126 +250,72 @@ impl AdminService {
                 status_code: StatusCode::INTERNAL_SERVER_ERROR,
             })?;
 
-        if existing_user.is_some() {
-            return Err(AppError {
-                message: "User already exists".to_string(),
-                status_code: StatusCode::CONFLICT,
-            });
-        }
-
-        // Hash password
-        let salt = rand::random::<[u8; 16]>();
-        let argon2 = Argon2::default();
-        let password_hash = PasswordHash::generate(&argon2, request.password.as_bytes(), &salt)
-            .map_err(|_| AppError {
-                message: "Failed to hash password".to_string(),
-                status_code: StatusCode::INTERNAL_SERVER_ERROR,
-            })?
-            .to_string();
-
-        // Create user
-        let user_id = Uuid::new_v4();
-        let user = users::ActiveModel {
-            id: Set(user_id),
-            email: Set(request.email),
-            password_hash: Set(password_hash),
-            created_at: Set(Some(chrono::Utc::now().into())),
-            is_admin: Set(request.is_admin.unwrap_or(false)),
-        };
-
-        let user = user.insert(db).await.map_err(|e| AppError {
-            message: format!("Failed to create user: {}", e),
-            status_code: StatusCode::INTERNAL_SERVER_ERROR,
-        })?;
+        let is_admin = user_model.map(|u| u.is_admin).flatten();
 
         Ok(UserResponse {
             id: user.id.to_string(),
             email: user.email,
             created_at: user.created_at.map(|t| t.to_rfc3339()),
-            is_admin: user.is_admin,
+            is_admin,
         })
     }
 
-    /// Update a user
+    /// Create a new user using UserService
+    pub async fn create_user(
+        db: &DatabaseConnection,
+        request: CreateUserRequest,
+    ) -> Result<UserResponse, AppError> {
+        let user = UserService::create_user_with_admin(
+            db,
+            request.email,
+            request.password,
+            request.is_admin.unwrap_or(false),
+        )
+        .await?;
+
+        Ok(UserResponse {
+            id: user.id.to_string(),
+            email: user.email,
+            created_at: user.created_at.map(|t| t.to_rfc3339()),
+            is_admin: Some(request.is_admin.unwrap_or(false)),
+        })
+    }
+
+    /// Update a user using UserService
     pub async fn update_user(
         db: &DatabaseConnection,
         user_id: Uuid,
         request: UpdateUserRequest,
     ) -> Result<UserResponse, AppError> {
-        let mut user = users::Entity::find_by_id(user_id)
+        let user = UserService::update_user(
+            db,
+            user_id,
+            request.email,
+            request.password,
+            request.is_admin,
+        )
+        .await?;
+
+        // Get admin status from database
+        let user_model = users::Entity::find_by_id(user_id)
             .one(db)
             .await
             .map_err(|e| AppError {
                 message: format!("Database error: {}", e),
                 status_code: StatusCode::INTERNAL_SERVER_ERROR,
-            })?
-            .ok_or(AppError {
-                message: "User not found".to_string(),
-                status_code: StatusCode::NOT_FOUND,
             })?;
 
-        let mut user_model: users::ActiveModel = user.clone().into();
-
-        // Update email if provided
-        if let Some(email) = request.email {
-            validate_email(&email)?;
-
-            // Check if email is already taken by another user
-            let existing_user = users::Entity::find()
-                .filter(users::Column::Email.eq(&email))
-                .filter(users::Column::Id.ne(user_id))
-                .one(db)
-                .await
-                .map_err(|e| AppError {
-                    message: format!("Database error: {}", e),
-                    status_code: StatusCode::INTERNAL_SERVER_ERROR,
-                })?;
-
-            if existing_user.is_some() {
-                return Err(AppError {
-                    message: "Email already taken".to_string(),
-                    status_code: StatusCode::CONFLICT,
-                });
-            }
-
-            user_model.email = Set(email);
-        }
-
-        // Update password if provided
-        if let Some(password) = request.password {
-            validate_password(&password)?;
-
-            let salt = rand::random::<[u8; 16]>();
-            let argon2 = Argon2::default();
-            let password_hash = PasswordHash::generate(&argon2, password.as_bytes(), &salt)
-                .map_err(|_| AppError {
-                    message: "Failed to hash password".to_string(),
-                    status_code: StatusCode::INTERNAL_SERVER_ERROR,
-                })?
-                .to_string();
-
-            user_model.password_hash = Set(password_hash);
-        }
-
-        // Update admin status if provided
-        if let Some(is_admin) = request.is_admin {
-            user_model.is_admin = Set(is_admin);
-        }
-
-        let user = user_model.update(db).await.map_err(|e| AppError {
-            message: format!("Failed to update user: {}", e),
-            status_code: StatusCode::INTERNAL_SERVER_ERROR,
-        })?;
+        let is_admin = user_model.map(|u| u.is_admin).flatten();
 
         Ok(UserResponse {
             id: user.id.to_string(),
             email: user.email,
             created_at: user.created_at.map(|t| t.to_rfc3339()),
-            is_admin: user.is_admin,
+            is_admin,
         })
     }
 
-    /// Delete a user
+    /// Delete a user using UserService
     pub async fn delete_user(
         db: &DatabaseConnection,
         user_id: Uuid,
@@ -407,25 +329,7 @@ impl AdminService {
             });
         }
 
-        let user = users::Entity::find_by_id(user_id)
-            .one(db)
-            .await
-            .map_err(|e| AppError {
-                message: format!("Database error: {}", e),
-                status_code: StatusCode::INTERNAL_SERVER_ERROR,
-            })?
-            .ok_or(AppError {
-                message: "User not found".to_string(),
-                status_code: StatusCode::NOT_FOUND,
-            })?;
-
-        let user_model: users::ActiveModel = user.into();
-        user_model.delete(db).await.map_err(|e| AppError {
-            message: format!("Failed to delete user: {}", e),
-            status_code: StatusCode::INTERNAL_SERVER_ERROR,
-        })?;
-
-        Ok(())
+        UserService::delete_user(db, user_id).await
     }
 
     /// Get list of database tables

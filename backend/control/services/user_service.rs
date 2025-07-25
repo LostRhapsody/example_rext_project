@@ -3,6 +3,7 @@ use argon2::{
     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
 };
 use sea_orm::*;
+use uuid::Uuid;
 
 use crate::domain::{user::*, validation::*};
 use crate::entity::models::{prelude::*, *};
@@ -64,6 +65,59 @@ impl UserService {
         Ok(user)
     }
 
+    /// Creates a new user with admin privileges (for admin service)
+    pub async fn create_user_with_admin(
+        db: &DatabaseConnection,
+        email: String,
+        password: String,
+        is_admin: bool,
+    ) -> Result<User, AppError> {
+        // Validate input
+        validate_registration_input(&email, &password)?;
+
+        // Check if user already exists
+        let existing_user: Option<users::Model> = Users::find()
+            .filter(users::Column::Email.eq(&email))
+            .one(db)
+            .await
+            .map_err(|_| AppError {
+                message: "Database error".to_string(),
+                status_code: StatusCode::INTERNAL_SERVER_ERROR,
+            })?;
+
+        if existing_user.is_some() {
+            return Err(AppError {
+                message: "User already exists".to_string(),
+                status_code: StatusCode::CONFLICT,
+            });
+        }
+
+        // Hash password
+        let password_hash = Self::hash_password(&password)?;
+
+        // Create user domain model
+        let user = User::create_new(email, password_hash);
+
+        // Save to database
+        let user_active_model = users::ActiveModel {
+            id: Set(user.id),
+            email: Set(user.email.clone()),
+            password_hash: Set(user.password_hash.clone()),
+            created_at: Set(user.created_at.map(|dt| dt.fixed_offset())),
+            is_admin: Set(Some(is_admin)),
+        };
+
+        Users::insert(user_active_model)
+            .exec(db)
+            .await
+            .map_err(|_| AppError {
+                message: "Failed to create user".to_string(),
+                status_code: StatusCode::INTERNAL_SERVER_ERROR,
+            })?;
+
+        Ok(user)
+    }
+
     /// Finds a user by email
     pub async fn find_user_by_email(
         db: &DatabaseConnection,
@@ -110,6 +164,104 @@ impl UserService {
                 model.created_at.map(|dt| dt.to_utc()),
             )
         }))
+    }
+
+    /// Updates a user
+    pub async fn update_user(
+        db: &DatabaseConnection,
+        user_id: Uuid,
+        email: Option<String>,
+        password: Option<String>,
+        is_admin: Option<bool>,
+    ) -> Result<User, AppError> {
+        let user_model = Users::find_by_id(user_id)
+            .one(db)
+            .await
+            .map_err(|_| AppError {
+                message: "Database error".to_string(),
+                status_code: StatusCode::INTERNAL_SERVER_ERROR,
+            })?
+            .ok_or(AppError {
+                message: "User not found".to_string(),
+                status_code: StatusCode::NOT_FOUND,
+            })?;
+
+        let mut user_active_model: users::ActiveModel = user_model.clone().into();
+
+        // Update email if provided
+        if let Some(new_email) = email {
+            validate_email(&new_email)?;
+
+            // Check if email is already taken by another user
+            let existing_user = Users::find()
+                .filter(users::Column::Email.eq(&new_email))
+                .filter(users::Column::Id.ne(user_id))
+                .one(db)
+                .await
+                .map_err(|_| AppError {
+                    message: "Database error".to_string(),
+                    status_code: StatusCode::INTERNAL_SERVER_ERROR,
+                })?;
+
+            if existing_user.is_some() {
+                return Err(AppError {
+                    message: "Email already taken".to_string(),
+                    status_code: StatusCode::CONFLICT,
+                });
+            }
+
+            user_active_model.email = Set(new_email);
+        }
+
+        // Update password if provided
+        if let Some(new_password) = password {
+            validate_password(&new_password)?;
+            let password_hash = Self::hash_password(&new_password)?;
+            user_active_model.password_hash = Set(password_hash);
+        }
+
+        // Update admin status if provided
+        if let Some(admin_status) = is_admin {
+            user_active_model.is_admin = Set(Some(admin_status));
+        }
+
+        let updated_user = user_active_model.update(db).await.map_err(|_| AppError {
+            message: "Failed to update user".to_string(),
+            status_code: StatusCode::INTERNAL_SERVER_ERROR,
+        })?;
+
+        Ok(User::new(
+            updated_user.id,
+            updated_user.email,
+            updated_user.password_hash,
+            updated_user.created_at.map(|dt| dt.to_utc()),
+        ))
+    }
+
+    /// Deletes a user
+    pub async fn delete_user(
+        db: &DatabaseConnection,
+        user_id: Uuid,
+    ) -> Result<(), AppError> {
+        let user_model = Users::find_by_id(user_id)
+            .one(db)
+            .await
+            .map_err(|_| AppError {
+                message: "Database error".to_string(),
+                status_code: StatusCode::INTERNAL_SERVER_ERROR,
+            })?
+            .ok_or(AppError {
+                message: "User not found".to_string(),
+                status_code: StatusCode::NOT_FOUND,
+            })?;
+
+        let user_active_model: users::ActiveModel = user_model.into();
+        user_active_model.delete(db).await.map_err(|_| AppError {
+            message: "Failed to delete user".to_string(),
+            status_code: StatusCode::INTERNAL_SERVER_ERROR,
+        })?;
+
+        Ok(())
     }
 
     /// Verifies a user's password
