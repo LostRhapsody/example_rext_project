@@ -5,6 +5,7 @@ use crate::infrastructure::{
     database::DatabaseManager, job_queue::JobQueueManager, scheduler::SchedulerManager,
     server::ServerManager,
 };
+use crate::control::services::user_service::UserService;
 
 /// Application startup orchestrator
 pub struct StartupService;
@@ -35,7 +36,54 @@ impl StartupService {
         println!("Queuing test job!");
         JobQueueManager::produce_messages(&job_storage).await?;
 
+        // Seed admin user if enabled
+        Self::seed_admin_user(&db).await?;
+
         Ok(db)
+    }
+
+    /// Seeds the admin user if it doesn't exist
+    async fn seed_admin_user(db: &DatabaseConnection) -> Result<(), Box<dyn std::error::Error>> {
+        // Check if admin user creation is enabled
+        let create_admin = env::var("CREATE_ADMIN_USER")
+            .unwrap_or_else(|_| "true".to_string())
+            .parse::<bool>()
+            .unwrap_or(true);
+
+        if !create_admin {
+            println!("Admin user creation is disabled");
+            return Ok(());
+        }
+
+        // Get admin credentials from environment variables
+        let admin_email = env::var("ADMIN_EMAIL").unwrap_or_else(|_| "admin@localhost".to_string());
+        let admin_password = env::var("ADMIN_PASSWORD").unwrap_or_else(|_| "admin".to_string());
+
+        // Check if admin user already exists
+        match UserService::find_user_by_email(db, &admin_email).await {
+            Ok(Some(_)) => {
+                println!("Admin user already exists: {}", admin_email);
+                Ok(())
+            }
+            Ok(None) => {
+                // Create admin user
+                match UserService::create_user_with_admin(db, admin_email.clone(), admin_password, true).await {
+                    Ok(user) => {
+                        println!("✅ Admin user created successfully: {} (ID: {})", admin_email, user.id);
+                        println!("⚠️  IMPORTANT: Change the default admin password immediately!");
+                        Ok(())
+                    }
+                    Err(e) => {
+                        eprintln!("❌ Failed to create admin user: {}", e.message);
+                        Err(Box::new(e))
+                    }
+                }
+            }
+            Err(e) => {
+                eprintln!("❌ Error checking for existing admin user: {}", e.message);
+                Err(Box::new(e))
+            }
+        }
     }
 
     /// Runs the server task

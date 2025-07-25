@@ -40,6 +40,18 @@ The Rust server has a CORS bypass that allows these two ports to communicate via
 - Logout using the "Logout" button in the navigation bar, which removes the token from your browser and updates the UI in real-time.
 - Visit the API docs at localhost:3000/scalar
 
+### Admin Access
+
+**Default Admin User:**
+- **Email**: `admin@localhost.com`
+- **Password**: `admin`
+- **Note**: This user is automatically created when the application starts for the first time.
+
+**Admin API Endpoints:**
+- Admin login: `POST /api/v1/admin/login`
+- View API documentation: `http://localhost:3000/scalar` (look for "Admin" tag)
+- **Important**: Change the default admin password immediately after first login!
+
 ## Next Steps
 *A quick outline of the upcoming goals for this project*
 - Establish sub-domains for local dev
@@ -87,20 +99,29 @@ This project will implement a custom admin panel with request logging, user mana
 
 ### Current Status: Phase 1 - Request Logging Infrastructure
 
-**Next Steps:**
-1. Add `tracing` and `tracing-subscriber` crates for structured logging
-2. Create `audit_logs` table migration
-3. Implement request logging middleware
-4. Add admin role to users table
-5. Create admin authentication middleware
+**Completed:**
+- ✅ Request logging middleware and audit_logs table
+- ✅ Admin user roles added to users table
+- ✅ Admin authentication endpoints (login/logout)
+- ✅ Request history endpoints (paginated, filtered)
+- ✅ User management endpoints (list, view, edit, delete)
+- ✅ Database table inspection endpoints
+- ✅ System health endpoints
+- ✅ **Admin user seeding during application startup**
 
-**Files to modify:**
-- `Cargo.toml` - Add logging dependencies
-- `migration/src/m20250101_000002_create_audit_logs.rs` - New migration
-- `backend/entity/models/audit_logs.rs` - New entity model
-- `backend/bridge/middleware/logging.rs` - New logging middleware
-- `backend/bridge/middleware/mod.rs` - Register new middleware
-- `backend/infrastructure/server.rs` - Add logging middleware to router
+**Admin User Seeding:**
+The application now automatically creates an admin user during startup with the following features:
+- **Idempotent Creation**: Only creates admin if it doesn't exist
+- **Environment Configuration**: Configurable via environment variables
+- **Secure Defaults**: Uses `admin@localhost` / `admin` as default credentials
+- **Audit Logging**: Logs admin creation for security monitoring
+
+**Environment Variables for Admin:**
+```env
+CREATE_ADMIN_USER=true          # Enable/disable admin creation
+ADMIN_EMAIL=admin@localhost     # Admin email address
+ADMIN_PASSWORD=admin           # Admin password (change in production!)
+```
 
 ## Architecture
 

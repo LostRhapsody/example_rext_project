@@ -2,7 +2,7 @@ use axum::middleware;
 use sea_orm::DatabaseConnection;
 use utoipa_axum::{router::OpenApiRouter, routes};
 
-use crate::bridge::middleware::admin::admin_middleware;
+use crate::bridge::middleware::{admin::admin_middleware, auth::auth_middleware};
 
 pub fn admin_router(db: DatabaseConnection) -> OpenApiRouter {
     // Admin authentication routes (no middleware needed)
@@ -25,6 +25,9 @@ pub fn admin_router(db: DatabaseConnection) -> OpenApiRouter {
         .routes(routes!(crate::bridge::handlers::admin::get_table_records_handler))
         // System health
         .routes(routes!(crate::bridge::handlers::admin::health_handler))
+        // auth middleware to extract JWT and set AuthUser
+        .route_layer(middleware::from_fn(auth_middleware))
+        // admin middleware to check if user is admin
         .route_layer(middleware::from_fn(admin_middleware));
 
     // Combine auth and protected routes

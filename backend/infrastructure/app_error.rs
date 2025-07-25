@@ -4,6 +4,8 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use serde::Serialize;
+use std::error::Error as StdError;
+use std::fmt;
 use utoipa::ToSchema;
 
 // Custom error type
@@ -12,6 +14,14 @@ pub struct AppError {
     pub message: String,
     pub status_code: StatusCode,
 }
+
+impl fmt::Display for AppError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
+impl StdError for AppError {}
 
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
