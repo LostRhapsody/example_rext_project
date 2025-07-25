@@ -61,13 +61,27 @@ const handleRegister = async () => {
       body: registerData,
     })
 
+    // Check if there's an error in the response
+    if (response.error) {
+      if (response.error.message) {
+        error.value = response.error.message
+      } else {
+        error.value = 'Registration failed. Please try again.'
+      }
+      return
+    }
+
+    // Check if we have successful data
     if (response.data) {
       success.value = response.data.message + ' Redirecting to login...'
       setTimeout(() => {
         router.push('/login')
       }, 2000)
+    } else {
+      error.value = 'Registration failed. Please try again.'
     }
   } catch (err: any) {
+    // This catch block will only trigger for network errors or other exceptions
     if (err.error?.message) {
       error.value = err.error.message
     } else {

@@ -134,13 +134,25 @@ const handleLogin = async () => {
       body: loginData,
     })
 
+    // Check if there's an error in the response
+    if (response.error) {
+      if (response.error.message) {
+        error.value = response.error.message
+      } else {
+        error.value = 'Login failed. Please try again.'
+      }
+      return
+    }
+
+    // Check if we have successful data
     if (response.data) {
       login(response.data.token)
       router.push('/profile')
     } else {
-      error.value = 'Login failed'
+      error.value = 'Login failed. Please try again.'
     }
   } catch (err: any) {
+    // This catch block will only trigger for network errors or other exceptions
     if (err.error?.message) {
       error.value = err.error.message
     } else {

@@ -45,10 +45,29 @@ const fetchProfile = async () => {
       }
     })
 
+    // Check if there's an error in the response
+    if (response.error) {
+      if (response.error.message) {
+        if (response.response?.status === 401) {
+          localStorage.removeItem('token')
+          router.push('/login')
+        } else {
+          error.value = response.error.message
+        }
+      } else {
+        error.value = 'Failed to load profile. Please try again.'
+      }
+      return
+    }
+
+    // Check if we have successful data
     if (response.data) {
       profile.value = response.data
+    } else {
+      error.value = 'Failed to load profile. Please try again.'
     }
   } catch (err: any) {
+    // This catch block will only trigger for network errors or other exceptions
     if (err.error?.message) {
       if (err.status === 401) {
         localStorage.removeItem('token')
