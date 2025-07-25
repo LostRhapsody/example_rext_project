@@ -64,12 +64,16 @@ This project will implement a custom admin panel with request logging, user mana
 - [x] Add admin user roles to users table
 - [x] Create admin authentication middleware
 
-#### Phase 2: Admin API Endpoints
-- [ ] Admin authentication endpoints (login/logout)
-- [ ] Request history endpoints (paginated, filtered)
-- [ ] User management endpoints (list, view, edit, delete)
-- [ ] Database table inspection endpoints
-- [ ] System health endpoints
+#### Phase 2: Admin API Endpoints ✅ (Done)
+- [x] Admin authentication endpoints (login/logout)
+- [x] Request history endpoints (paginated, filtered)
+- [x] User management endpoints (list, view, edit, delete)
+- [x] Database table inspection endpoints
+- [x] System health endpoints
+
+### BREAK TIME!
+
+It seems the OpenAPI documentation is no longer working, we need to investigate why before moving on.
 
 #### Phase 3: Admin Frontend
 - [ ] Admin layout and navigation
