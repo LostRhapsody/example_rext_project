@@ -143,11 +143,35 @@ pub async fn request_logging_middleware(
         }
     });
 
-    // Optionally log to tracing
+    // Optionally log to tracing with admin label
+    let is_admin_request = path_clone.starts_with("/api/v1/admin");
     if let Some(ref err) = error_message_clone {
-        error!(request_id = %request_id, status_code, user_id = ?user_id_clone, path = %path_clone, method = %method_clone, ip_address = ?ip_address_clone, user_agent = ?user_agent_clone, response_time_ms, error = %err, "Request error");
+        error!(
+            request_id = %request_id,
+            status_code,
+            user_id = ?user_id_clone,
+            path = %path_clone,
+            method = %method_clone,
+            ip_address = ?ip_address_clone,
+            user_agent = ?user_agent_clone,
+            response_time_ms,
+            error = %err,
+            admin_request = %is_admin_request,
+            "Request error"
+        );
     } else {
-        info!(request_id = %request_id, status_code, user_id = ?user_id_clone, path = %path_clone, method = %method_clone, ip_address = ?ip_address_clone, user_agent = ?user_agent_clone, response_time_ms, "Request completed");
+        info!(
+            request_id = %request_id,
+            status_code,
+            user_id = ?user_id_clone,
+            path = %path_clone,
+            method = %method_clone,
+            ip_address = ?ip_address_clone,
+            user_agent = ?user_agent_clone,
+            response_time_ms,
+            admin_request = %is_admin_request,
+            "Request completed"
+        );
     }
 
     Ok(result)

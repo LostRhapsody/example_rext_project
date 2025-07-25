@@ -15,6 +15,7 @@ use utoipa_scalar::{Scalar, Servable as ScalarServable};
 use utoipa_swagger_ui::SwaggerUi;
 
 use crate::bridge::routes::auth::auth_router;
+use crate::bridge::routes::admin::admin_router;
 use crate::bridge::middleware::logging::request_logging_middleware;
 use crate::infrastructure::cors::CorsManager;
 use crate::infrastructure::openapi::ApiDoc;
@@ -35,6 +36,7 @@ impl ServerManager {
         // Create the OpenAPI Router
         let (router, api) = OpenApiRouter::with_openapi(ApiDoc::openapi())
             .nest("/api/v1/auth", auth_router(db.clone()))
+            .nest("/api/v1/admin", admin_router(db.clone()))
             .split_for_parts();
 
         let mut router = router
