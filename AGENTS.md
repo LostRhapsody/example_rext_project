@@ -17,6 +17,7 @@ The goal of this project is to serve as a demo/template for Rext, a fullstack, r
 
 - **Layered Architecture**: Always consider the layered architecture when adding new features and think about where to add code.
 - **Services**: Services and functions should be single purpose. Ensure that whatever you're adding is not an existing service, don't duplicate code, for instance if you're writing user logic, check the user service first to make sure we're not duplicating code.
+- **Testing**: Never test changes! If testing requires running the server, don't, just use `cargo check` to look for errors or warnings, and then inform me how to test it.
 
 ## 🛠️ Technology Stack
 
