@@ -71,10 +71,6 @@ This project will implement a custom admin panel with request logging, user mana
 - [x] Database table inspection endpoints
 - [x] System health endpoints
 
-### BREAK TIME!
-
-- [ ] It seems the OpenAPI documentation is no longer working, we need to investigate why before moving on.
-
 #### Phase 3: Admin Frontend
 - [ ] Admin layout and navigation
 - [ ] Request history dashboard with filtering/search
