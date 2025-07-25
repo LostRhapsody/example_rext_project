@@ -60,7 +60,8 @@ pub struct ProfileResponse {
 }
 
 // JWT token extractor
-#[derive(Clone)]
+#[derive(Clone, ToSchema)]
 pub struct AuthUser {
+    #[schema(value_type = String)]
     pub user_id: uuid::Uuid,
 }
