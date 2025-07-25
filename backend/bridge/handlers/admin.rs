@@ -17,7 +17,7 @@ use crate::{
 /// Admin login endpoint
 #[utoipa::path(
     post,
-    path = "/api/v1/admin/auth/login",
+    path = "/admin/login",
     request_body = AdminLoginRequest,
     responses(
         (status = 200, description = "Admin login successful", body = AdminLoginResponse),
@@ -41,7 +41,7 @@ pub async fn admin_login_handler(
 /// Admin logout endpoint
 #[utoipa::path(
     post,
-    path = "/api/v1/admin/auth/logout",
+    path = "/admin/logout",
     responses(
         (status = 200, description = "Admin logout successful", body = MessageResponse),
     ),
@@ -66,7 +66,7 @@ pub async fn admin_logout_handler() -> impl IntoResponse {
 /// Get audit logs endpoint
 #[utoipa::path(
     get,
-    path = "/api/v1/admin/logs",
+    path = "/admin/logs",
     params(LogsQueryParams),
     responses(
         (status = 200, description = "Audit logs retrieved successfully", body = PaginatedResponse<AuditLogResponse>),
@@ -92,7 +92,7 @@ pub async fn get_audit_logs_handler(
 /// Get users endpoint
 #[utoipa::path(
     get,
-    path = "/api/v1/admin/users",
+    path = "/admin/users",
     params(UsersQueryParams),
     responses(
         (status = 200, description = "Users retrieved successfully", body = PaginatedResponse<UserResponse>),
@@ -118,7 +118,7 @@ pub async fn get_users_handler(
 /// Get specific user endpoint
 #[utoipa::path(
     get,
-    path = "/api/v1/admin/users/{id}",
+    path = "/admin/users/{id}",
     params(
         ("id" = String, Path, description = "User ID")
     ),
@@ -152,7 +152,7 @@ pub async fn get_user_handler(
 /// Create user endpoint
 #[utoipa::path(
     post,
-    path = "/api/v1/admin/users",
+    path = "/admin/users",
     request_body = CreateUserRequest,
     responses(
         (status = 201, description = "User created successfully", body = UserResponse),
@@ -180,7 +180,7 @@ pub async fn create_user_handler(
 /// Update user endpoint
 #[utoipa::path(
     put,
-    path = "/api/v1/admin/users/{id}",
+    path = "/admin/users/{id}",
     params(
         ("id" = String, Path, description = "User ID")
     ),
@@ -218,7 +218,7 @@ pub async fn update_user_handler(
 /// Delete user endpoint
 #[utoipa::path(
     delete,
-    path = "/api/v1/admin/users/{id}",
+    path = "/admin/users/{id}",
     params(
         ("id" = String, Path, description = "User ID")
     ),
@@ -265,7 +265,7 @@ pub async fn delete_user_handler(
 /// Get database tables endpoint
 #[utoipa::path(
     get,
-    path = "/api/v1/admin/database/tables",
+    path = "/admin/database/tables",
     responses(
         (status = 200, description = "Database tables retrieved successfully", body = Vec<DatabaseTableResponse>),
         (status = 401, description = "Unauthorized - authentication required", body = ErrorResponse),
@@ -289,7 +289,7 @@ pub async fn get_database_tables_handler(
 /// Get table records endpoint
 #[utoipa::path(
     get,
-    path = "/api/v1/admin/database/tables/{table_name}",
+    path = "/admin/database/tables/{table_name}",
     params(
         ("table_name" = String, Path, description = "Table name"),
         TableRecordsQueryParams
@@ -319,7 +319,7 @@ pub async fn get_table_records_handler(
 /// System health endpoint
 #[utoipa::path(
     get,
-    path = "/api/v1/admin/health",
+    path = "/admin/health",
     responses(
         (status = 200, description = "System health check successful", body = HealthResponse),
         (status = 401, description = "Unauthorized - authentication required", body = ErrorResponse),
