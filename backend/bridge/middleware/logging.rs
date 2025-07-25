@@ -2,6 +2,7 @@ use axum::{body::{to_bytes, Body}, extract::{Request, State}, http::StatusCode, 
 use sea_orm::{ActiveModelTrait, DatabaseConnection, Set};
 use std::time::Instant;
 use tracing::{error, info};
+use serde_json::Value;
 
 use crate::{
     bridge::types::auth::AuthUser,
@@ -10,6 +11,44 @@ use crate::{
 };
 
 const MAX_BODY_LOG_BYTES: usize = 4096; // 4KB
+
+/// Sensitive fields that should be redacted from logs
+const SENSITIVE_FIELDS: &[&str] = &[
+    "password", "passwd", "pwd", "secret", "token", "key", "auth", "authorization",
+    "jwt", "api_key", "api_secret", "private_key", "private_secret"
+];
+
+/// Sanitize JSON content by redacting sensitive fields
+fn sanitize_json_content(content: &str) -> String {
+    if let Ok(mut json) = serde_json::from_str::<Value>(content) {
+        if let Some(obj) = json.as_object_mut() {
+            for field in SENSITIVE_FIELDS {
+                if obj.contains_key(*field) {
+                    obj.insert(field.to_string(), Value::String("[REDACTED]".to_string()));
+                }
+            }
+        }
+        json.to_string()
+    } else {
+        // If not valid JSON, check for common patterns and redact
+        let mut sanitized = content.to_string();
+        for field in SENSITIVE_FIELDS {
+            // Simple pattern matching for common formats
+            let patterns = [
+                format!("\"{}\":", field),
+                format!("{}:", field),
+                format!("{} =", field),
+            ];
+            for pattern in patterns {
+                if sanitized.contains(&pattern) {
+                    // This is a simplified redaction - in production you might want more sophisticated parsing
+                    sanitized = sanitized.replace(&format!("{}", pattern), &format!("{}[REDACTED]", pattern));
+                }
+            }
+        }
+        sanitized
+    }
+}
 
 /// Request logging middleware for auditing all API requests
 pub async fn request_logging_middleware(
@@ -45,7 +84,8 @@ pub async fn request_logging_middleware(
     let (parts, body) = request.into_parts();
     let body_bytes = to_bytes(body, MAX_BODY_LOG_BYTES).await.unwrap_or_default();
     let truncated = &body_bytes[..]; // Already limited by to_bytes
-    let request_body = Some(String::from_utf8_lossy(truncated).to_string());
+    let raw_body = String::from_utf8_lossy(truncated).to_string();
+    let request_body = Some(sanitize_json_content(&raw_body));
     let request = Request::from_parts(parts, Body::from(body_bytes));
 
     // Run the next handler and capture response
@@ -58,7 +98,8 @@ pub async fn request_logging_middleware(
     let (parts, body) = result.into_parts();
     let body_bytes = to_bytes(body, MAX_BODY_LOG_BYTES).await.unwrap_or_default();
     let truncated = &body_bytes[..]; // Already limited by to_bytes
-    let response_body = Some(String::from_utf8_lossy(truncated).to_string());
+    let raw_body = String::from_utf8_lossy(truncated).to_string();
+    let response_body = Some(sanitize_json_content(&raw_body));
     let result = Response::from_parts(parts, Body::from(body_bytes));
 
     // Error message if status is error
