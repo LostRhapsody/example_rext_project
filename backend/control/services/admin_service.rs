@@ -1,5 +1,6 @@
 use sea_orm::*;
 use uuid::Uuid;
+use base64::Engine;
 
 use crate::{
     bridge::types::admin::*,
@@ -356,11 +357,16 @@ impl AdminService {
                 status_code: StatusCode::INTERNAL_SERVER_ERROR,
             })?;
 
+            // Skip system tables
+            if table_name.starts_with("sqlite_") || table_name.starts_with("_sqlx_") || table_name.starts_with("seaql_") {
+                continue;
+            }
+
             // Get record count for each table
             let count_result = db
                 .query_one(Statement::from_sql_and_values(
                     db.get_database_backend(),
-                    format!("SELECT COUNT(*) as count FROM {}", table_name),
+                    format!("SELECT COUNT(*) as count FROM \"{}\"", table_name),
                     vec![],
                 ))
                 .await
@@ -370,7 +376,24 @@ impl AdminService {
                 })?;
 
             let record_count: u64 = count_result
-                .and_then(|row| row.try_get("", "count").ok())
+                .and_then(|row| {
+                    // Try different ways to access the count column
+                    let result = row.try_get::<i64>("", "count")
+                        .map(|v| v as u64)
+                        .or_else(|e| {
+                            println!("Failed to get as i64: {:?}", e);
+                            row.try_get::<u64>("", "count")
+                        })
+                        .or_else(|e| {
+                            println!("Failed to get as u64: {:?}", e);
+                            row.try_get::<i32>("", "count").map(|v| v as u64)
+                        })
+                        .or_else(|e| {
+                            println!("Failed to get as i32: {:?}", e);
+                            row.try_get::<u32>("", "count").map(|v| v as u64)
+                        });
+                    result.ok()
+                })
                 .unwrap_or(0);
 
             result.push(DatabaseTableResponse {
@@ -394,7 +417,7 @@ impl AdminService {
         let columns_result = db
             .query_all(Statement::from_sql_and_values(
                 db.get_database_backend(),
-                format!("PRAGMA table_info({})", table_name),
+                format!("PRAGMA table_info(\"{}\")", table_name),
                 vec![],
             ))
             .await
@@ -417,7 +440,7 @@ impl AdminService {
             .query_all(Statement::from_sql_and_values(
                 db.get_database_backend(),
                 format!(
-                    "SELECT * FROM {} LIMIT {} OFFSET {}",
+                    "SELECT * FROM \"{}\" LIMIT {} OFFSET {}",
                     table_name, params.limit, offset
                 ),
                 vec![],
@@ -432,7 +455,25 @@ impl AdminService {
         for row in records_result {
             let mut record = Vec::new();
             for column in &columns {
-                let value: serde_json::Value = row.try_get("", column).unwrap_or(serde_json::Value::Null);
+                // Try to get the value as different types and convert to JSON
+                let value = if let Ok(v) = row.try_get::<String>("", column) {
+                    serde_json::Value::String(v)
+                } else if let Ok(v) = row.try_get::<i64>("", column) {
+                    serde_json::Value::Number(serde_json::Number::from(v))
+                } else if let Ok(v) = row.try_get::<f64>("", column) {
+                    if let Some(n) = serde_json::Number::from_f64(v) {
+                        serde_json::Value::Number(n)
+                    } else {
+                        serde_json::Value::Null
+                    }
+                } else if let Ok(v) = row.try_get::<bool>("", column) {
+                    serde_json::Value::Bool(v)
+                } else if let Ok(v) = row.try_get::<Vec<u8>>("", column) {
+                    // Convert blob to base64 string
+                    serde_json::Value::String(base64::engine::general_purpose::STANDARD.encode(v))
+                } else {
+                    serde_json::Value::Null
+                };
                 record.push(value);
             }
             records.push(record);

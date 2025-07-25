@@ -33,6 +33,7 @@ utoipa-swagger-ui = { version = "9.0.2", features = [
 ] }
 
 uuid = { version = "1.17.0", features = ["v4", "serde"] }
+base64 = "0.21.7"
 
 # Logging and tracing
 tracing = "0.1"
