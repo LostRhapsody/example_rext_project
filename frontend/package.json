@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "run-p \"generate:client:watch\" \"dev:server\"",
+    "dev": "run-p \"generate:client\" \"dev:server\"",
     "dev:server": "vite",
     "predev": "wait-on http://localhost:3000/api-docs/openapi.json",
     "dev:full": "echo 'Starting full development workflow...' && npm run predev && npm run dev",

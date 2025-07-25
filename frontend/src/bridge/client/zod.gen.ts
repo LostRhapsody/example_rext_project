@@ -2,8 +2,84 @@
 
 import { z } from 'zod';
 
+export const zAdminLoginRequest = z.object({
+    email: z.string(),
+    password: z.string()
+});
+
+export const zAdminLoginResponse = z.object({
+    admin_id: z.string(),
+    email: z.string(),
+    token: z.string()
+});
+
+export const zAuditLogResponse = z.object({
+    error_message: z.optional(z.union([
+        z.string(),
+        z.null()
+    ])),
+    id: z.string(),
+    ip_address: z.optional(z.union([
+        z.string(),
+        z.null()
+    ])),
+    method: z.string(),
+    path: z.string(),
+    request_body: z.optional(z.union([
+        z.string(),
+        z.null()
+    ])),
+    response_body: z.optional(z.union([
+        z.string(),
+        z.null()
+    ])),
+    response_time_ms: z.optional(z.union([
+        z.int(),
+        z.null()
+    ])),
+    status_code: z.optional(z.union([
+        z.int(),
+        z.null()
+    ])),
+    timestamp: z.optional(z.union([
+        z.string(),
+        z.null()
+    ])),
+    user_agent: z.optional(z.union([
+        z.string(),
+        z.null()
+    ])),
+    user_id: z.optional(z.union([
+        z.string(),
+        z.null()
+    ]))
+});
+
+export const zAuthUser = z.object({
+    user_id: z.string()
+});
+
+export const zCreateUserRequest = z.object({
+    email: z.string(),
+    is_admin: z.optional(z.union([
+        z.boolean(),
+        z.null()
+    ])),
+    password: z.string()
+});
+
+export const zDatabaseTableResponse = z.object({
+    name: z.string(),
+    record_count: z.coerce.bigint().gte(BigInt(0))
+});
+
 export const zErrorResponse = z.object({
     message: z.string()
+});
+
+export const zHealthResponse = z.object({
+    status: z.string(),
+    timestamp: z.string()
 });
 
 export const zLoginRequest = z.object({
@@ -15,8 +91,101 @@ export const zLoginResponse = z.object({
     token: z.string()
 });
 
+export const zLogsQueryParams = z.object({
+    end_date: z.optional(z.union([
+        z.string(),
+        z.null()
+    ])),
+    limit: z.optional(z.coerce.bigint().gte(BigInt(0))),
+    method: z.optional(z.union([
+        z.string(),
+        z.null()
+    ])),
+    page: z.optional(z.coerce.bigint().gte(BigInt(0))),
+    start_date: z.optional(z.union([
+        z.string(),
+        z.null()
+    ])),
+    status_code: z.optional(z.union([
+        z.int(),
+        z.null()
+    ])),
+    user_id: z.optional(z.union([
+        z.string(),
+        z.null()
+    ]))
+});
+
 export const zMessageResponse = z.object({
     message: z.string()
+});
+
+export const zPaginationMeta = z.object({
+    limit: z.coerce.bigint().gte(BigInt(0)),
+    page: z.coerce.bigint().gte(BigInt(0)),
+    total: z.coerce.bigint().gte(BigInt(0)),
+    total_pages: z.coerce.bigint().gte(BigInt(0))
+});
+
+export const zPaginatedResponseAuditLogResponse = z.object({
+    data: z.array(z.object({
+        error_message: z.optional(z.union([
+            z.string(),
+            z.null()
+        ])),
+        id: z.string(),
+        ip_address: z.optional(z.union([
+            z.string(),
+            z.null()
+        ])),
+        method: z.string(),
+        path: z.string(),
+        request_body: z.optional(z.union([
+            z.string(),
+            z.null()
+        ])),
+        response_body: z.optional(z.union([
+            z.string(),
+            z.null()
+        ])),
+        response_time_ms: z.optional(z.union([
+            z.int(),
+            z.null()
+        ])),
+        status_code: z.optional(z.union([
+            z.int(),
+            z.null()
+        ])),
+        timestamp: z.optional(z.union([
+            z.string(),
+            z.null()
+        ])),
+        user_agent: z.optional(z.union([
+            z.string(),
+            z.null()
+        ])),
+        user_id: z.optional(z.union([
+            z.string(),
+            z.null()
+        ]))
+    })),
+    pagination: zPaginationMeta
+});
+
+export const zPaginatedResponseUserResponse = z.object({
+    data: z.array(z.object({
+        created_at: z.optional(z.union([
+            z.string(),
+            z.null()
+        ])),
+        email: z.string(),
+        id: z.string(),
+        is_admin: z.optional(z.union([
+            z.boolean(),
+            z.null()
+        ]))
+    })),
+    pagination: zPaginationMeta
 });
 
 export const zProfileResponse = z.object({
@@ -42,6 +211,223 @@ export const zRegisterResponse = z.object({
     message: z.string(),
     userId: z.string()
 });
+
+export const zTableRecordResponse = z.object({
+    columns: z.array(z.string()),
+    records: z.array(z.array(z.unknown()))
+});
+
+export const zTableRecordsQueryParams = z.object({
+    limit: z.optional(z.coerce.bigint().gte(BigInt(0))),
+    page: z.optional(z.coerce.bigint().gte(BigInt(0)))
+});
+
+export const zUpdateUserRequest = z.object({
+    email: z.optional(z.union([
+        z.string(),
+        z.null()
+    ])),
+    is_admin: z.optional(z.union([
+        z.boolean(),
+        z.null()
+    ])),
+    password: z.optional(z.union([
+        z.string(),
+        z.null()
+    ]))
+});
+
+export const zUserResponse = z.object({
+    created_at: z.optional(z.union([
+        z.string(),
+        z.null()
+    ])),
+    email: z.string(),
+    id: z.string(),
+    is_admin: z.optional(z.union([
+        z.boolean(),
+        z.null()
+    ]))
+});
+
+export const zUsersQueryParams = z.object({
+    is_admin: z.optional(z.union([
+        z.boolean(),
+        z.null()
+    ])),
+    limit: z.optional(z.coerce.bigint().gte(BigInt(0))),
+    page: z.optional(z.coerce.bigint().gte(BigInt(0))),
+    search: z.optional(z.union([
+        z.string(),
+        z.null()
+    ]))
+});
+
+export const zGetDatabaseTablesHandlerData = z.object({
+    body: z.optional(z.never()),
+    path: z.optional(z.never()),
+    query: z.optional(z.never())
+});
+
+/**
+ * Database tables retrieved successfully
+ */
+export const zGetDatabaseTablesHandlerResponse = z.array(zDatabaseTableResponse);
+
+export const zGetTableRecordsHandlerData = z.object({
+    body: z.optional(z.never()),
+    path: z.object({
+        table_name: z.string()
+    }),
+    query: z.optional(z.object({
+        page: z.optional(z.coerce.bigint().gte(BigInt(0))),
+        limit: z.optional(z.coerce.bigint().gte(BigInt(0)))
+    }))
+});
+
+/**
+ * Table records retrieved successfully
+ */
+export const zGetTableRecordsHandlerResponse = zTableRecordResponse;
+
+export const zHealthHandlerData = z.object({
+    body: z.optional(z.never()),
+    path: z.optional(z.never()),
+    query: z.optional(z.never())
+});
+
+/**
+ * System health check successful
+ */
+export const zHealthHandlerResponse = zHealthResponse;
+
+export const zAdminLoginHandlerData = z.object({
+    body: zAdminLoginRequest,
+    path: z.optional(z.never()),
+    query: z.optional(z.never())
+});
+
+/**
+ * Admin login successful
+ */
+export const zAdminLoginHandlerResponse = zAdminLoginResponse;
+
+export const zAdminLogoutHandlerData = z.object({
+    body: z.optional(z.never()),
+    path: z.optional(z.never()),
+    query: z.optional(z.never())
+});
+
+/**
+ * Admin logout successful
+ */
+export const zAdminLogoutHandlerResponse = zMessageResponse;
+
+export const zGetAuditLogsHandlerData = z.object({
+    body: z.optional(z.never()),
+    path: z.optional(z.never()),
+    query: z.optional(z.object({
+        page: z.optional(z.coerce.bigint().gte(BigInt(0))),
+        limit: z.optional(z.coerce.bigint().gte(BigInt(0))),
+        method: z.optional(z.union([
+            z.string(),
+            z.null()
+        ])),
+        status_code: z.optional(z.union([
+            z.int(),
+            z.null()
+        ])),
+        user_id: z.optional(z.union([
+            z.string(),
+            z.null()
+        ])),
+        start_date: z.optional(z.union([
+            z.string(),
+            z.null()
+        ])),
+        end_date: z.optional(z.union([
+            z.string(),
+            z.null()
+        ]))
+    }))
+});
+
+/**
+ * Audit logs retrieved successfully
+ */
+export const zGetAuditLogsHandlerResponse = zPaginatedResponseAuditLogResponse;
+
+export const zGetUsersHandlerData = z.object({
+    body: z.optional(z.never()),
+    path: z.optional(z.never()),
+    query: z.optional(z.object({
+        page: z.optional(z.coerce.bigint().gte(BigInt(0))),
+        limit: z.optional(z.coerce.bigint().gte(BigInt(0))),
+        search: z.optional(z.union([
+            z.string(),
+            z.null()
+        ])),
+        is_admin: z.optional(z.union([
+            z.boolean(),
+            z.null()
+        ]))
+    }))
+});
+
+/**
+ * Users retrieved successfully
+ */
+export const zGetUsersHandlerResponse = zPaginatedResponseUserResponse;
+
+export const zCreateUserHandlerData = z.object({
+    body: zCreateUserRequest,
+    path: z.optional(z.never()),
+    query: z.optional(z.never())
+});
+
+/**
+ * User created successfully
+ */
+export const zCreateUserHandlerResponse = zUserResponse;
+
+export const zDeleteUserHandlerData = z.object({
+    body: z.optional(z.never()),
+    path: z.object({
+        id: z.string()
+    }),
+    query: z.optional(z.never())
+});
+
+/**
+ * User deleted successfully
+ */
+export const zDeleteUserHandlerResponse = zMessageResponse;
+
+export const zGetUserHandlerData = z.object({
+    body: z.optional(z.never()),
+    path: z.object({
+        id: z.string()
+    }),
+    query: z.optional(z.never())
+});
+
+/**
+ * User retrieved successfully
+ */
+export const zGetUserHandlerResponse = zUserResponse;
+
+export const zUpdateUserHandlerData = z.object({
+    body: zUpdateUserRequest,
+    path: z.object({
+        id: z.string()
+    }),
+    query: z.optional(z.never())
+});
+
+/**
+ * User updated successfully
+ */
+export const zUpdateUserHandlerResponse = zUserResponse;
 
 export const zLoginHandlerData = z.object({
     body: zLoginRequest,
