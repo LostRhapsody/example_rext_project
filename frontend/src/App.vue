@@ -1,15 +1,29 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+
 const router = useRouter()
+const route = useRoute()
 const { isLoggedIn, logout: authLogout } = useAuth()
 
 const logout = () => {
   authLogout()
   router.push('/')
 }
+
+// Check if we're in admin area
+const isAdminRoute = computed(() => {
+  return route.path.startsWith('/admin')
+})
+
+// Don't show main header in admin area
+const showMainHeader = computed(() => {
+  return !isAdminRoute.value
+})
 </script>
 
 <template>
-  <header>
+  <header v-if="showMainHeader">
     <h1>Demo Login App</h1>
 
     <nav>
@@ -22,10 +36,13 @@ const logout = () => {
         <RouterLink to="/profile">Profile</RouterLink>
         <button @click="logout">Logout</button>
       </span>
+      <span>
+        <RouterLink to="/admin/login" class="admin-link">Admin Panel</RouterLink>
+      </span>
     </nav>
   </header>
 
-  <main>
+  <main :class="{ 'admin-main': isAdminRoute }">
     <RouterView />
   </main>
 </template>
@@ -54,7 +71,20 @@ nav a:hover, nav button:hover {
   text-decoration: underline;
 }
 
+.admin-link {
+  color: #dc3545 !important;
+  font-weight: 600;
+}
+
+.admin-link:hover {
+  color: #c82333 !important;
+}
+
 main {
   padding: 2rem;
+}
+
+.admin-main {
+  padding: 0;
 }
 </style>

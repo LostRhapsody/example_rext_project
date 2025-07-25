@@ -52,6 +52,12 @@ The Rust server has a CORS bypass that allows these two ports to communicate via
 - View API documentation: `http://localhost:3000/scalar` (look for "Admin" tag)
 - **Important**: Change the default admin password immediately after first login!
 
+**Admin Panel Access:**
+- **Frontend URL**: `http://localhost:5173/admin/login`
+- **Default Credentials**: `admin@localhost.com` / `admin`
+- **Features**: User management, request logs, database browser, system health
+- **Documentation**: See `ADMIN_PANEL.md` for detailed usage instructions
+
 ## Next Steps
 *A quick outline of the upcoming goals for this project*
 - Establish sub-domains for local dev
@@ -83,21 +89,32 @@ This project will implement a custom admin panel with request logging, user mana
 - [x] Database table inspection endpoints
 - [x] System health endpoints
 
-#### Phase 3: Admin Frontend
-- [ ] Admin layout and navigation
-- [ ] Request history dashboard with filtering/search
-- [ ] User management interface
-- [ ] Database table browser
-- [ ] System health dashboard
+#### Phase 3: Admin Frontend ✅ (Done)
+- [x] Admin layout and navigation
+- [x] Request history dashboard with filtering/search
+- [x] User management interface
+- [x] Database table browser
+- [x] System health dashboard
+
+#### Break Time!
+
+There are some issues with the admin panel:
+- AG Grid reporting theme and CSS errors, all in all it doesn't work very well.
+- Database view is just reporting NULL as all the record vales
+- Request Logs count on the main admin panel page is "5".... there are 170+.
+- Clicking a request to view the details in a modal doesn't pretty print the body.
+- We have request AND response bodies? Why only show one?
+- Lots of terrible color choices being made
+- system health has uptime and database set to unknown... makes sense I guess? We don't report on these metrics nor do I know the best way to get them.
 
 #### Phase 4: Advanced Features
-- [ ] Real-time request monitoring
-- [ ] Performance metrics and analytics
+- [ ] Real-time request monitoring (what does this mean?)
+- [ ] Performance metrics and analytics (what's the difference between this and seeing request ms time?)
 - [ ] Export functionality (CSV, JSON)
-- [ ] Admin user management
-- [ ] Role-based permissions
+- [ ] Admin user management (we already do this? What's this mean?)
+- [ ] Role-based permissions (yes, important. Will need a 'roles' table or a 'role' field on the user)
 
-### Current Status: Phase 1 - Request Logging Infrastructure
+### Current Status: Phase 3 - Admin Frontend ✅ (Complete)
 
 **Completed:**
 - ✅ Request logging middleware and audit_logs table
@@ -108,6 +125,12 @@ This project will implement a custom admin panel with request logging, user mana
 - ✅ Database table inspection endpoints
 - ✅ System health endpoints
 - ✅ **Admin user seeding during application startup**
+- ✅ **Complete Admin Frontend with AG Grid integration**
+- ✅ **Admin layout and navigation system**
+- ✅ **Request history dashboard with advanced filtering**
+- ✅ **User management interface with CRUD operations**
+- ✅ **Database table browser with record inspection**
+- ✅ **System health dashboard with real-time metrics**
 
 **Admin User Seeding:**
 The application now automatically creates an admin user during startup with the following features:
