@@ -129,6 +129,12 @@ pub async fn request_logging_middleware(
     // Extract request info
     let method = request.method().to_string();
     let path = request.uri().path().to_string();
+
+    // if path is /api-docs/openapi.json, don't log
+    if path == "/api-docs/openapi.json" {
+        return Ok(next.run(request).await);
+    }
+
     let ip_address = request
         .headers()
         .get("x-forwarded-for")
