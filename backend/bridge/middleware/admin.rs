@@ -14,7 +14,7 @@ use crate::{
 };
 
 /// Admin authentication middleware that requires admin privileges
-pub async fn admin_middleware(
+pub async fn _admin_middleware(
     mut request: Request,
     next: Next,
 ) -> Result<Response, AppError> {
@@ -59,7 +59,7 @@ pub async fn admin_middleware(
     // Add admin user info to request extensions for downstream handlers
     let user_id = auth_user.user_id;
     let email = user.email.clone();
-    request.extensions_mut().insert(AdminUser {
+    request.extensions_mut().insert(_AdminUser {
         user_id,
         email,
     });
@@ -69,13 +69,13 @@ pub async fn admin_middleware(
 
 /// Admin user information for downstream handlers
 #[derive(Clone)]
-pub struct AdminUser {
+pub struct _AdminUser {
     pub user_id: uuid::Uuid,
     pub email: String,
 }
 
 /// Log admin access attempts (for security monitoring)
-pub fn log_admin_access_attempt(
+pub fn _log_admin_access_attempt(
     user_id: Option<uuid::Uuid>,
     success: bool,
     path: &str,
@@ -96,4 +96,4 @@ pub fn log_admin_access_attempt(
             "Admin access denied"
         );
     }
-} 
+}

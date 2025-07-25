@@ -11,7 +11,7 @@ use infrastructure::logging::LoggingManager;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize logging first
     LoggingManager::initialize();
-    
+
     tracing::info!("Starting the Rext Server 🦖");
 
     // Initialize the application

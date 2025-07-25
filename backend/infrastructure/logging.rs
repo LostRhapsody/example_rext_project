@@ -19,9 +19,14 @@ impl LoggingManager {
             }
         });
 
-        // Create environment filter
+        // Create environment filter with specific crate filters to reduce noise
         let env_filter = EnvFilter::try_from_default_env()
-            .unwrap_or_else(|_| EnvFilter::new(log_level));
+            .unwrap_or_else(|_| {
+                EnvFilter::new(log_level)
+                    .add_directive("sqlx=warn".parse().unwrap())
+                    .add_directive("apalis=warn".parse().unwrap())
+                    .add_directive("tower_http=warn".parse().unwrap())
+            });
 
         // Configure tracing subscriber
         let subscriber = tracing_subscriber::fmt()
@@ -46,4 +51,4 @@ impl LoggingManager {
     pub fn generate_request_id() -> String {
         uuid::Uuid::new_v4().to_string()
     }
-} 
+}

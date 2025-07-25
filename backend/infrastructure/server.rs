@@ -42,10 +42,8 @@ impl ServerManager {
             .merge(Redoc::with_url("/redoc", api.clone()))
             .merge(RapiDoc::new("/api-docs/openapi.json").path("/rapidoc"))
             .merge(Scalar::with_url("/scalar", api))
-            .route("/", get(Self::root_handler));
-
-        // Add request logging middleware to all routes
-        router = router.layer(middleware::from_fn_with_state(db.clone(), request_logging_middleware));
+            .route("/", get(Self::root_handler))
+            .route_layer(middleware::from_fn_with_state(db.clone(),request_logging_middleware));
 
         // Add CORS layer for development
         if environment == "development" {
