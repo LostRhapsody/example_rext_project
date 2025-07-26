@@ -31,7 +31,7 @@
         <div class="health-icon">📊</div>
         <div class="health-content">
           <h3>Uptime</h3>
-          <p>{{ uptime }}</p>
+          <p>{{ healthStatus.uptime || 'Unknown' }}</p>
         </div>
       </div>
 
@@ -39,7 +39,9 @@
         <div class="health-icon">💾</div>
         <div class="health-content">
           <h3>Database</h3>
-          <p :class="getStatusClass(dbStatus)">{{ dbStatus }}</p>
+          <p :class="getStatusClass(healthStatus.database_status)">
+            {{ healthStatus.database_status || 'Unknown' }}
+          </p>
         </div>
       </div>
     </div>
@@ -105,20 +107,62 @@
           </div>
           <div class="metric-content">
             <div class="metric-item">
-              <span class="metric-label">Memory Usage:</span>
-              <span class="metric-value">{{ metrics.memoryUsage }}</span>
+              <span class="metric-label">CPU Usage:</span>
+              <span class="metric-value" :class="getUsageClass(healthStatus.cpu_usage)">
+                {{ healthStatus.cpu_usage?.toFixed(1) || '0.0' }}%
+              </span>
             </div>
             <div class="metric-item">
-              <span class="metric-label">CPU Usage:</span>
-              <span class="metric-value">{{ metrics.cpuUsage }}</span>
+              <span class="metric-label">Memory Usage:</span>
+              <span class="metric-value" :class="getUsageClass(healthStatus.memory_usage)">
+                {{ healthStatus.memory_usage?.toFixed(1) || '0.0' }}%
+              </span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Memory Total:</span>
+              <span class="metric-value">{{ healthStatus.memory_total || 'Unknown' }}</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Memory Used:</span>
+              <span class="metric-value">{{ healthStatus.memory_used || 'Unknown' }}</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Memory Available:</span>
+              <span class="metric-value">{{ healthStatus.memory_available || 'Unknown' }}</span>
             </div>
             <div class="metric-item">
               <span class="metric-label">Disk Usage:</span>
-              <span class="metric-value">{{ metrics.diskUsage }}</span>
+              <span class="metric-value" :class="getUsageClass(healthStatus.disk_usage)">
+                {{ healthStatus.disk_usage?.toFixed(1) || '0.0' }}%
+              </span>
             </div>
             <div class="metric-item">
-              <span class="metric-label">Network I/O:</span>
-              <span class="metric-value">{{ metrics.networkIO }}</span>
+              <span class="metric-label">Disk Total:</span>
+              <span class="metric-value">{{ healthStatus.disk_total || 'Unknown' }}</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Disk Used:</span>
+              <span class="metric-value">{{ healthStatus.disk_used || 'Unknown' }}</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Disk Available:</span>
+              <span class="metric-value">{{ healthStatus.disk_available || 'Unknown' }}</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Network Sent:</span>
+              <span class="metric-value">{{ healthStatus.network_bytes_sent || 'Unknown' }}</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Network Received:</span>
+              <span class="metric-value">{{ healthStatus.network_bytes_received || 'Unknown' }}</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Process Count:</span>
+              <span class="metric-value">{{ healthStatus.process_count || 0 }}</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">DB Connections:</span>
+              <span class="metric-value">{{ healthStatus.database_connections || 'Unknown' }}</span>
             </div>
           </div>
         </div>
@@ -156,7 +200,7 @@
 
     <!-- System Information -->
     <div class="system-info-section">
-      <h2>System Information</h2>
+      <h2>System Information - Not yet implemented</h2>
       <div class="system-info-grid">
         <div class="info-card">
           <h3>Application</h3>
@@ -186,8 +230,8 @@
           </div>
           <div class="info-item">
             <span class="info-label">Connection:</span>
-            <span class="info-value" :class="getStatusClass(systemInfo.databaseStatus)">
-              {{ systemInfo.databaseStatus }}
+            <span class="info-value" :class="getStatusClass(healthStatus.database_status)">
+              {{ healthStatus.database_status || 'Unknown' }}
             </span>
           </div>
         </div>
@@ -220,11 +264,7 @@ import {
   getUsersHandler,
   getDatabaseTablesHandler
 } from '@/bridge/client'
-
-interface HealthStatus {
-  status: string
-  timestamp: string
-}
+import type { HealthResponse } from '@/bridge/client/types.gen'
 
 interface Metrics {
   totalRequests: number
@@ -235,10 +275,6 @@ interface Metrics {
   totalUsers: number
   adminUsers: number
   newUsers24h: number
-  memoryUsage: string
-  cpuUsage: string
-  diskUsage: string
-  networkIO: string
 }
 
 interface SystemInfo {
@@ -247,7 +283,6 @@ interface SystemInfo {
   startTime: string
   databaseType: string
   databaseTables: number
-  databaseStatus: string
   host: string
   port: number
   protocol: string
@@ -269,9 +304,24 @@ interface ErrorLog {
 }
 
 const loading = ref(false)
-const healthStatus = ref<HealthStatus>({
+const healthStatus = ref<HealthResponse>({
   status: 'Unknown',
-  timestamp: ''
+  timestamp: '',
+  uptime: '',
+  cpu_usage: 0,
+  memory_usage: 0,
+  memory_total: '',
+  memory_used: '',
+  memory_available: '',
+  disk_usage: 0,
+  disk_total: '',
+  disk_used: '',
+  disk_available: '',
+  network_bytes_sent: '',
+  network_bytes_received: '',
+  process_count: 0,
+  database_connections: null,
+  database_status: 'Unknown'
 })
 const metrics = ref<Metrics>({
   totalRequests: 0,
@@ -281,26 +331,19 @@ const metrics = ref<Metrics>({
   activeUsers: 0,
   totalUsers: 0,
   adminUsers: 0,
-  newUsers24h: 0,
-  memoryUsage: 'Unknown',
-  cpuUsage: 'Unknown',
-  diskUsage: 'Unknown',
-  networkIO: 'Unknown'
+  newUsers24h: 0
 })
 const systemInfo = ref<SystemInfo>({
-  version: '1.0.0',
-  environment: 'development',
+  version: 'unknown',
+  environment: 'unknown',
   startTime: '',
-  databaseType: 'SQLite',
+  databaseType: 'unknown',
   databaseTables: 0,
-  databaseStatus: 'Unknown',
-  host: 'localhost',
-  port: 3000,
-  protocol: 'HTTP'
+  host: 'unknown',
+  port: 0,
+  protocol: 'unknown'
 })
 const recentErrors = ref<ErrorLog[]>([])
-const uptime = ref('Unknown')
-const dbStatus = ref('Unknown')
 
 let refreshInterval: NodeJS.Timeout | null = null
 
@@ -322,7 +365,22 @@ const fetchHealthStatus = async () => {
     console.error('Error fetching health status:', error)
     healthStatus.value = {
       status: 'Error',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      uptime: 'Unknown',
+      cpu_usage: 0,
+      memory_usage: 0,
+      memory_total: 'Unknown',
+      memory_used: 'Unknown',
+      memory_available: 'Unknown',
+      disk_usage: 0,
+      disk_total: 'Unknown',
+      disk_used: 'Unknown',
+      disk_available: 'Unknown',
+      network_bytes_sent: 'Unknown',
+      network_bytes_received: 'Unknown',
+      process_count: 0,
+      database_connections: null,
+      database_status: 'Error'
     }
   }
 }
@@ -359,21 +417,17 @@ const fetchMetrics = async () => {
         activeUsers: 0, // Would need additional tracking
         totalUsers: 0, // Will be fetched separately
         adminUsers: 0, // Will be fetched separately
-        newUsers24h: 0, // Would need additional tracking
-        memoryUsage: 'N/A', // Would need system monitoring
-        cpuUsage: 'N/A', // Would need system monitoring
-        diskUsage: 'N/A', // Would need system monitoring
-        networkIO: 'N/A' // Would need system monitoring
+        newUsers24h: 0 // Would need additional tracking
       }
     }
 
     // Fetch user statistics
     const usersResponse = await getUsersHandler({
-      query: { limit: 1 },
       headers
     })
 
     if (usersResponse.data) {
+      console.log('usersResponse.data', usersResponse.data)
       const totalUsers = usersResponse.data.pagination?.total || 0
       const adminUsers = usersResponse.data.data?.filter((user: any) => user.is_admin).length || 0
 
@@ -410,15 +464,13 @@ const fetchSystemInfo = async () => {
 
     if (tablesResponse.data) {
       systemInfo.value.databaseTables = tablesResponse.data.length || 0
-      systemInfo.value.databaseStatus = 'Connected'
     }
 
     // Set start time (approximate)
-    systemInfo.value.startTime = new Date(Date.now() - 60000).toISOString() // 1 minute ago as approximation
+    systemInfo.value.startTime = new Date(Date.now()).toISOString()
 
   } catch (error) {
     console.error('Error fetching system info:', error)
-    systemInfo.value.databaseStatus = 'Error'
   }
 }
 
@@ -428,24 +480,26 @@ const refreshMetrics = () => {
   fetchSystemInfo()
 }
 
-// Update dbStatus when system info is fetched
-const updateDbStatus = () => {
-  dbStatus.value = systemInfo.value.databaseStatus
-}
-
 const getStatusClass = (status: string) => {
   const statusLower = status.toLowerCase()
   if (statusLower === 'healthy' || statusLower === 'ok' || statusLower === 'connected') return 'status-success'
   if (statusLower === 'warning' || statusLower === 'degraded') return 'status-warning'
-  if (statusLower === 'error' || statusLower === 'down' || statusLower === 'unhealthy') return 'status-error'
+  if (statusLower === 'error' || statusLower === 'down' || statusLower === 'unhealthy' || statusLower === 'critical') return 'status-error'
   return 'status-unknown'
+}
+
+const getUsageClass = (usage: number) => {
+  if (usage > 90) return 'status-error'
+  if (usage > 80) return 'status-warning'
+  if (usage > 70) return 'status-warning'
+  return 'status-success'
 }
 
 const getStatusIcon = (status: string) => {
   const statusLower = status.toLowerCase()
   if (statusLower === 'healthy' || statusLower === 'ok') return '💚'
   if (statusLower === 'warning' || statusLower === 'degraded') return '⚠️'
-  if (statusLower === 'error' || statusLower === 'down' || statusLower === 'unhealthy') return '🔴'
+  if (statusLower === 'error' || statusLower === 'down' || statusLower === 'unhealthy' || statusLower === 'critical') return '🔴'
   return '❓'
 }
 
@@ -458,39 +512,12 @@ const formatTimestamp = (timestamp?: string | null) => {
   }
 }
 
-const updateUptime = () => {
-  if (systemInfo.value.startTime) {
-    try {
-      const startTime = new Date(systemInfo.value.startTime).getTime()
-      const now = Date.now()
-      const diff = now - startTime
-
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-
-      if (days > 0) {
-        uptime.value = `${days}d ${hours}h ${minutes}m`
-      } else if (hours > 0) {
-        uptime.value = `${hours}h ${minutes}m`
-      } else {
-        uptime.value = `${minutes}m`
-      }
-    } catch {
-      uptime.value = 'Unknown'
-    }
-  }
-}
-
 onMounted(() => {
   refreshMetrics()
-  updateDbStatus()
 
-  // Update uptime every minute
-  updateUptime()
+  // Update metrics every minute
   refreshInterval = setInterval(() => {
-    updateUptime()
-    updateDbStatus()
+    refreshMetrics()
   }, 60000)
 })
 

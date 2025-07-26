@@ -510,7 +510,7 @@ impl AdminService {
             network_bytes_received: SystemMonitorService::format_bytes(system_metrics.network_bytes_received),
             process_count: system_metrics.process_count,
             database_connections: system_metrics.database_connections,
-            database_status: "Connected".to_string(), // We'll enhance this later
+            database_status: "Unknown".to_string(), // We'll enhance this later
         }
     }
 }
