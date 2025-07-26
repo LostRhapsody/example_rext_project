@@ -99,12 +99,6 @@ This project will implement a custom admin panel with request logging, user mana
 #### Break Time!
 
 There are some issues with the admin panel:
-- AG Grid reporting theme and CSS errors, all in all it doesn't work very well.
-- Database view is just reporting NULL as all the record vales
-- Request Logs count on the main admin panel page is "5".... there are 170+.
-- Clicking a request to view the details in a modal doesn't pretty print the body.
-- We have request AND response bodies? Why only show one?
-- Lots of terrible color choices being made
 - system health has uptime and database set to unknown... makes sense I guess? We don't report on these metrics nor do I know the best way to get them.
 - Could use a token service as well to generate, decode, and validate tokens.
 

@@ -38,3 +38,4 @@ base64 = "0.21.7"
 # Logging and tracing
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json", "time"] }
+sysinfo = "0.36.1"

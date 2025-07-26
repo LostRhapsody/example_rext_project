@@ -135,8 +135,8 @@
           <p>No recent errors found</p>
         </div>
         <div v-else class="error-items">
-          <div 
-            v-for="error in recentErrors" 
+          <div
+            v-for="error in recentErrors"
             :key="error.id"
             class="error-item"
           >
@@ -214,11 +214,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import { 
-  healthHandler, 
-  getAuditLogsHandler, 
-  getUsersHandler, 
-  getDatabaseTablesHandler 
+import {
+  healthHandler,
+  getAuditLogsHandler,
+  getUsersHandler,
+  getDatabaseTablesHandler
 } from '@/bridge/client'
 
 interface HealthStatus {
@@ -344,13 +344,13 @@ const fetchMetrics = async () => {
 
     if (logsResponse.data) {
       const logs = logsResponse.data.data || []
-      
+
       // Calculate metrics from logs
       const totalRequests = logs.length
       const successfulRequests = logs.filter((log: any) => log.status_code >= 200 && log.status_code < 300).length
       const errorRequests = logs.filter((log: any) => log.status_code >= 400).length
       const responseTimes = logs.map((log: any) => log.response_time_ms || 0).filter((time: number) => time > 0)
-      
+
       metrics.value = {
         totalRequests,
         successRate: totalRequests > 0 ? Math.round((successfulRequests / totalRequests) * 100) : 0,
@@ -376,7 +376,7 @@ const fetchMetrics = async () => {
     if (usersResponse.data) {
       const totalUsers = usersResponse.data.pagination?.total || 0
       const adminUsers = usersResponse.data.data?.filter((user: any) => user.is_admin).length || 0
-      
+
       metrics.value.totalUsers = totalUsers
       metrics.value.adminUsers = adminUsers
     }
@@ -464,11 +464,11 @@ const updateUptime = () => {
       const startTime = new Date(systemInfo.value.startTime).getTime()
       const now = Date.now()
       const diff = now - startTime
-      
+
       const days = Math.floor(diff / (1000 * 60 * 60 * 24))
       const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-      
+
       if (days > 0) {
         uptime.value = `${days}d ${hours}h ${minutes}m`
       } else if (hours > 0) {
@@ -485,7 +485,7 @@ const updateUptime = () => {
 onMounted(() => {
   refreshMetrics()
   updateDbStatus()
-  
+
   // Update uptime every minute
   updateUptime()
   refreshInterval = setInterval(() => {
@@ -833,35 +833,35 @@ onUnmounted(() => {
   .admin-health {
     padding: 1rem;
   }
-  
+
   .health-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .metrics-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .system-info-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .error-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
   }
-  
+
   .metric-item {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.25rem;
   }
-  
+
   .info-item {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.25rem;
   }
 }
-</style> 
+</style>
