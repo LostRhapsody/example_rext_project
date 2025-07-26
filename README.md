@@ -106,6 +106,7 @@ There are some issues with the admin panel:
 - We have request AND response bodies? Why only show one?
 - Lots of terrible color choices being made
 - system health has uptime and database set to unknown... makes sense I guess? We don't report on these metrics nor do I know the best way to get them.
+- Could use a token service as well to generate, decode, and validate tokens.
 
 #### Phase 4: Advanced Features
 - [ ] Real-time request monitoring (what does this mean?)

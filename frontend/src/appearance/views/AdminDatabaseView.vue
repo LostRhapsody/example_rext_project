@@ -9,8 +9,8 @@
     <div class="tables-section">
       <h2>Database Tables</h2>
       <div class="tables-grid">
-        <div 
-          v-for="table in tables" 
+        <div
+          v-for="table in tables"
           :key="table.name"
           class="table-card"
           :class="{ active: selectedTable === table.name }"
@@ -69,16 +69,16 @@
           <span>Showing {{ paginationInfo.start }} to {{ paginationInfo.end }} of {{ paginationInfo.total }} records</span>
         </div>
         <div class="pagination-controls">
-          <button 
-            @click="previousPage" 
+          <button
+            @click="previousPage"
             :disabled="filters.page <= 1"
             class="page-btn"
           >
             Previous
           </button>
           <span class="page-info">Page {{ filters.page }} of {{ paginationInfo.totalPages }}</span>
-          <button 
-            @click="nextPage" 
+          <button
+            @click="nextPage"
             :disabled="filters.page >= paginationInfo.totalPages"
             class="page-btn"
           >
@@ -97,8 +97,8 @@
         </div>
         <div class="modal-body">
           <div class="record-detail-grid">
-            <div 
-              v-for="(value, key) in selectedRecord" 
+            <div
+              v-for="(value, key) in selectedRecord"
               :key="key"
               class="detail-item"
             >
@@ -124,8 +124,6 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
 import { AgGridVue } from 'ag-grid-vue3'
-import 'ag-grid-community/styles/ag-grid.css'
-import 'ag-grid-community/styles/ag-theme-alpine.css'
 import { getDatabaseTablesHandler, getTableRecordsHandler } from '@/bridge/client'
 
 interface DatabaseTable {
@@ -189,7 +187,7 @@ const defaultColDef = {
 
 const fetchTables = async () => {
   loading.value = true
-  
+
   try {
     const token = localStorage.getItem('adminToken')
     if (!token) return
@@ -214,7 +212,7 @@ const fetchRecords = async () => {
   if (!selectedTable.value) return
 
   loading.value = true
-  
+
   try {
     const token = localStorage.getItem('adminToken')
     if (!token) return
@@ -234,7 +232,7 @@ const fetchRecords = async () => {
       const data = response.data
       columns.value = data.columns || []
       records.value = data.records || []
-      
+
       // Calculate pagination info (approximate since we don't have total from API)
       paginationInfo.value = {
         page: filters.page,
@@ -283,11 +281,11 @@ const onGridReady = (params: any) => {
 const onRowClicked = (event: any) => {
   const recordData = event.data
   const recordObject: { [key: string]: unknown } = {}
-  
+
   columns.value.forEach((column, index) => {
     recordObject[column] = recordData[column] || recordData[index]
   })
-  
+
   selectedRecord.value = recordObject
   showRecordModal.value = true
 }
@@ -625,39 +623,39 @@ onMounted(() => {
   .admin-database {
     padding: 1rem;
   }
-  
+
   .tables-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .records-header {
     flex-direction: column;
     gap: 1rem;
     align-items: stretch;
   }
-  
+
   .records-actions {
     justify-content: center;
   }
-  
+
   .pagination-info {
     flex-direction: column;
     gap: 1rem;
     text-align: center;
   }
-  
+
   .detail-item {
     flex-direction: column;
     align-items: stretch;
     gap: 0.5rem;
   }
-  
+
   .detail-item label {
     min-width: auto;
   }
-  
+
   .detail-item span {
     text-align: left;
   }
 }
-</style> 
+</style>

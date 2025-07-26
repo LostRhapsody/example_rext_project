@@ -5,119 +5,19 @@
       <p>Monitor and analyze API request history</p>
     </div>
 
-    <!-- Filters -->
-    <div class="filters-section">
-      <div class="filters-grid">
-        <div class="filter-group">
-          <label>HTTP Method</label>
-          <select v-model="filters.method" @change="applyFilters">
-            <option value="">All Methods</option>
-            <option value="GET">GET</option>
-            <option value="POST">POST</option>
-            <option value="PUT">PUT</option>
-            <option value="DELETE">DELETE</option>
-            <option value="PATCH">PATCH</option>
-          </select>
-        </div>
-
-        <div class="filter-group">
-          <label>Status Code</label>
-          <select v-model="filters.status_code" @change="applyFilters">
-            <option value="">All Status Codes</option>
-            <option value="200">200 - OK</option>
-            <option value="201">201 - Created</option>
-            <option value="400">400 - Bad Request</option>
-            <option value="401">401 - Unauthorized</option>
-            <option value="403">403 - Forbidden</option>
-            <option value="404">404 - Not Found</option>
-            <option value="500">500 - Server Error</option>
-          </select>
-        </div>
-
-        <div class="filter-group">
-          <label>Start Date</label>
-          <input 
-            type="date" 
-            v-model="filters.start_date" 
-            @change="applyFilters"
-          />
-        </div>
-
-        <div class="filter-group">
-          <label>End Date</label>
-          <input 
-            type="date" 
-            v-model="filters.end_date" 
-            @change="applyFilters"
-          />
-        </div>
-
-        <div class="filter-group">
-          <label>User ID</label>
-          <input 
-            type="text" 
-            v-model="filters.user_id" 
-            placeholder="Filter by user ID"
-            @input="applyFilters"
-          />
-        </div>
-
-        <div class="filter-group">
-          <label>Page Size</label>
-          <select v-model="filters.limit" @change="applyFilters">
-            <option value="10">10</option>
-            <option value="25">25</option>
-            <option value="50">50</option>
-            <option value="100">100</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="filter-actions">
-        <button @click="clearFilters" class="clear-btn">Clear Filters</button>
-        <button @click="applyFilters" class="refresh-btn">Refresh</button>
-      </div>
-    </div>
-
     <!-- AG Grid -->
     <div class="grid-container">
       <ag-grid-vue
         :columnDefs="columnDefs"
-        :rowData="logs"
         :defaultColDef="defaultColDef"
+        :rowData="logs"
         :pagination="true"
         :paginationPageSize="filters.limit"
-        :rowSelection="'single'"
+        :rowSelection="rowSelection"
         :animateRows="true"
         :domLayout="'autoHeight'"
-        class="ag-theme-alpine"
-        @grid-ready="onGridReady"
         @row-clicked="onRowClicked"
       />
-    </div>
-
-    <!-- Pagination Info -->
-    <div class="pagination-info">
-      <div class="pagination-stats">
-        <span>Showing {{ paginationInfo.start }} to {{ paginationInfo.end }} of {{ paginationInfo.total }} logs</span>
-      </div>
-      <div class="pagination-controls">
-        <button 
-          @click="changePage(paginationInfo.page - 1)" 
-          :disabled="paginationInfo.page <= 1"
-          class="page-btn"
-        >
-          Previous
-        </button>
-        <span class="page-info">Page {{ paginationInfo.page }} of {{ paginationInfo.totalPages }}</span>
-        <button 
-          @click="changePage(paginationInfo.page + 1)" 
-          :disabled="paginationInfo.page >= paginationInfo.totalPages"
-          class="page-btn"
-        >
-          Next
-        </button>
-      </div>
     </div>
 
     <!-- Log Detail Modal -->
@@ -186,13 +86,11 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { AgGridVue } from 'ag-grid-vue3'
-import 'ag-grid-community/styles/ag-grid.css'
-import 'ag-grid-community/styles/ag-theme-alpine.css'
 import { getAuditLogsHandler } from '@/bridge/client'
-import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community';
-ModuleRegistry.registerModules([ AllCommunityModule ]);
+import { AgGridVue } from 'ag-grid-vue3'
+import type { ColDef } from "ag-grid-community";
 
+const rowSelection = 'single'
 
 interface LogEntry {
   id: string
@@ -222,7 +120,7 @@ const loading = ref(false)
 const logs = ref<LogEntry[]>([])
 const paginationInfo = ref<PaginationInfo>({
   page: 1,
-  limit: 20,
+  limit: 100,
   total: 0,
   totalPages: 0,
   start: 0,
@@ -242,7 +140,7 @@ const filters = reactive({
 const selectedLog = ref<LogEntry | null>(null)
 const showLogModal = ref(false)
 
-const columnDefs = ref([
+const columnDefs = ref<ColDef<LogEntry>[]>([
   {
     headerName: 'Timestamp',
     field: 'timestamp',
@@ -257,9 +155,9 @@ const columnDefs = ref([
     width: 100,
     cellRenderer: (params: any) => {
       const method = params.value
-      const color = method === 'GET' ? '#28a745' : 
-                   method === 'POST' ? '#007bff' : 
-                   method === 'PUT' ? '#ffc107' : 
+      const color = method === 'GET' ? '#28a745' :
+                   method === 'POST' ? '#007bff' :
+                   method === 'PUT' ? '#ffc107' :
                    method === 'DELETE' ? '#dc3545' : '#6c757d'
       return `<span style="color: ${color}; font-weight: bold;">${method}</span>`
     },
@@ -279,8 +177,8 @@ const columnDefs = ref([
     width: 100,
     cellRenderer: (params: any) => {
       const status = params.value
-      const color = status >= 200 && status < 300 ? '#28a745' : 
-                   status >= 400 && status < 500 ? '#ffc107' : 
+      const color = status >= 200 && status < 300 ? '#28a745' :
+                   status >= 400 && status < 500 ? '#ffc107' :
                    status >= 500 ? '#dc3545' : '#6c757d'
       return `<span style="color: ${color}; font-weight: bold;">${status}</span>`
     },
@@ -314,14 +212,10 @@ const columnDefs = ref([
 ])
 
 const defaultColDef = {
+  flex: 1,
   resizable: true,
   sortable: true,
   filter: true,
-  floatingFilter: true
-}
-
-const onGridReady = (params: any) => {
-  // gridApi.value = params.api // This line is no longer needed
 }
 
 const onRowClicked = (event: any) => {
@@ -375,7 +269,7 @@ const getStatusClass = (statusCode?: number) => {
 
 const fetchLogs = async () => {
   loading.value = true
-  
+
   try {
     const token = localStorage.getItem('adminToken')
     if (!token) return
@@ -520,6 +414,7 @@ onMounted(() => {
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   overflow: hidden;
   margin-bottom: 1rem;
+  padding: 1rem;
 }
 
 .ag-theme-alpine {
@@ -704,19 +599,19 @@ onMounted(() => {
   .admin-logs {
     padding: 1rem;
   }
-  
+
   .filters-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .pagination-info {
     flex-direction: column;
     gap: 1rem;
     text-align: center;
   }
-  
+
   .log-detail-grid {
     grid-template-columns: 1fr;
   }
 }
-</style> 
+</style>

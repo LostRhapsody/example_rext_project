@@ -16,8 +16,8 @@
     <!-- Admin Navigation -->
     <nav class="admin-nav">
       <div class="nav-content">
-        <router-link 
-          v-for="item in navItems" 
+        <router-link
+          v-for="item in navItems"
           :key="item.path"
           :to="item.path"
           class="nav-item"
@@ -88,7 +88,7 @@ const logout = async () => {
         'Authorization': `Bearer ${token}`
       }
     })
-    
+
     localStorage.removeItem('adminToken')
     localStorage.removeItem('adminEmail')
     router.push('/admin/login')
@@ -220,18 +220,18 @@ const logout = async () => {
     gap: 1rem;
     text-align: center;
   }
-  
+
   .nav-content {
     flex-wrap: wrap;
     justify-content: center;
   }
-  
+
   .nav-item {
     padding: 0.75rem 1rem;
   }
-  
+
   .admin-main {
     padding: 1rem;
   }
 }
-</style> 
+</style>

@@ -54,16 +54,16 @@
         <span>Showing {{ paginationInfo.start }} to {{ paginationInfo.end }} of {{ paginationInfo.total }} users</span>
       </div>
       <div class="pagination-controls">
-        <button 
-          @click="changePage(filters.page - 1)" 
+        <button
+          @click="changePage(filters.page - 1)"
           :disabled="filters.page <= 1"
           class="page-btn"
         >
           Previous
         </button>
         <span class="page-info">Page {{ filters.page }} of {{ paginationInfo.totalPages }}</span>
-        <button 
-          @click="changePage(filters.page + 1)" 
+        <button
+          @click="changePage(filters.page + 1)"
           :disabled="filters.page >= paginationInfo.totalPages"
           class="page-btn"
         >
@@ -240,14 +240,12 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { AgGridVue } from 'ag-grid-vue3'
-import 'ag-grid-community/styles/ag-grid.css'
-import 'ag-grid-community/styles/ag-theme-alpine.css'
-import { 
-  getUsersHandler, 
-  createUserHandler, 
-  updateUserHandler, 
+import {
+  getUsersHandler,
+  createUserHandler,
+  updateUserHandler,
   deleteUserHandler,
-  getUserHandler 
+  getUserHandler
 } from '@/bridge/client'
 
 interface User {
@@ -377,7 +375,7 @@ const showDetailModal = ref(false)
 
 const fetchUsers = async () => {
   loading.value = true
-  
+
   try {
     const token = localStorage.getItem('adminToken')
     if (!token) return
@@ -1076,34 +1074,34 @@ onMounted(() => {
   .admin-users {
     padding: 1rem;
   }
-  
+
   .actions-bar {
     flex-direction: column;
     gap: 1rem;
     align-items: stretch;
   }
-  
+
   .search-section {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .search-input {
     min-width: auto;
   }
-  
+
   .pagination-info {
     flex-direction: column;
     gap: 1rem;
     text-align: center;
   }
-  
+
   .form-actions {
     flex-direction: column;
   }
-  
+
   .detail-actions {
     flex-direction: column;
   }
 }
-</style> 
+</style>

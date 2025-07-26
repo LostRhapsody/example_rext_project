@@ -47,9 +47,9 @@
         <div v-if="loading" class="loading">Loading recent activity...</div>
         <div v-else-if="recentLogs.length === 0" class="no-data">No recent activity</div>
         <div v-else class="activity-items">
-          <div 
-            v-for="log in recentLogs" 
-            :key="log.id" 
+          <div
+            v-for="log in recentLogs"
+            :key="log.id"
             class="activity-item"
           >
             <div class="activity-icon" :class="getStatusClass(log.status_code || 0)">
@@ -106,11 +106,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { 
-  getAuditLogsHandler, 
-  getUsersHandler, 
-  getDatabaseTablesHandler, 
-  healthHandler 
+import {
+  getAuditLogsHandler,
+  getUsersHandler,
+  getDatabaseTablesHandler,
+  healthHandler
 } from '@/bridge/client'
 
 interface Log {
@@ -163,7 +163,7 @@ const recentLogs = ref<Log[]>([])
 
 const fetchDashboardData = async () => {
   loading.value = true
-  
+
   try {
     const token = localStorage.getItem('adminToken')
     if (!token) return
@@ -177,7 +177,7 @@ const fetchDashboardData = async () => {
       query: { limit: 5 },
       headers
     })
-    
+
     if (logsResponse.data) {
       recentLogs.value = logsResponse.data.data || []
       stats.value.totalLogs = recentLogs.value.length
@@ -188,7 +188,7 @@ const fetchDashboardData = async () => {
       query: { limit: 1 },
       headers
     })
-    
+
     if (usersResponse.data) {
       stats.value.totalUsers = usersResponse.data.pagination?.total || 0
     }
@@ -197,7 +197,7 @@ const fetchDashboardData = async () => {
     const tablesResponse = await getDatabaseTablesHandler({
       headers
     })
-    
+
     if (tablesResponse.data) {
       stats.value.totalTables = tablesResponse.data.length || 0
     }
@@ -206,7 +206,7 @@ const fetchDashboardData = async () => {
     const healthResponse = await healthHandler({
       headers
     })
-    
+
     if (healthResponse.data) {
       stats.value.systemStatus = healthResponse.data.status || 'Unknown'
     }
@@ -462,18 +462,18 @@ onMounted(() => {
   .admin-dashboard {
     padding: 1rem;
   }
-  
+
   .stats-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .quick-actions {
     grid-template-columns: 1fr;
   }
-  
+
   .activity-meta {
     flex-direction: column;
     gap: 0.5rem;
   }
 }
-</style> 
+</style>
