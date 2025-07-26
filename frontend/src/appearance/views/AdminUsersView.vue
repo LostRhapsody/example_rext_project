@@ -38,38 +38,12 @@
         :rowData="users"
         :defaultColDef="defaultColDef"
         :pagination="true"
-        :paginationPageSize="filters.limit"
-        :rowSelection="'single'"
+        :paginationPageSize="20"
+        :rowSelection="rowSelection"
         :animateRows="true"
         :domLayout="'autoHeight'"
-        class="ag-theme-alpine"
-        @grid-ready="onGridReady"
         @row-clicked="onRowClicked"
       />
-    </div>
-
-    <!-- Pagination Info -->
-    <div class="pagination-info">
-      <div class="pagination-stats">
-        <span>Showing {{ paginationInfo.start }} to {{ paginationInfo.end }} of {{ paginationInfo.total }} users</span>
-      </div>
-      <div class="pagination-controls">
-        <button
-          @click="changePage(filters.page - 1)"
-          :disabled="filters.page <= 1"
-          class="page-btn"
-        >
-          Previous
-        </button>
-        <span class="page-info">Page {{ filters.page }} of {{ paginationInfo.totalPages }}</span>
-        <button
-          @click="changePage(filters.page + 1)"
-          :disabled="filters.page >= paginationInfo.totalPages"
-          class="page-btn"
-        >
-          Next
-        </button>
-      </div>
     </div>
 
     <!-- Create User Modal -->
@@ -180,6 +154,9 @@
           <button @click="closeDeleteModal" class="close-btn">&times;</button>
         </div>
         <div class="modal-body">
+          <div v-if="deleteError" class="error-message">
+            {{ deleteError }}
+          </div>
           <div class="delete-warning">
             <p>Are you sure you want to delete this user?</p>
             <div class="user-info">
@@ -218,7 +195,7 @@
             </div>
             <div class="detail-item">
               <label>Created At:</label>
-              <span>{{ formatTimestamp(selectedUser.created_at) }}</span>
+              <span>{{ formatTimestamp(selectedUser.created_at || '') }}</span>
             </div>
             <div class="detail-item">
               <label>Admin Status:</label>
@@ -289,9 +266,9 @@ const paginationInfo = ref<PaginationInfo>({
 
 const filters = reactive({
   page: 1,
-  limit: 20,
+  limit: 9999,
   search: '',
-  is_admin: null as boolean | null
+  is_admin: ''
 })
 
 const showCreateModal = ref(false)
@@ -366,9 +343,14 @@ const defaultColDef = {
   floatingFilter: true
 }
 
+const rowSelection = {
+  mode: 'singleRow',
+} as any; // AG Grid type definitions are overly strict
+
 const creating = ref(false)
 const updating = ref(false)
 const deleting = ref(false)
+const deleteError = ref('')
 
 // Modal states
 const showDetailModal = ref(false)
@@ -380,13 +362,17 @@ const fetchUsers = async () => {
     const token = localStorage.getItem('adminToken')
     if (!token) return
 
-    const query: any = {
+    const query: GetUsersHandlerData["query"] = {
       page: filters.page,
       limit: filters.limit
     }
 
     if (filters.search) query.search = filters.search
-    if (filters.is_admin !== null) query.is_admin = filters.is_admin
+    if (filters.is_admin === 'true') {
+      query.is_admin = true
+    } else if (filters.is_admin === 'false') {
+      query.is_admin = false
+    }
 
     const response = await getUsersHandler({
       query,
@@ -488,7 +474,7 @@ const confirmDelete = async () => {
     const token = localStorage.getItem('adminToken')
     if (!token) return
 
-    const response = await deleteUserHandler({
+    const response = await deleteUserHandler<false>({
       path: { id: selectedUser.value.id },
       headers: {
         'Authorization': `Bearer ${token}`
@@ -498,10 +484,15 @@ const confirmDelete = async () => {
     if (response.data) {
       showDeleteModal.value = false
       selectedUser.value = null
+      deleteError.value = ''
       fetchUsers()
+    } else if (response.error) {
+      console.error('Error deleting user:', response.error)
+      deleteError.value = response.error.message || 'Failed to delete user'
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error deleting user:', error)
+    deleteError.value = error.message || 'Failed to delete user'
   } finally {
     deleting.value = false
   }
@@ -525,12 +516,6 @@ const nextPage = () => {
   }
 }
 
-const onGridReady = (params: any) => {
-  // Expose functions globally for AG Grid button clicks
-  ;(window as any).viewUser = viewUser
-  ;(window as any).editUser = editUser
-  ;(window as any).deleteUser = deleteUser
-}
 
 const onRowClicked = (params: any) => {
   selectedUser.value = params.data
@@ -551,6 +536,7 @@ const closeEditModal = () => {
 const closeDeleteModal = () => {
   showDeleteModal.value = false
   selectedUser.value = null
+  deleteError.value = ''
 }
 
 const closeDetailModal = () => {
@@ -637,7 +623,7 @@ const applyFilters = () => {
 
 const clearFilters = () => {
   filters.search = ''
-  filters.is_admin = null
+  filters.is_admin = ''
   filters.page = 1
   fetchUsers()
 }
@@ -961,6 +947,16 @@ onMounted(() => {
 .warning-text {
   color: #dc3545;
   font-weight: 600;
+}
+
+.error-message {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  border: 1px solid #f5c6cb;
+  font-size: 0.9rem;
 }
 
 .user-detail-grid {
