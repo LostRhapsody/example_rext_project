@@ -99,7 +99,7 @@ This project will implement a custom admin panel with request logging, user mana
 #### Break Time!
 
 There are some issues with the admin panel:
-- system health has uptime and database set to unknown... makes sense I guess? We don't report on these metrics nor do I know the best way to get them.
+- The system info was all faked- we've fixed that mostly with the system info service and updated health endpoint. Front-end still needs to be updated to use the new system info service. Also, we're still missing database connections and health, and disk and network metrics.
 - Could use a token service as well to generate, decode, and validate tokens.
 
 #### Phase 4: Advanced Features
