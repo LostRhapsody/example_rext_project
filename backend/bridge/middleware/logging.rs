@@ -67,7 +67,7 @@ pub async fn extract_request_response(
 
     // extract parts of the request so we can reconstruct it later
     let (req_parts, req_body) = req.into_parts();
-    
+
     // read the entire request body
     let req_bytes = match axum::body::to_bytes(req_body, usize::MAX).await {
         Ok(bytes) => bytes,
@@ -132,6 +132,21 @@ pub async fn request_logging_middleware(
 
     // if path is /api-docs/openapi.json, don't log
     if path == "/api-docs/openapi.json" {
+        return Ok(next.run(request).await);
+    }
+
+    // Don't log the logs endpoint to prevent recursive logging
+    if path == "/api/v1/admin/logs" {
+        return Ok(next.run(request).await);
+    }
+
+    // Don't log database inspection endpoints as they can return large amounts of data
+    if path.starts_with("/api/v1/admin/database") {
+        return Ok(next.run(request).await);
+    }
+
+    // Don't log users endpoint as it can return large amounts of user data
+    if path.starts_with("/api/v1/admin/users") {
         return Ok(next.run(request).await);
     }
 

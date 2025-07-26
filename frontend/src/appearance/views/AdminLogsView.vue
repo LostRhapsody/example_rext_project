@@ -67,11 +67,11 @@
             </div>
             <div v-if="selectedLog?.request_body" class="detail-item full-width">
               <label>Request Body:</label>
-              <pre>{{ selectedLog.request_body }}</pre>
+              <pre>{{ prettyPrintJson(selectedLog.request_body) }}</pre>
             </div>
             <div v-if="selectedLog?.response_body" class="detail-item full-width">
               <label>Response Body:</label>
-              <pre>{{ selectedLog.response_body }}</pre>
+              <pre>{{ prettyPrintJson(selectedLog.response_body) }}</pre>
             </div>
             <div v-if="selectedLog?.error_message" class="detail-item full-width">
               <label>Error Message:</label>
@@ -228,25 +228,11 @@ const closeLogModal = () => {
   selectedLog.value = null
 }
 
-const applyFilters = () => {
-  filters.page = 1
-  fetchLogs()
-}
-
-const clearFilters = () => {
-  filters.method = ''
-  filters.status_code = null
-  filters.user_id = ''
-  filters.start_date = ''
-  filters.end_date = ''
-  filters.page = 1
-  fetchLogs()
-}
-
-const changePage = (newPage: number) => {
-  if (newPage >= 1 && newPage <= paginationInfo.value.totalPages) {
-    filters.page = newPage
-    fetchLogs()
+const prettyPrintJson = (json: string) => {
+  try {
+    return JSON.stringify(JSON.parse(json), null, 2)
+  } catch {
+    return json
   }
 }
 
