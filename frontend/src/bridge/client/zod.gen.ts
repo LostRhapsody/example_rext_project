@@ -78,6 +78,7 @@ export const zErrorResponse = z.object({
 });
 
 export const zHealthResponse = z.object({
+    active_users_7_days: z.coerce.bigint().gte(BigInt(0)),
     cpu_usage: z.number(),
     database_connections: z.optional(z.union([
         z.int().gte(0),
@@ -94,9 +95,13 @@ export const zHealthResponse = z.object({
     memory_used: z.string(),
     network_bytes_received: z.string(),
     network_bytes_sent: z.string(),
+    new_users_24_hours: z.coerce.bigint().gte(BigInt(0)),
+    new_users_30_days: z.coerce.bigint().gte(BigInt(0)),
+    new_users_7_days: z.coerce.bigint().gte(BigInt(0)),
     process_count: z.int().gte(0),
     status: z.string(),
     timestamp: z.string(),
+    total_users: z.coerce.bigint().gte(BigInt(0)),
     uptime: z.string()
 });
 

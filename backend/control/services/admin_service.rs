@@ -486,6 +486,17 @@ impl AdminService {
     pub async fn get_health_status(db: &DatabaseConnection) -> HealthResponse {
         let system_metrics = SystemMonitorService::get_system_metrics(db).await;
 
+        // Get user analytics
+        let user_analytics = SystemMonitorService::get_user_analytics(db).await.unwrap_or_else(|_| {
+            crate::control::services::system_monitor::UserAnalytics {
+                total_users: 0,
+                active_users_7_days: 0,
+                new_users_24_hours: 0,
+                new_users_7_days: 0,
+                new_users_30_days: 0,
+            }
+        });
+
         // Calculate health status based on metrics
         let status = SystemMonitorService::get_health_status(&system_metrics);
 
@@ -511,6 +522,12 @@ impl AdminService {
             process_count: system_metrics.process_count,
             database_connections: system_metrics.database_connections,
             database_status: "Unknown".to_string(), // We'll enhance this later
+            // User Analytics
+            total_users: user_analytics.total_users,
+            active_users_7_days: user_analytics.active_users_7_days,
+            new_users_24_hours: user_analytics.new_users_24_hours,
+            new_users_7_days: user_analytics.new_users_7_days,
+            new_users_30_days: user_analytics.new_users_30_days,
         }
     }
 }

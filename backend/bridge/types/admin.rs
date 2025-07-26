@@ -136,6 +136,12 @@ pub struct HealthResponse {
     pub process_count: usize,
     pub database_connections: Option<u32>,
     pub database_status: String,
+    // User Analytics
+    pub total_users: u64,
+    pub active_users_7_days: u64,
+    pub new_users_24_hours: u64,
+    pub new_users_7_days: u64,
+    pub new_users_30_days: u64,
 }
 
 #[derive(Serialize, ToSchema)]

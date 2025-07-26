@@ -49,6 +49,7 @@ export type ErrorResponse = {
 };
 
 export type HealthResponse = {
+    active_users_7_days: number;
     cpu_usage: number;
     database_connections?: number | null;
     database_status: string;
@@ -62,9 +63,13 @@ export type HealthResponse = {
     memory_used: string;
     network_bytes_received: string;
     network_bytes_sent: string;
+    new_users_24_hours: number;
+    new_users_30_days: number;
+    new_users_7_days: number;
     process_count: number;
     status: string;
     timestamp: string;
+    total_users: number;
     uptime: string;
 };
 

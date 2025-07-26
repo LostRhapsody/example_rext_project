@@ -83,20 +83,24 @@
           </div>
           <div class="metric-content">
             <div class="metric-item">
-              <span class="metric-label">Active Users:</span>
-              <span class="metric-value">{{ metrics.activeUsers }}</span>
-            </div>
-            <div class="metric-item">
               <span class="metric-label">Total Users:</span>
-              <span class="metric-value">{{ metrics.totalUsers }}</span>
+              <span class="metric-value">{{ healthStatus.total_users || 0 }}</span>
             </div>
             <div class="metric-item">
-              <span class="metric-label">Admin Users:</span>
-              <span class="metric-value">{{ metrics.adminUsers }}</span>
+              <span class="metric-label">Active Users (7 days):</span>
+              <span class="metric-value">{{ healthStatus.active_users_7_days || 0 }}</span>
             </div>
             <div class="metric-item">
               <span class="metric-label">New Users (24h):</span>
-              <span class="metric-value">{{ metrics.newUsers24h }}</span>
+              <span class="metric-value">{{ healthStatus.new_users_24_hours || 0 }}</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">New Users (7 days):</span>
+              <span class="metric-value">{{ healthStatus.new_users_7_days || 0 }}</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">New Users (30 days):</span>
+              <span class="metric-value">{{ healthStatus.new_users_30_days || 0 }}</span>
             </div>
           </div>
         </div>
@@ -261,7 +265,6 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import {
   healthHandler,
   getAuditLogsHandler,
-  getUsersHandler,
   getDatabaseTablesHandler
 } from '@/bridge/client'
 import type { HealthResponse } from '@/bridge/client/types.gen'
@@ -271,10 +274,6 @@ interface Metrics {
   successRate: number
   avgResponseTime: number
   errorRate: number
-  activeUsers: number
-  totalUsers: number
-  adminUsers: number
-  newUsers24h: number
 }
 
 interface SystemInfo {
@@ -321,17 +320,18 @@ const healthStatus = ref<HealthResponse>({
   network_bytes_received: '',
   process_count: 0,
   database_connections: null,
-  database_status: 'Unknown'
+  database_status: 'Unknown',
+  total_users: 0,
+  active_users_7_days: 0,
+  new_users_24_hours: 0,
+  new_users_7_days: 0,
+  new_users_30_days: 0
 })
 const metrics = ref<Metrics>({
   totalRequests: 0,
   successRate: 0,
   avgResponseTime: 0,
-  errorRate: 0,
-  activeUsers: 0,
-  totalUsers: 0,
-  adminUsers: 0,
-  newUsers24h: 0
+  errorRate: 0
 })
 const systemInfo = ref<SystemInfo>({
   version: 'unknown',
@@ -380,7 +380,12 @@ const fetchHealthStatus = async () => {
       network_bytes_received: 'Unknown',
       process_count: 0,
       database_connections: null,
-      database_status: 'Error'
+      database_status: 'Error',
+      total_users: 0,
+      active_users_7_days: 0,
+      new_users_24_hours: 0,
+      new_users_7_days: 0,
+      new_users_30_days: 0
     }
   }
 }
@@ -394,7 +399,7 @@ const fetchMetrics = async () => {
       'Authorization': `Bearer ${token}`
     }
 
-    // Fetch logs for metrics calculation
+    // Fetch logs for request metrics calculation
     const logsResponse = await getAuditLogsHandler({
       query: { limit: 1000 },
       headers
@@ -403,7 +408,7 @@ const fetchMetrics = async () => {
     if (logsResponse.data) {
       const logs = logsResponse.data.data || []
 
-      // Calculate metrics from logs
+      // Calculate request metrics from logs
       const totalRequests = logs.length
       const successfulRequests = logs.filter((log: any) => log.status_code >= 200 && log.status_code < 300).length
       const errorRequests = logs.filter((log: any) => log.status_code >= 400).length
@@ -413,26 +418,8 @@ const fetchMetrics = async () => {
         totalRequests,
         successRate: totalRequests > 0 ? Math.round((successfulRequests / totalRequests) * 100) : 0,
         avgResponseTime: responseTimes.length > 0 ? Math.round(responseTimes.reduce((a: number, b: number) => a + b, 0) / responseTimes.length) : 0,
-        errorRate: totalRequests > 0 ? Math.round((errorRequests / totalRequests) * 100) : 0,
-        activeUsers: 0, // Would need additional tracking
-        totalUsers: 0, // Will be fetched separately
-        adminUsers: 0, // Will be fetched separately
-        newUsers24h: 0 // Would need additional tracking
+        errorRate: totalRequests > 0 ? Math.round((errorRequests / totalRequests) * 100) : 0
       }
-    }
-
-    // Fetch user statistics
-    const usersResponse = await getUsersHandler({
-      headers
-    })
-
-    if (usersResponse.data) {
-      console.log('usersResponse.data', usersResponse.data)
-      const totalUsers = usersResponse.data.pagination?.total || 0
-      const adminUsers = usersResponse.data.data?.filter((user: any) => user.is_admin).length || 0
-
-      metrics.value.totalUsers = totalUsers
-      metrics.value.adminUsers = adminUsers
     }
 
     // Fetch recent errors
