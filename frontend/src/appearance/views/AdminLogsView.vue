@@ -154,8 +154,9 @@ import { getAuditLogsHandler } from '@/bridge/client'
 import { AgGridVue } from 'ag-grid-vue3'
 import type { ColDef } from "ag-grid-community";
 
-const rowSelection = 'single'
-
+const rowSelection = {
+    mode: 'singleRow',
+} as any; // AG Grid type definitions are overly strict
 
 interface LogEntry {
   id: string
