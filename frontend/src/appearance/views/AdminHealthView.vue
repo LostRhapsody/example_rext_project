@@ -515,10 +515,10 @@ const formatTimestamp = (timestamp?: string | null) => {
 onMounted(() => {
   refreshMetrics()
 
-  // Update metrics every minute
+  // Update metrics every 30 seconds
   refreshInterval = setInterval(() => {
     refreshMetrics()
-  }, 60000)
+  }, 30000)
 })
 
 onUnmounted(() => {
