@@ -5,6 +5,70 @@
       <p>Monitor and analyze API request history</p>
     </div>
 
+    <!-- Filters -->
+    <div class="filters-section">
+      <div class="filters-grid">
+        <div class="filter-group">
+          <label>HTTP Method</label>
+          <select v-model="filters.method" @change="applyFilters">
+            <option value="">All Methods</option>
+            <option value="GET">GET</option>
+            <option value="POST">POST</option>
+            <option value="PUT">PUT</option>
+            <option value="DELETE">DELETE</option>
+            <option value="PATCH">PATCH</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label>Status Code</label>
+          <select v-model="filters.status_code" @change="applyFilters">
+            <option value="">All Status Codes</option>
+            <option value="200">200 - OK</option>
+            <option value="201">201 - Created</option>
+            <option value="400">400 - Bad Request</option>
+            <option value="401">401 - Unauthorized</option>
+            <option value="403">403 - Forbidden</option>
+            <option value="404">404 - Not Found</option>
+            <option value="500">500 - Server Error</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label>Start Date</label>
+          <input
+            type="date"
+            v-model="filters.start_date"
+            @change="applyFilters"
+          />
+        </div>
+
+        <div class="filter-group">
+          <label>End Date</label>
+          <input
+            type="date"
+            v-model="filters.end_date"
+            @change="applyFilters"
+          />
+        </div>
+
+        <div class="filter-group">
+          <label>User ID</label>
+          <input
+            type="text"
+            v-model="filters.user_id"
+            placeholder="Filter by user ID"
+            @input="applyFilters"
+          />
+        </div>
+      </div>
+
+      <div class="filter-actions">
+        <button @click="clearFilters" class="clear-btn">Clear Filters</button>
+        <button @click="applyFilters" class="refresh-btn">Refresh</button>
+      </div>
+    </div>
+
     <!-- AG Grid -->
     <div class="grid-container">
       <ag-grid-vue
@@ -12,7 +76,7 @@
         :defaultColDef="defaultColDef"
         :rowData="logs"
         :pagination="true"
-        :paginationPageSize="filters.limit"
+        :paginationPageSize="20"
         :rowSelection="rowSelection"
         :animateRows="true"
         :domLayout="'autoHeight'"
@@ -92,6 +156,7 @@ import type { ColDef } from "ag-grid-community";
 
 const rowSelection = 'single'
 
+
 interface LogEntry {
   id: string
   timestamp?: string | null
@@ -129,7 +194,7 @@ const paginationInfo = ref<PaginationInfo>({
 
 const filters = reactive({
   page: 1,
-  limit: 20,
+  limit: 9999,
   method: '',
   status_code: null as number | null,
   user_id: '',
@@ -216,6 +281,8 @@ const defaultColDef = {
   resizable: true,
   sortable: true,
   filter: true,
+  floatingFilter: true
+
 }
 
 const onRowClicked = (event: any) => {
@@ -266,7 +333,7 @@ const fetchLogs = async () => {
     }
 
     if (filters.method) query.method = filters.method
-    if (filters.status_code) query.status_code = filters.status_code
+    if (filters.status_code) query.status_code = Number(filters.status_code)
     if (filters.user_id) query.user_id = filters.user_id
     if (filters.start_date) query.start_date = filters.start_date
     if (filters.end_date) query.end_date = filters.end_date
@@ -295,6 +362,21 @@ const fetchLogs = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const applyFilters = () => {
+  filters.page = 1
+  fetchLogs()
+}
+
+const clearFilters = () => {
+  filters.method = ''
+  filters.status_code = null
+  filters.user_id = ''
+  filters.start_date = ''
+  filters.end_date = ''
+  filters.page = 1
+  fetchLogs()
 }
 
 onMounted(() => {

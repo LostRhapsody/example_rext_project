@@ -184,7 +184,7 @@ export type GetDatabaseTablesHandlerData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/api/v1/admin/admin/database/tables';
+    url: '/api/v1/admin/database/tables';
 };
 
 export type GetDatabaseTablesHandlerErrors = {
@@ -225,7 +225,7 @@ export type GetTableRecordsHandlerData = {
         page?: number;
         limit?: number;
     };
-    url: '/api/v1/admin/admin/database/tables/{table_name}';
+    url: '/api/v1/admin/database/tables/{table_name}';
 };
 
 export type GetTableRecordsHandlerErrors = {
@@ -258,7 +258,7 @@ export type HealthHandlerData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/api/v1/admin/admin/health';
+    url: '/api/v1/admin/health';
 };
 
 export type HealthHandlerErrors = {
@@ -287,7 +287,7 @@ export type AdminLoginHandlerData = {
     body: AdminLoginRequest;
     path?: never;
     query?: never;
-    url: '/api/v1/admin/admin/login';
+    url: '/api/v1/admin/login';
 };
 
 export type AdminLoginHandlerErrors = {
@@ -324,7 +324,7 @@ export type AdminLogoutHandlerData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/api/v1/admin/admin/logout';
+    url: '/api/v1/admin/logout';
 };
 
 export type AdminLogoutHandlerResponses = {
@@ -348,7 +348,7 @@ export type GetAuditLogsHandlerData = {
         start_date?: string | null;
         end_date?: string | null;
     };
-    url: '/api/v1/admin/admin/logs';
+    url: '/api/v1/admin/logs';
 };
 
 export type GetAuditLogsHandlerErrors = {
@@ -386,7 +386,7 @@ export type GetUsersHandlerData = {
         search?: string | null;
         is_admin?: boolean | null;
     };
-    url: '/api/v1/admin/admin/users';
+    url: '/api/v1/admin/users';
 };
 
 export type GetUsersHandlerErrors = {
@@ -419,7 +419,7 @@ export type CreateUserHandlerData = {
     body: CreateUserRequest;
     path?: never;
     query?: never;
-    url: '/api/v1/admin/admin/users';
+    url: '/api/v1/admin/users';
 };
 
 export type CreateUserHandlerErrors = {
@@ -465,7 +465,7 @@ export type DeleteUserHandlerData = {
         id: string;
     };
     query?: never;
-    url: '/api/v1/admin/admin/users/{id}';
+    url: '/api/v1/admin/users/{id}';
 };
 
 export type DeleteUserHandlerErrors = {
@@ -511,7 +511,7 @@ export type GetUserHandlerData = {
         id: string;
     };
     query?: never;
-    url: '/api/v1/admin/admin/users/{id}';
+    url: '/api/v1/admin/users/{id}';
 };
 
 export type GetUserHandlerErrors = {
@@ -553,7 +553,7 @@ export type UpdateUserHandlerData = {
         id: string;
     };
     query?: never;
-    url: '/api/v1/admin/admin/users/{id}';
+    url: '/api/v1/admin/users/{id}';
 };
 
 export type UpdateUserHandlerErrors = {

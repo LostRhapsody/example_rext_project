@@ -31,7 +31,7 @@ export const getDatabaseTablesHandler = <ThrowOnError extends boolean = false>(o
         responseValidator: async (data) => {
             return await zGetDatabaseTablesHandlerResponse.parseAsync(data);
         },
-        url: '/api/v1/admin/admin/database/tables',
+        url: '/api/v1/admin/database/tables',
         ...options
     });
 };
@@ -48,7 +48,7 @@ export const getTableRecordsHandler = <ThrowOnError extends boolean = false>(opt
         responseValidator: async (data) => {
             return await zGetTableRecordsHandlerResponse.parseAsync(data);
         },
-        url: '/api/v1/admin/admin/database/tables/{table_name}',
+        url: '/api/v1/admin/database/tables/{table_name}',
         ...options
     });
 };
@@ -65,7 +65,7 @@ export const healthHandler = <ThrowOnError extends boolean = false>(options?: Op
         responseValidator: async (data) => {
             return await zHealthHandlerResponse.parseAsync(data);
         },
-        url: '/api/v1/admin/admin/health',
+        url: '/api/v1/admin/health',
         ...options
     });
 };
@@ -82,7 +82,7 @@ export const adminLoginHandler = <ThrowOnError extends boolean = false>(options:
         responseValidator: async (data) => {
             return await zAdminLoginHandlerResponse.parseAsync(data);
         },
-        url: '/api/v1/admin/admin/login',
+        url: '/api/v1/admin/login',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -103,7 +103,7 @@ export const adminLogoutHandler = <ThrowOnError extends boolean = false>(options
         responseValidator: async (data) => {
             return await zAdminLogoutHandlerResponse.parseAsync(data);
         },
-        url: '/api/v1/admin/admin/logout',
+        url: '/api/v1/admin/logout',
         ...options
     });
 };
@@ -120,7 +120,7 @@ export const getAuditLogsHandler = <ThrowOnError extends boolean = false>(option
         responseValidator: async (data) => {
             return await zGetAuditLogsHandlerResponse.parseAsync(data);
         },
-        url: '/api/v1/admin/admin/logs',
+        url: '/api/v1/admin/logs',
         ...options
     });
 };
@@ -137,7 +137,7 @@ export const getUsersHandler = <ThrowOnError extends boolean = false>(options?: 
         responseValidator: async (data) => {
             return await zGetUsersHandlerResponse.parseAsync(data);
         },
-        url: '/api/v1/admin/admin/users',
+        url: '/api/v1/admin/users',
         ...options
     });
 };
@@ -154,7 +154,7 @@ export const createUserHandler = <ThrowOnError extends boolean = false>(options:
         responseValidator: async (data) => {
             return await zCreateUserHandlerResponse.parseAsync(data);
         },
-        url: '/api/v1/admin/admin/users',
+        url: '/api/v1/admin/users',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -175,7 +175,7 @@ export const deleteUserHandler = <ThrowOnError extends boolean = false>(options:
         responseValidator: async (data) => {
             return await zDeleteUserHandlerResponse.parseAsync(data);
         },
-        url: '/api/v1/admin/admin/users/{id}',
+        url: '/api/v1/admin/users/{id}',
         ...options
     });
 };
@@ -192,7 +192,7 @@ export const getUserHandler = <ThrowOnError extends boolean = false>(options: Op
         responseValidator: async (data) => {
             return await zGetUserHandlerResponse.parseAsync(data);
         },
-        url: '/api/v1/admin/admin/users/{id}',
+        url: '/api/v1/admin/users/{id}',
         ...options
     });
 };
@@ -209,7 +209,7 @@ export const updateUserHandler = <ThrowOnError extends boolean = false>(options:
         responseValidator: async (data) => {
             return await zUpdateUserHandlerResponse.parseAsync(data);
         },
-        url: '/api/v1/admin/admin/users/{id}',
+        url: '/api/v1/admin/users/{id}',
         ...options,
         headers: {
             'Content-Type': 'application/json',
