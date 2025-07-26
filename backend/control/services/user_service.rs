@@ -3,6 +3,7 @@ use argon2::{
     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
 };
 use sea_orm::*;
+use sea_orm::prelude::Expr;
 use uuid::Uuid;
 
 use crate::domain::{user::*, validation::*};
@@ -52,6 +53,7 @@ impl UserService {
             password_hash: Set(user.password_hash.clone()),
             created_at: Set(user.created_at.map(|dt| dt.fixed_offset())),
             is_admin: Set(Some(false)), // Default to non-admin
+            last_login: Set(None),
         };
 
         Users::insert(user_active_model)
@@ -105,6 +107,7 @@ impl UserService {
             password_hash: Set(user.password_hash.clone()),
             created_at: Set(user.created_at.map(|dt| dt.fixed_offset())),
             is_admin: Set(Some(is_admin)),
+            last_login: Set(None),
         };
 
         Users::insert(user_active_model)
@@ -116,6 +119,29 @@ impl UserService {
             })?;
 
         Ok(user)
+    }
+
+    /// Updates a user's last login timestamp (non-blocking)
+    pub async fn update_last_login(
+        db: &DatabaseConnection,
+        user_id: Uuid,
+    ) -> Result<(), AppError> {
+        let now = chrono::Utc::now();
+
+        // Use a non-blocking update operation
+        let update_result = Users::update_many()
+            .col_expr(users::Column::LastLogin, Expr::value(now.fixed_offset()))
+            .filter(users::Column::Id.eq(user_id))
+            .exec(db)
+            .await;
+
+        // We don't want to fail the login if this update fails
+        if let Err(e) = update_result {
+            // Log the error but don't return it to avoid blocking login
+            eprintln!("Failed to update last_login for user {}: {:?}", user_id, e);
+        }
+
+        Ok(())
     }
 
     /// Finds a user by email
@@ -138,6 +164,7 @@ impl UserService {
                 model.email,
                 model.password_hash,
                 model.created_at.map(|dt| dt.to_utc()),
+                model.last_login.map(|dt| dt.to_utc()),
             )
         }))
     }
@@ -162,6 +189,7 @@ impl UserService {
                 model.email,
                 model.password_hash,
                 model.created_at.map(|dt| dt.to_utc()),
+                model.last_login.map(|dt| dt.to_utc()),
             )
         }))
     }
@@ -235,6 +263,7 @@ impl UserService {
             updated_user.email,
             updated_user.password_hash,
             updated_user.created_at.map(|dt| dt.to_utc()),
+            updated_user.last_login.map(|dt| dt.to_utc()),
         ))
     }
 

@@ -38,6 +38,13 @@ impl AuthService {
             });
         }
 
+        // Update last login timestamp (non-blocking)
+        let db_clone = db.clone();
+        let user_id = user.id;
+        tokio::spawn(async move {
+            let _ = UserService::update_last_login(&db_clone, user_id).await;
+        });
+
         // Generate JWT token
         let token = Self::generate_jwt_token(&user.id)?;
 

@@ -17,6 +17,8 @@ pub struct Model {
     #[schema(value_type = String)]
     pub created_at: Option<DateTimeWithTimeZone>,
     pub is_admin: Option<bool>,
+    #[schema(value_type = String)]
+    pub last_login: Option<DateTimeWithTimeZone>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

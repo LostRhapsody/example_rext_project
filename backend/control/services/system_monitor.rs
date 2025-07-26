@@ -1,5 +1,6 @@
 use sysinfo::System;
 use sea_orm::DatabaseConnection;
+use chrono::{Utc, Duration};
 
 /// System monitoring service for collecting system metrics
 pub struct SystemMonitorService;
@@ -19,6 +20,16 @@ pub struct SystemMetrics {
     pub uptime: u64,
     pub process_count: usize,
     pub database_connections: Option<u32>,
+}
+
+/// User analytics data structure
+#[derive(Debug, Clone)]
+pub struct UserAnalytics {
+    pub total_users: u64,
+    pub active_users_7_days: u64,
+    pub new_users_24_hours: u64,
+    pub new_users_7_days: u64,
+    pub new_users_30_days: u64,
 }
 
 impl SystemMonitorService {
@@ -66,6 +77,52 @@ impl SystemMonitorService {
             process_count,
             database_connections,
         }
+    }
+
+    /// Get user analytics
+    pub async fn get_user_analytics(db: &DatabaseConnection) -> Result<UserAnalytics, sea_orm::DbErr> {
+        use crate::entity::models::{prelude::*, *};
+        use sea_orm::*;
+
+        let now = Utc::now();
+        let seven_days_ago = now - Duration::days(7);
+        let one_day_ago = now - Duration::days(1);
+        let thirty_days_ago = now - Duration::days(30);
+
+        // Get total users
+        let total_users = Users::find().count(db).await?;
+
+        // Get active users (logged in within last 7 days)
+        let active_users_7_days = Users::find()
+            .filter(users::Column::LastLogin.gte(seven_days_ago))
+            .count(db)
+            .await?;
+
+        // Get new users in last 24 hours
+        let new_users_24_hours = Users::find()
+            .filter(users::Column::CreatedAt.gte(one_day_ago))
+            .count(db)
+            .await?;
+
+        // Get new users in last 7 days
+        let new_users_7_days = Users::find()
+            .filter(users::Column::CreatedAt.gte(seven_days_ago))
+            .count(db)
+            .await?;
+
+        // Get new users in last 30 days
+        let new_users_30_days = Users::find()
+            .filter(users::Column::CreatedAt.gte(thirty_days_ago))
+            .count(db)
+            .await?;
+
+        Ok(UserAnalytics {
+            total_users,
+            active_users_7_days,
+            new_users_24_hours,
+            new_users_7_days,
+            new_users_30_days,
+        })
     }
 
     /// Get database connection count from SeaORM connection

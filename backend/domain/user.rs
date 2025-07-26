@@ -8,6 +8,7 @@ pub struct User {
     pub email: String,
     pub password_hash: String,
     pub created_at: Option<DateTime<Utc>>,
+    pub last_login: Option<DateTime<Utc>>,
 }
 
 impl User {
@@ -17,12 +18,14 @@ impl User {
         email: String,
         password_hash: String,
         created_at: Option<DateTime<Utc>>,
+        last_login: Option<DateTime<Utc>>,
     ) -> Self {
         Self {
             id,
             email,
             password_hash,
             created_at,
+            last_login,
         }
     }
 
@@ -33,6 +36,7 @@ impl User {
             email,
             password_hash,
             created_at: Some(Utc::now()),
+            last_login: None,
         }
     }
 }
