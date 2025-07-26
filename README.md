@@ -96,18 +96,22 @@ This project will implement a custom admin panel with request logging, user mana
 - [x] Database table browser
 - [x] System health dashboard
 
-#### Break Time!
-
-There are some issues with the admin panel:
-- The system info was all faked- we've fixed that mostly with the system info service and updated health endpoint. Front-end still needs to be updated to use the new system info service. Also, we're still missing database connections and health, and disk and network metrics.
-- Could use a token service as well to generate, decode, and validate tokens.
-
 #### Phase 4: Advanced Features
 - [ ] Real-time request monitoring (what does this mean?)
 - [ ] Performance metrics and analytics (what's the difference between this and seeing request ms time?)
 - [ ] Export functionality (CSV, JSON)
 - [ ] Admin user management (we already do this? What's this mean?)
 - [ ] Role-based permissions (yes, important. Will need a 'roles' table or a 'role' field on the user)
+- [ ] Database connections and health
+- [ ] System start time for sysinfo
+- [ ] backend (rust) app version (cargo.toml version)
+- [ ] environment (dev, prod, etc)
+- [ ] database type (sqlite, mysql, postgresql, if we can't extract dynamically, we can infer from DB connection string)
+- [ ] Server host, port, and protocol (http, https)
+- [ ] disk usage, total used, available
+- [ ] network usage, total sent, received
+- [ ] new user sign ups in the last 24 hours (just use the created_at field)
+- [ ] Active users (users who have logged in in the last week, add new field to users table, last_login)
 
 ### Current Status: Phase 3 - Admin Frontend ✅ (Complete)
 
