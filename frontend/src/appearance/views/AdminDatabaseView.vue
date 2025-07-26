@@ -27,20 +27,6 @@
 
     <!-- Table Records -->
     <div v-if="selectedTable" class="records-section">
-      <div class="records-header">
-        <h2>Records in {{ selectedTable }}</h2>
-        <div class="records-actions">
-          <select v-model="filters.limit" @change="fetchRecords" class="page-size-select">
-            <option value="10">10 per page</option>
-            <option value="25">25 per page</option>
-            <option value="50">50 per page</option>
-            <option value="100">100 per page</option>
-          </select>
-          <button @click="refreshRecords" class="refresh-btn">
-            <span>🔄</span> Refresh
-          </button>
-        </div>
-      </div>
 
       <!-- AG Grid for Records -->
       <div class="grid-container">
@@ -50,40 +36,14 @@
           :rowData="records"
           :defaultColDef="defaultColDef"
           :pagination="true"
-          :paginationPageSize="filters.limit"
-          :rowSelection="'single'"
+          :paginationPageSize="20"
+          :rowSelection="rowSelection"
           :animateRows="true"
           :domLayout="'autoHeight'"
-          class="ag-theme-alpine"
-          @grid-ready="onGridReady"
           @row-clicked="onRowClicked"
         />
         <div v-else class="no-records">
           <p>No records found in this table</p>
-        </div>
-      </div>
-
-      <!-- Pagination Info -->
-      <div class="pagination-info">
-        <div class="pagination-stats">
-          <span>Showing {{ paginationInfo.start }} to {{ paginationInfo.end }} of {{ paginationInfo.total }} records</span>
-        </div>
-        <div class="pagination-controls">
-          <button
-            @click="previousPage"
-            :disabled="filters.page <= 1"
-            class="page-btn"
-          >
-            Previous
-          </button>
-          <span class="page-info">Page {{ filters.page }} of {{ paginationInfo.totalPages }}</span>
-          <button
-            @click="nextPage"
-            :disabled="filters.page >= paginationInfo.totalPages"
-            class="page-btn"
-          >
-            Next
-          </button>
         </div>
       </div>
     </div>
@@ -149,7 +109,7 @@ const loading = ref(false)
 const tables = ref<DatabaseTable[]>([])
 const selectedTable = ref('')
 const columns = ref<string[]>([])
-const records = ref<unknown[][]>([])
+const records = ref<{ [key: string]: unknown }[]>([])
 const paginationInfo = ref<PaginationInfo>({
   page: 1,
   limit: 20,
@@ -161,21 +121,123 @@ const paginationInfo = ref<PaginationInfo>({
 
 const filters = reactive({
   page: 1,
-  limit: 20
+  limit: 9999
 })
 
 const showRecordModal = ref(false)
 const selectedRecord = ref<{ [key: string]: unknown } | null>(null)
 
+// Column configuration interface
+interface ColumnConfig {
+  hide?: boolean
+  flex?: number
+  width?: number
+  sortable?: boolean
+  filter?: boolean
+  valueFormatter?: (params: any) => string
+  cellRenderer?: string
+  cellRendererParams?: any
+  [key: string]: any // Allow additional AG Grid properties
+}
+
+// Column configuration overrides for specific tables
+const columnOverrides: Record<string, Record<string, ColumnConfig>> = {
+  // Example: Hide specific columns for certain tables
+  'Jobs': {
+    'id': { hide: true },
+    'attempts': { hide: true },
+    'max_attempts': { hide: true },
+    'lock_at': { hide: true },
+    'lock_by': { hide: true },
+    'last_error': { hide: true },
+    'job': { hide: true}
+  },
+  // Add more table-specific configurations as needed
+  'audit_logs': {
+    'id': { hide: true },
+    'user_agent': { hide: true },
+    'request_body': { hide: true },
+    'response_body': { hide: true },
+    'error_message': { hide: true }
+  }
+}
+
+/*
+ * USAGE EXAMPLES:
+ *
+ * 1. Hide a column for a specific table:
+ *    hideColumn('users', 'password_hash')
+ *
+ * 2. Show a previously hidden column:
+ *    showColumn('users', 'password_hash')
+ *
+ * 3. Add custom formatting for a column:
+ *    addColumnOverride('users', 'email', {
+ *      valueFormatter: (params) => params.value?.toLowerCase() || ''
+ *    })
+ *
+ * 4. Set custom width for a column:
+ *    addColumnOverride('audit_logs', 'details', { width: 400 })
+ *
+ * 5. Disable sorting for a column:
+ *    addColumnOverride('users', 'id', { sortable: false })
+ *
+ * 6. Remove a custom override:
+ *    removeColumnOverride('users', 'email')
+ */
+
+// Helper function to get column configuration for a specific table and field
+const getColumnConfig = (tableName: string, fieldName: string): ColumnConfig => {
+  const tableConfig = columnOverrides[tableName]
+  return tableConfig?.[fieldName] || {}
+}
+
+// Utility functions for dynamic column management
+const addColumnOverride = (tableName: string, fieldName: string, config: ColumnConfig) => {
+  if (!columnOverrides[tableName]) {
+    columnOverrides[tableName] = {}
+  }
+  columnOverrides[tableName][fieldName] = config
+}
+
+const removeColumnOverride = (tableName: string, fieldName: string) => {
+  if (columnOverrides[tableName]) {
+    delete columnOverrides[tableName][fieldName]
+  }
+}
+
+const hideColumn = (tableName: string, fieldName: string) => {
+  addColumnOverride(tableName, fieldName, { hide: true })
+}
+
+const showColumn = (tableName: string, fieldName: string) => {
+  addColumnOverride(tableName, fieldName, { hide: false })
+}
+
 const columnDefs = computed(() => {
-  return columns.value.map(column => ({
-    headerName: column,
-    field: column,
-    flex: 1,
-    sortable: true,
-    filter: true,
-    valueFormatter: (params: any) => formatValue(params.value)
-  }))
+  return columns.value
+    .map(column => {
+      const config = getColumnConfig(selectedTable.value, column)
+
+      // Skip columns that are configured to be hidden
+      if (config.hide) {
+        return null
+      }
+
+      return {
+        headerName: column,
+        field: column,
+        flex: config.flex || 1,
+        width: config.width,
+        sortable: config.sortable !== false,
+        filter: config.filter !== false,
+        valueFormatter: config.valueFormatter || ((params: any) => formatValue(params.value)),
+        cellRenderer: config.cellRenderer,
+        cellRendererParams: config.cellRendererParams,
+        ...config // Spread any additional AG Grid properties
+      }
+    })
+    .filter((col): col is NonNullable<typeof col> => col !== null) // Remove null entries (hidden columns)
 })
 
 const defaultColDef = {
@@ -184,6 +246,10 @@ const defaultColDef = {
   filter: true,
   floatingFilter: true
 }
+
+const rowSelection = {
+  mode: 'singleRow',
+} as any; // AG Grid type definitions are overly strict
 
 const fetchTables = async () => {
   loading.value = true
@@ -231,7 +297,16 @@ const fetchRecords = async () => {
     if (response.data) {
       const data = response.data
       columns.value = data.columns || []
-      records.value = data.records || []
+
+      // Transform records from arrays to objects for AG Grid
+      const rawRecords = data.records || []
+      records.value = rawRecords.map((recordArray: unknown[]) => {
+        const recordObject: { [key: string]: unknown } = {}
+        columns.value.forEach((column, index) => {
+          recordObject[column] = recordArray[index]
+        })
+        return recordObject
+      })
 
       // Calculate pagination info (approximate since we don't have total from API)
       paginationInfo.value = {
@@ -280,13 +355,7 @@ const onGridReady = (params: any) => {
 
 const onRowClicked = (event: any) => {
   const recordData = event.data
-  const recordObject: { [key: string]: unknown } = {}
-
-  columns.value.forEach((column, index) => {
-    recordObject[column] = recordData[column] || recordData[index]
-  })
-
-  selectedRecord.value = recordObject
+  selectedRecord.value = recordData
   showRecordModal.value = true
 }
 
