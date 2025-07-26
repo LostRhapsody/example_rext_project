@@ -49,8 +49,23 @@ export type ErrorResponse = {
 };
 
 export type HealthResponse = {
+    cpu_usage: number;
+    database_connections?: number | null;
+    database_status: string;
+    disk_available: string;
+    disk_total: string;
+    disk_usage: number;
+    disk_used: string;
+    memory_available: string;
+    memory_total: string;
+    memory_usage: number;
+    memory_used: string;
+    network_bytes_received: string;
+    network_bytes_sent: string;
+    process_count: number;
     status: string;
     timestamp: string;
+    uptime: string;
 };
 
 export type LoginRequest = {

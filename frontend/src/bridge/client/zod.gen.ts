@@ -78,8 +78,26 @@ export const zErrorResponse = z.object({
 });
 
 export const zHealthResponse = z.object({
+    cpu_usage: z.number(),
+    database_connections: z.optional(z.union([
+        z.int().gte(0),
+        z.null()
+    ])),
+    database_status: z.string(),
+    disk_available: z.string(),
+    disk_total: z.string(),
+    disk_usage: z.number(),
+    disk_used: z.string(),
+    memory_available: z.string(),
+    memory_total: z.string(),
+    memory_usage: z.number(),
+    memory_used: z.string(),
+    network_bytes_received: z.string(),
+    network_bytes_sent: z.string(),
+    process_count: z.int().gte(0),
     status: z.string(),
-    timestamp: z.string()
+    timestamp: z.string(),
+    uptime: z.string()
 });
 
 export const zLoginRequest = z.object({

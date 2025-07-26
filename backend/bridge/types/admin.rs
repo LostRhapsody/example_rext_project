@@ -121,6 +121,35 @@ pub struct TableRecordResponse {
 pub struct HealthResponse {
     pub status: String,
     pub timestamp: String,
+    pub uptime: String,
+    pub cpu_usage: f32,
+    pub memory_usage: f32,
+    pub memory_total: String,
+    pub memory_used: String,
+    pub memory_available: String,
+    pub disk_usage: f32,
+    pub disk_total: String,
+    pub disk_used: String,
+    pub disk_available: String,
+    pub network_bytes_sent: String,
+    pub network_bytes_received: String,
+    pub process_count: usize,
+    pub database_connections: Option<u32>,
+    pub database_status: String,
+}
+
+#[derive(Serialize, ToSchema)]
+pub struct SystemInfoResponse {
+    pub version: String,
+    pub environment: String,
+    pub start_time: String,
+    pub database_type: String,
+    pub database_tables: u64,
+    pub database_status: String,
+    pub host: String,
+    pub port: u16,
+    pub protocol: String,
+    pub system_metrics: HealthResponse,
 }
 
 // Helper functions for defaults

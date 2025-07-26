@@ -7,7 +7,7 @@ use crate::{
     domain::{validation::*},
     entity::models::{audit_logs, users},
     infrastructure::{app_error::AppError, jwt_claims::Claims},
-    control::services::user_service::UserService,
+    control::services::{user_service::UserService, system_monitor::SystemMonitorService},
 };
 use axum::http::StatusCode;
 use jsonwebtoken::{EncodingKey, Header, encode};
@@ -483,10 +483,34 @@ impl AdminService {
     }
 
     /// Get system health status
-    pub async fn get_health_status() -> HealthResponse {
+    pub async fn get_health_status(db: &DatabaseConnection) -> HealthResponse {
+        let system_metrics = SystemMonitorService::get_system_metrics(db).await;
+
+        // Calculate health status based on metrics
+        let status = SystemMonitorService::get_health_status(&system_metrics);
+
+        // Format memory and disk values
+        let memory_usage = SystemMonitorService::get_memory_usage_percentage(&system_metrics);
+        let disk_usage = SystemMonitorService::get_disk_usage_percentage(&system_metrics);
+
         HealthResponse {
-            status: "OK".to_string(),
+            status,
             timestamp: chrono::Utc::now().to_rfc3339(),
+            uptime: SystemMonitorService::format_uptime(system_metrics.uptime),
+            cpu_usage: system_metrics.cpu_usage,
+            memory_usage,
+            memory_total: SystemMonitorService::format_bytes(system_metrics.memory_total),
+            memory_used: SystemMonitorService::format_bytes(system_metrics.memory_used),
+            memory_available: SystemMonitorService::format_bytes(system_metrics.memory_available),
+            disk_usage,
+            disk_total: SystemMonitorService::format_bytes(system_metrics.disk_total),
+            disk_used: SystemMonitorService::format_bytes(system_metrics.disk_used),
+            disk_available: SystemMonitorService::format_bytes(system_metrics.disk_available),
+            network_bytes_sent: SystemMonitorService::format_bytes(system_metrics.network_bytes_sent),
+            network_bytes_received: SystemMonitorService::format_bytes(system_metrics.network_bytes_received),
+            process_count: system_metrics.process_count,
+            database_connections: system_metrics.database_connections,
+            database_status: "Connected".to_string(), // We'll enhance this later
         }
     }
 }

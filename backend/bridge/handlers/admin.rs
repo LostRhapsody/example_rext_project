@@ -332,7 +332,9 @@ pub async fn get_table_records_handler(
         ("jwt_token" = [])
     )
 )]
-pub async fn health_handler() -> impl IntoResponse {
-    let response = AdminService::get_health_status().await;
+pub async fn health_handler(
+    State(db): State<DatabaseConnection>,
+) -> impl IntoResponse {
+    let response = AdminService::get_health_status(&db).await;
     (StatusCode::OK, Json(response))
 }
