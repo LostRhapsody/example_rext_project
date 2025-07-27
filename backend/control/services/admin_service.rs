@@ -244,22 +244,11 @@ impl AdminService {
                 status_code: StatusCode::NOT_FOUND,
             })?;
 
-        // Get admin status from database
-        let user_model = users::Entity::find_by_id(user_id)
-            .one(db)
-            .await
-            .map_err(|e| AppError {
-                message: format!("Database error: {}", e),
-                status_code: StatusCode::INTERNAL_SERVER_ERROR,
-            })?;
-
-        let is_admin = user_model.map(|u| u.is_admin).flatten();
-
         Ok(UserResponse {
             id: user.id.to_string(),
             email: user.email,
             created_at: user.created_at.map(|t| t.to_rfc3339()),
-            is_admin,
+            is_admin: Some(user.is_admin),
         })
     }
 
@@ -299,22 +288,11 @@ impl AdminService {
         )
         .await?;
 
-        // Get admin status from database
-        let user_model = users::Entity::find_by_id(user_id)
-            .one(db)
-            .await
-            .map_err(|e| AppError {
-                message: format!("Database error: {}", e),
-                status_code: StatusCode::INTERNAL_SERVER_ERROR,
-            })?;
-
-        let is_admin = user_model.map(|u| u.is_admin).flatten();
-
         Ok(UserResponse {
             id: user.id.to_string(),
             email: user.email,
             created_at: user.created_at.map(|t| t.to_rfc3339()),
-            is_admin,
+            is_admin: Some(user.is_admin),
         })
     }
 

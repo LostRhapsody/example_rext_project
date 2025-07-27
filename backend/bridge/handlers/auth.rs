@@ -4,7 +4,7 @@ use axum::{
     http::StatusCode,
     response::IntoResponse,
 };
-use sea_orm::*;
+use sea_orm::DatabaseConnection;
 
 use crate::bridge::types::auth::{
     AUTH_TAG, AuthUser, LoginRequest, LoginResponse, ProfileResponse, RegisterRequest,

@@ -9,6 +9,7 @@ use uuid::Uuid;
 use crate::domain::{user::*, validation::*};
 use crate::entity::models::{prelude::*, *};
 use crate::infrastructure::app_error::AppError;
+use crate::control::services::database_service::DatabaseService;
 use axum::http::StatusCode;
 
 /// Service for user-related business operations
@@ -24,14 +25,16 @@ impl UserService {
         validate_registration_input(&registration.email, &registration.password)?;
 
         // Check if user already exists
-        let existing_user: Option<users::Model> = Users::find()
-            .filter(users::Column::Email.eq(registration.email.clone()))
-            .one(db)
-            .await
-            .map_err(|_| AppError {
-                message: "Database error".to_string(),
-                status_code: StatusCode::INTERNAL_SERVER_ERROR,
-            })?;
+        let existing_user: Option<users::Model> = DatabaseService::find_one_with_tracking(
+            db,
+            "users",
+            Users::find().filter(users::Column::Email.eq(registration.email.clone()))
+        )
+        .await
+        .map_err(|_| AppError {
+            message: "Database error".to_string(),
+            status_code: StatusCode::INTERNAL_SERVER_ERROR,
+        })?;
 
         if existing_user.is_some() {
             return Err(AppError {
@@ -78,14 +81,16 @@ impl UserService {
         validate_registration_input(&email, &password)?;
 
         // Check if user already exists
-        let existing_user: Option<users::Model> = Users::find()
-            .filter(users::Column::Email.eq(&email))
-            .one(db)
-            .await
-            .map_err(|_| AppError {
-                message: "Database error".to_string(),
-                status_code: StatusCode::INTERNAL_SERVER_ERROR,
-            })?;
+        let existing_user: Option<users::Model> = DatabaseService::find_one_with_tracking(
+            db,
+            "users",
+            Users::find().filter(users::Column::Email.eq(&email))
+        )
+        .await
+        .map_err(|_| AppError {
+            message: "Database error".to_string(),
+            status_code: StatusCode::INTERNAL_SERVER_ERROR,
+        })?;
 
         if existing_user.is_some() {
             return Err(AppError {
@@ -149,14 +154,16 @@ impl UserService {
         db: &DatabaseConnection,
         email: &str,
     ) -> Result<Option<User>, AppError> {
-        let user_model: Option<users::Model> = Users::find()
-            .filter(users::Column::Email.eq(email))
-            .one(db)
-            .await
-            .map_err(|_| AppError {
-                message: "Database error".to_string(),
-                status_code: StatusCode::INTERNAL_SERVER_ERROR,
-            })?;
+        let user_model: Option<users::Model> = DatabaseService::find_one_with_tracking(
+            db,
+            "users",
+            Users::find().filter(users::Column::Email.eq(email))
+        )
+        .await
+        .map_err(|_| AppError {
+            message: "Database error".to_string(),
+            status_code: StatusCode::INTERNAL_SERVER_ERROR,
+        })?;
 
         Ok(user_model.map(|model| {
             User::new(
@@ -165,6 +172,7 @@ impl UserService {
                 model.password_hash,
                 model.created_at.map(|dt| dt.to_utc()),
                 model.last_login.map(|dt| dt.to_utc()),
+                model.is_admin.unwrap_or(false),
             )
         }))
     }
@@ -174,14 +182,16 @@ impl UserService {
         db: &DatabaseConnection,
         user_id: uuid::Uuid,
     ) -> Result<Option<User>, AppError> {
-        let user_model: Option<users::Model> =
+        let user_model: Option<users::Model> = DatabaseService::find_one_with_tracking(
+            db,
+            "users",
             Users::find_by_id(user_id)
-                .one(db)
-                .await
-                .map_err(|_| AppError {
-                    message: "Database error".to_string(),
-                    status_code: StatusCode::INTERNAL_SERVER_ERROR,
-                })?;
+        )
+        .await
+        .map_err(|_| AppError {
+            message: "Database error".to_string(),
+            status_code: StatusCode::INTERNAL_SERVER_ERROR,
+        })?;
 
         Ok(user_model.map(|model| {
             User::new(
@@ -190,6 +200,7 @@ impl UserService {
                 model.password_hash,
                 model.created_at.map(|dt| dt.to_utc()),
                 model.last_login.map(|dt| dt.to_utc()),
+                model.is_admin.unwrap_or(false),
             )
         }))
     }
@@ -202,17 +213,20 @@ impl UserService {
         password: Option<String>,
         is_admin: Option<bool>,
     ) -> Result<User, AppError> {
-        let user_model = Users::find_by_id(user_id)
-            .one(db)
-            .await
-            .map_err(|_| AppError {
-                message: "Database error".to_string(),
-                status_code: StatusCode::INTERNAL_SERVER_ERROR,
-            })?
-            .ok_or(AppError {
-                message: "User not found".to_string(),
-                status_code: StatusCode::NOT_FOUND,
-            })?;
+        let user_model = DatabaseService::find_one_with_tracking(
+            db,
+            "users",
+            Users::find_by_id(user_id)
+        )
+        .await
+        .map_err(|_| AppError {
+            message: "Database error".to_string(),
+            status_code: StatusCode::INTERNAL_SERVER_ERROR,
+        })?
+        .ok_or(AppError {
+            message: "User not found".to_string(),
+            status_code: StatusCode::NOT_FOUND,
+        })?;
 
         let mut user_active_model: users::ActiveModel = user_model.clone().into();
 
@@ -221,15 +235,18 @@ impl UserService {
             validate_email(&new_email)?;
 
             // Check if email is already taken by another user
-            let existing_user = Users::find()
-                .filter(users::Column::Email.eq(&new_email))
-                .filter(users::Column::Id.ne(user_id))
-                .one(db)
-                .await
-                .map_err(|_| AppError {
-                    message: "Database error".to_string(),
-                    status_code: StatusCode::INTERNAL_SERVER_ERROR,
-                })?;
+            let existing_user = DatabaseService::find_one_with_tracking(
+                db,
+                "users",
+                Users::find()
+                    .filter(users::Column::Email.eq(&new_email))
+                    .filter(users::Column::Id.ne(user_id))
+            )
+            .await
+            .map_err(|_| AppError {
+                message: "Database error".to_string(),
+                status_code: StatusCode::INTERNAL_SERVER_ERROR,
+            })?;
 
             if existing_user.is_some() {
                 return Err(AppError {
@@ -264,6 +281,7 @@ impl UserService {
             updated_user.password_hash,
             updated_user.created_at.map(|dt| dt.to_utc()),
             updated_user.last_login.map(|dt| dt.to_utc()),
+            updated_user.is_admin.unwrap_or(false),
         ))
     }
 
@@ -272,17 +290,20 @@ impl UserService {
         db: &DatabaseConnection,
         user_id: Uuid,
     ) -> Result<(), AppError> {
-        let user_model = Users::find_by_id(user_id)
-            .one(db)
-            .await
-            .map_err(|_| AppError {
-                message: "Database error".to_string(),
-                status_code: StatusCode::INTERNAL_SERVER_ERROR,
-            })?
-            .ok_or(AppError {
-                message: "User not found".to_string(),
-                status_code: StatusCode::NOT_FOUND,
-            })?;
+        let user_model = DatabaseService::find_one_with_tracking(
+            db,
+            "users",
+            Users::find_by_id(user_id)
+        )
+        .await
+        .map_err(|_| AppError {
+            message: "Database error".to_string(),
+            status_code: StatusCode::INTERNAL_SERVER_ERROR,
+        })?
+        .ok_or(AppError {
+            message: "User not found".to_string(),
+            status_code: StatusCode::NOT_FOUND,
+        })?;
 
         let user_active_model: users::ActiveModel = user_model.into();
         user_active_model.delete(db).await.map_err(|_| AppError {

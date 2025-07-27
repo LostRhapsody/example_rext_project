@@ -9,6 +9,7 @@ use tracing::{error, info, warn};
 use crate::{
     bridge::types::auth::AuthUser,
     control::services::token_service::TokenService,
+    control::services::database_service::DatabaseService,
     entity::models::users,
     infrastructure::{app_error::AppError, logging::LoggingManager},
 };
@@ -25,21 +26,24 @@ pub async fn admin_middleware(
     let user_id = TokenService::extract_and_validate_token(&request)?;
 
     // Check if user has admin privileges
-    let user = users::Entity::find_by_id(user_id)
-        .filter(users::Column::IsAdmin.eq(true))
-        .one(&db)
-        .await
-        .map_err(|e| {
-            error!(request_id = %request_id, error = ?e, "Database error checking admin status");
-            AppError {
-                message: "Failed to verify admin status".to_string(),
-                status_code: axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            }
-        })?
-        .ok_or(AppError {
-            message: "Access denied: Admin privileges required".to_string(),
-            status_code: axum::http::StatusCode::FORBIDDEN,
-        })?;
+    let user = DatabaseService::find_one_with_tracking(
+        &db,
+        "users",
+        users::Entity::find_by_id(user_id)
+            .filter(users::Column::IsAdmin.eq(true))
+    )
+    .await
+    .map_err(|e| {
+        error!(request_id = %request_id, error = ?e, "Database error checking admin status");
+        AppError {
+            message: "Failed to verify admin status".to_string(),
+            status_code: axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    })?
+    .ok_or(AppError {
+        message: "Access denied: Admin privileges required".to_string(),
+        status_code: axum::http::StatusCode::FORBIDDEN,
+    })?;
 
     info!(
         request_id = %request_id,
