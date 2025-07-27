@@ -167,6 +167,11 @@ pub struct HealthResponse {
     pub temperature: Option<f32>,
     pub project_name: String,
     pub project_version: String,
+    // Server Information
+    pub server_host: String,
+    pub server_port: u16,
+    pub server_protocol: String,
+    pub environment: String,
 }
 
 #[derive(Serialize, ToSchema)]

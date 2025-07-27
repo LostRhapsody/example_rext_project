@@ -2,7 +2,10 @@ use sysinfo::{System, Disks, Networks, Components};
 use sea_orm::DatabaseConnection;
 use chrono::{Utc, Duration};
 use std::fs;
-use crate::control::services::database_service::{DatabaseMonitorService, DatabasePerformanceMetrics};
+use crate::control::services::{
+    database_service::{DatabaseMonitorService, DatabasePerformanceMetrics},
+    server_config::ServerConfigService,
+};
 
 /// System monitoring service for collecting system metrics
 pub struct SystemMonitorService;
@@ -257,7 +260,7 @@ impl SystemMonitorService {
         }
     }
 
-    /// Get project information from Cargo.toml
+        /// Get project information from Cargo.toml
     pub fn get_project_info() -> (String, String) {
         // Try to read Cargo.toml from the project root
         let cargo_toml_path = "Cargo.toml";
@@ -291,6 +294,16 @@ impl SystemMonitorService {
                 ("unknown".to_string(), "unknown".to_string())
             }
         }
+    }
+
+    /// Get server information
+    pub fn get_server_info() -> (String, u16, String, String) {
+        let host = ServerConfigService::get_host();
+        let port = ServerConfigService::get_port();
+        let protocol = ServerConfigService::get_protocol();
+        let environment = ServerConfigService::get_environment();
+
+        (host, port, protocol, environment)
     }
 }
 

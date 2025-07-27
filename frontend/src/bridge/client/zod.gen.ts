@@ -107,6 +107,7 @@ export const zHealthResponse = z.object({
     disk_total: z.string(),
     disk_usage: z.number(),
     disk_used: z.string(),
+    environment: z.string(),
     host_name: z.optional(z.union([
         z.string(),
         z.null()
@@ -131,6 +132,9 @@ export const zHealthResponse = z.object({
     process_count: z.int().gte(0),
     project_name: z.string(),
     project_version: z.string(),
+    server_host: z.string(),
+    server_port: z.int().gte(0),
+    server_protocol: z.string(),
     status: z.string(),
     system_name: z.optional(z.union([
         z.string(),

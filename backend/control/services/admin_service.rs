@@ -505,6 +505,9 @@ impl AdminService {
         // Get project information
         let (project_name, project_version) = SystemMonitorService::get_project_info();
 
+        // Get server information
+        let (server_host, server_port, server_protocol, environment) = SystemMonitorService::get_server_info();
+
         HealthResponse {
             status,
             timestamp: chrono::Utc::now().to_rfc3339(),
@@ -539,6 +542,11 @@ impl AdminService {
             temperature: system_metrics.temperature,
             project_name,
             project_version,
+            // Server Information
+            server_host,
+            server_port,
+            server_protocol,
+            environment,
         }
     }
 }

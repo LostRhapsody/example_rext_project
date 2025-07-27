@@ -72,6 +72,7 @@ export type HealthResponse = {
     disk_total: string;
     disk_usage: number;
     disk_used: string;
+    environment: string;
     host_name?: string | null;
     kernel_version?: string | null;
     memory_available: string;
@@ -87,6 +88,9 @@ export type HealthResponse = {
     process_count: number;
     project_name: string;
     project_version: string;
+    server_host: string;
+    server_port: number;
+    server_protocol: string;
     status: string;
     system_name?: string | null;
     temperature?: number | null;

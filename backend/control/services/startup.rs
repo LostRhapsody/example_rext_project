@@ -5,7 +5,7 @@ use crate::infrastructure::{
     database::DatabaseManager, job_queue::JobQueueManager, scheduler::SchedulerManager,
     server::ServerManager,
 };
-use crate::control::services::user_service::UserService;
+use crate::control::services::{user_service::UserService, server_config::ServerConfigService};
 
 /// Application startup orchestrator
 pub struct StartupService;
@@ -15,6 +15,9 @@ impl StartupService {
     pub async fn initialize() -> Result<DatabaseConnection, Box<dyn std::error::Error>> {
         // Load environment variables from .env file
         dotenvy::dotenv().ok();
+
+        // Initialize server configuration
+        ServerConfigService::initialize();
 
         // Get environment configuration
         let environment = env::var("ENVIRONMENT").unwrap_or_else(|_| "development".to_string());
