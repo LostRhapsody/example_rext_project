@@ -8,6 +8,7 @@ pub struct User {
     pub email: String,
     pub password_hash: String,
     pub created_at: Option<DateTime<Utc>>,
+    #[allow(dead_code)]
     pub last_login: Option<DateTime<Utc>>,
     pub is_admin: bool,
 }
