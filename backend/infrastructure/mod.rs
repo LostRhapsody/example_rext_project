@@ -7,3 +7,4 @@ pub mod logging;
 pub mod openapi;
 pub mod scheduler;
 pub mod server;
+pub mod websocket;

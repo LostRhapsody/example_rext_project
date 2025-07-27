@@ -7,7 +7,7 @@ use serde_json::Value;
 use crate::{
     bridge::types::auth::AuthUser,
     entity::models::audit_logs,
-    infrastructure::logging::LoggingManager,
+    infrastructure::{logging::LoggingManager, websocket::broadcast_audit_log},
 };
 
 const MAX_BODY_LOG_BYTES: usize = 4096; // 4KB
@@ -150,6 +150,11 @@ pub async fn request_logging_middleware(
         return Ok(next.run(request).await);
     }
 
+    // Don't log WebSocket endpoint to prevent recursive logging
+    if path == "/api/v1/admin/ws" {
+        return Ok(next.run(request).await);
+    }
+
     let ip_address = request
         .headers()
         .get("x-forwarded-for")
@@ -194,6 +199,18 @@ pub async fn request_logging_middleware(
     let error_message_clone = error_message.clone();
     let user_id_clone = user_id.clone();
 
+    // Create audit log entry
+    let audit_log_id = uuid::Uuid::new_v4().to_string();
+    let timestamp = chrono::Utc::now().to_rfc3339();
+
+    // Clone values for WebSocket broadcast
+    let method_for_ws = method_clone.clone();
+    let path_for_ws = path_clone.clone();
+    let ip_address_for_ws = ip_address_clone.clone();
+    let user_agent_for_ws = user_agent_clone.clone();
+    let error_message_for_ws = error_message_clone.clone();
+    let user_id_for_ws = user_id_clone.clone();
+
     // Insert audit log asynchronously (don't block response)
     let audit_log = audit_logs::ActiveModel {
         id: Set(uuid::Uuid::new_v4()),
@@ -215,6 +232,20 @@ pub async fn request_logging_middleware(
             error!(request_id = %request_id_clone, error = ?e, "Failed to insert audit log");
         } else {
             info!(request_id = %request_id_clone, "Audit log inserted");
+
+            // Broadcast the audit log to WebSocket clients
+            broadcast_audit_log(
+                audit_log_id,
+                timestamp,
+                method_for_ws,
+                path_for_ws,
+                Some(status_code),
+                Some(response_time_ms),
+                user_id_for_ws.map(|id| id.to_string()),
+                ip_address_for_ws,
+                user_agent_for_ws,
+                error_message_for_ws,
+            ).await;
         }
     });
 

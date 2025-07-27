@@ -39,12 +39,18 @@ impl ServerManager {
             .nest("/api/v1/admin", admin_router(db.clone()))
             .split_for_parts();
 
+        // Create WebSocket router with database state
+        let websocket_router = Router::new()
+            .route("/api/v1/admin/ws", get(crate::bridge::handlers::websocket::websocket_handler))
+            .with_state(db.clone());
+
         let mut router = router
             .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", api.clone()))
             .merge(Redoc::with_url("/redoc", api.clone()))
             .merge(RapiDoc::new("/api-docs/openapi.json").path("/rapidoc"))
             .merge(Scalar::with_url("/scalar", api))
             .route("/", get(Self::root_handler))
+            .merge(websocket_router)
             .route_layer(middleware::from_fn_with_state(db.clone(),request_logging_middleware));
 
         // Add CORS layer for development

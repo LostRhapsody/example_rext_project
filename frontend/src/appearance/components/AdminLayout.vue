@@ -72,6 +72,11 @@ const navItems = ref([
     path: '/admin/health',
     label: 'System Health',
     icon: '💚'
+  },
+  {
+    path: '/admin/monitor',
+    label: 'Real-time Monitor',
+    icon: '📡'
   }
 ])
 

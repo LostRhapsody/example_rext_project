@@ -10,6 +10,7 @@ import AdminLogsView from '@/views/AdminLogsView.vue'
 import AdminUsersView from '@/views/AdminUsersView.vue'
 import AdminDatabaseView from '@/views/AdminDatabaseView.vue'
 import AdminHealthView from '@/views/AdminHealthView.vue'
+import AdminRealtimeMonitorView from '@/views/AdminRealtimeMonitorView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -70,6 +71,11 @@ const router = createRouter({
           path: 'health',
           name: 'admin-health',
           component: AdminHealthView,
+        },
+        {
+          path: 'monitor',
+          name: 'admin-realtime-monitor',
+          component: AdminRealtimeMonitorView,
         },
       ],
     },

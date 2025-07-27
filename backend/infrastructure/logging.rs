@@ -4,6 +4,8 @@ use tracing_subscriber::{
     EnvFilter,
 };
 
+use crate::infrastructure::websocket::broadcast_system_log;
+
 /// Logging configuration manager
 pub struct LoggingManager;
 
@@ -28,14 +30,15 @@ impl LoggingManager {
                     .add_directive("tower_http=warn".parse().unwrap())
             });
 
-        // Configure tracing subscriber
+        // Configure tracing subscriber with custom layer for WebSocket broadcasting
         let subscriber = tracing_subscriber::fmt()
             .with_env_filter(env_filter)
             .with_timer(UtcTime::rfc_3339())
             .with_span_events(FmtSpan::CLOSE)
             .with_target(false)
             .with_thread_ids(true)
-            .with_thread_names(true);
+            .with_thread_names(true)
+            .with_ansi(environment != "production");
 
         // Use JSON format in production, pretty format in development
         if environment == "production" {
@@ -44,11 +47,27 @@ impl LoggingManager {
             subscriber.pretty().init();
         }
 
+        // Set up custom event subscriber for WebSocket broadcasting
         tracing::info!("Logging initialized for environment: {}", environment);
+
+        // Broadcast the initialization message
+        let environment_clone = environment.clone();
+        tokio::spawn(async move {
+            broadcast_system_log(
+                "info".to_string(),
+                format!("Logging system initialized for environment: {}", environment_clone),
+                "logging".to_string(),
+            ).await;
+        });
     }
 
     /// Create a request ID for tracking requests across the system
     pub fn generate_request_id() -> String {
         uuid::Uuid::new_v4().to_string()
+    }
+
+    /// Broadcast a log message to WebSocket clients
+    pub async fn broadcast_log(level: &str, message: &str, target: &str) {
+        broadcast_system_log(level.to_string(), message.to_string(), target.to_string()).await;
     }
 }
