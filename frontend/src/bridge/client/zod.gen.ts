@@ -68,6 +68,19 @@ export const zCreateUserRequest = z.object({
     password: z.string()
 });
 
+export const zDatabasePerformanceResponse = z.object({
+    avg_execution_time_ms: z.number(),
+    critical_query_count: z.coerce.bigint().gte(BigInt(0)),
+    error_rate: z.number(),
+    max_execution_time_ms: z.number(),
+    p50_execution_time_ms: z.number(),
+    p95_execution_time_ms: z.number(),
+    p99_execution_time_ms: z.number(),
+    queries_per_second: z.number(),
+    slow_query_count: z.coerce.bigint().gte(BigInt(0)),
+    total_queries: z.coerce.bigint().gte(BigInt(0))
+});
+
 export const zDatabaseTableResponse = z.object({
     name: z.string(),
     record_count: z.coerce.bigint().gte(BigInt(0))
@@ -83,6 +96,10 @@ export const zHealthResponse = z.object({
     database_connections: z.optional(z.union([
         z.int().gte(0),
         z.null()
+    ])),
+    database_performance: z.optional(z.union([
+        z.null(),
+        zDatabasePerformanceResponse
     ])),
     database_status: z.string(),
     disk_available: z.string(),

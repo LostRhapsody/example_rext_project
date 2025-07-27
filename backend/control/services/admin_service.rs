@@ -7,7 +7,7 @@ use crate::{
     domain::{validation::*},
     entity::models::{audit_logs, users},
     infrastructure::{app_error::AppError, jwt_claims::Claims},
-    control::services::{user_service::UserService, system_monitor::SystemMonitorService},
+    control::services::{user_service::UserService, system_monitor::SystemMonitorService, database_service::DatabaseMonitorService, database_service::DatabaseService},
 };
 use axum::http::StatusCode;
 use jsonwebtoken::{EncodingKey, Header, encode};
@@ -34,14 +34,16 @@ impl AdminService {
             })?;
 
         // Check if user is admin by querying the database directly for the is_admin field
-        let user_model = users::Entity::find()
-            .filter(users::Column::Email.eq(&login.email))
-            .one(db)
-            .await
-            .map_err(|e| AppError {
-                message: format!("Database error: {}", e),
-                status_code: StatusCode::INTERNAL_SERVER_ERROR,
-            })?;
+        let user_model = DatabaseService::find_one_with_tracking(
+            db,
+            "users",
+            users::Entity::find().filter(users::Column::Email.eq(&login.email))
+        )
+        .await
+        .map_err(|e| AppError {
+            message: format!("Database error: {}", e),
+            status_code: StatusCode::INTERNAL_SERVER_ERROR,
+        })?;
 
         let user_model = user_model.ok_or(AppError {
             message: "Invalid credentials".to_string(),
@@ -497,6 +499,24 @@ impl AdminService {
             }
         });
 
+        // Get database performance metrics
+        let database_performance = DatabaseMonitorService::get_performance_metrics(db).await.ok()
+            .map(|metrics| DatabasePerformanceResponse {
+                total_queries: metrics.total_queries,
+                avg_execution_time_ms: metrics.avg_execution_time_ms,
+                p50_execution_time_ms: metrics.p50_execution_time_ms,
+                p95_execution_time_ms: metrics.p95_execution_time_ms,
+                p99_execution_time_ms: metrics.p99_execution_time_ms,
+                max_execution_time_ms: metrics.max_execution_time_ms,
+                error_rate: metrics.error_rate,
+                queries_per_second: metrics.queries_per_second,
+                slow_query_count: metrics.slow_query_count,
+                critical_query_count: metrics.critical_query_count,
+            });
+
+        // Get database health status
+        let database_status = DatabaseMonitorService::get_database_health_status(db).await;
+
         // Calculate health status based on metrics
         let status = SystemMonitorService::get_health_status(&system_metrics);
 
@@ -521,7 +541,8 @@ impl AdminService {
             network_bytes_received: SystemMonitorService::format_bytes(system_metrics.network_bytes_received),
             process_count: system_metrics.process_count,
             database_connections: system_metrics.database_connections,
-            database_status: "Unknown".to_string(), // We'll enhance this later
+            database_status,
+            database_performance,
             // User Analytics
             total_users: user_analytics.total_users,
             active_users_7_days: user_analytics.active_users_7_days,

@@ -116,6 +116,21 @@ pub struct TableRecordResponse {
     pub records: Vec<Vec<serde_json::Value>>,
 }
 
+// Database Performance Metrics
+#[derive(Serialize, ToSchema)]
+pub struct DatabasePerformanceResponse {
+    pub total_queries: u64,
+    pub avg_execution_time_ms: f64,
+    pub p50_execution_time_ms: f64,
+    pub p95_execution_time_ms: f64,
+    pub p99_execution_time_ms: f64,
+    pub max_execution_time_ms: f64,
+    pub error_rate: f64,
+    pub queries_per_second: f64,
+    pub slow_query_count: u64,
+    pub critical_query_count: u64,
+}
+
 // System Health
 #[derive(Serialize, ToSchema)]
 pub struct HealthResponse {
@@ -136,6 +151,7 @@ pub struct HealthResponse {
     pub process_count: usize,
     pub database_connections: Option<u32>,
     pub database_status: String,
+    pub database_performance: Option<DatabasePerformanceResponse>,
     // User Analytics
     pub total_users: u64,
     pub active_users_7_days: u64,

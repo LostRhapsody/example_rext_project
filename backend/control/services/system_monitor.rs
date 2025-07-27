@@ -1,6 +1,7 @@
 use sysinfo::System;
 use sea_orm::DatabaseConnection;
 use chrono::{Utc, Duration};
+use crate::control::services::database_service::{DatabaseMonitorService, DatabasePerformanceMetrics};
 
 /// System monitoring service for collecting system metrics
 pub struct SystemMonitorService;
@@ -20,6 +21,8 @@ pub struct SystemMetrics {
     pub uptime: u64,
     pub process_count: usize,
     pub database_connections: Option<u32>,
+    #[allow(dead_code)]
+    pub database_performance: Option<DatabasePerformanceMetrics>,
 }
 
 /// User analytics data structure
@@ -63,6 +66,9 @@ impl SystemMonitorService {
         // Get database connection count (if available)
         let database_connections = Self::get_database_connections(db).await;
 
+        // Get database performance metrics
+        let database_performance = DatabaseMonitorService::get_performance_metrics(db).await.ok();
+
         SystemMetrics {
             cpu_usage,
             memory_total,
@@ -76,6 +82,7 @@ impl SystemMonitorService {
             uptime,
             process_count,
             database_connections,
+            database_performance,
         }
     }
 
@@ -243,6 +250,7 @@ mod tests {
             uptime: 0,
             process_count: 0,
             database_connections: None,
+            database_performance: None,
         };
 
         assert_eq!(SystemMonitorService::get_memory_usage_percentage(&metrics), 50.0);
@@ -263,6 +271,7 @@ mod tests {
             uptime: 0,
             process_count: 0,
             database_connections: None,
+            database_performance: None,
         };
 
         assert_eq!(SystemMonitorService::get_health_status(&healthy_metrics), "Healthy");

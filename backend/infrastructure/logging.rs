@@ -67,6 +67,7 @@ impl LoggingManager {
     }
 
     /// Broadcast a log message to WebSocket clients
+    #[allow(dead_code)]
     pub async fn broadcast_log(level: &str, message: &str, target: &str) {
         broadcast_system_log(level.to_string(), message.to_string(), target.to_string()).await;
     }

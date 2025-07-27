@@ -83,6 +83,7 @@ impl WebSocketManager {
     }
 
     /// Add a new connection
+    #[allow(dead_code)]
     pub async fn add_connection(&self, connection_id: String) -> broadcast::Receiver<WebSocketMessage> {
         let (tx, _rx) = broadcast::channel(100);
         self.connections.write().await.insert(connection_id, tx);
@@ -100,6 +101,7 @@ impl WebSocketManager {
     }
 
     /// Send a message to a specific connection
+    #[allow(dead_code)]
     pub async fn send_to_connection(&self, connection_id: &str, message: WebSocketMessage) -> bool {
         if let Some(tx) = self.connections.read().await.get(connection_id) {
             tx.send(message).is_ok()
@@ -153,6 +155,7 @@ pub async fn broadcast_system_log(level: String, message: String, target: String
 }
 
 /// Helper function to broadcast performance metrics
+#[allow(dead_code)]
 pub async fn broadcast_performance_metrics(
     total_requests: u64,
     success_rate: f64,

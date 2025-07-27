@@ -1,16 +1,28 @@
 use sea_orm::*;
 use sqlx::SqlitePool;
 use std::env;
+use std::time::Duration;
 
 /// Database connection manager
 pub struct DatabaseManager;
 
 impl DatabaseManager {
-    /// Creates and configures the database connection
+        /// Creates and configures the database connection
     pub async fn create_connection() -> Result<DatabaseConnection, Box<dyn std::error::Error>> {
         let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set in .env file");
 
-        let db: DatabaseConnection = Database::connect(&database_url)
+        let mut opts = ConnectOptions::new(database_url.clone());
+
+        // Enable SQLx logging for query performance tracking
+        opts.sqlx_logging(true)
+            .max_connections(20)
+            .min_connections(5)
+            .connect_timeout(Duration::from_secs(8))
+            .acquire_timeout(Duration::from_secs(8))
+            .idle_timeout(Duration::from_secs(8))
+            .max_lifetime(Duration::from_secs(8));
+
+        let db: DatabaseConnection = Database::connect(opts)
             .await
             .expect("Failed to connect to database");
 

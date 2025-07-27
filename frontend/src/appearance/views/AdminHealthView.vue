@@ -170,6 +170,74 @@
             </div>
           </div>
         </div>
+
+        <!-- Database Performance Metrics -->
+        <div class="metric-card" v-if="healthStatus.database_performance">
+          <div class="metric-header">
+            <h3>Database Performance</h3>
+            <span class="status-badge" :class="getStatusClass(healthStatus.database_status)">
+              {{ healthStatus.database_status }}
+            </span>
+          </div>
+          <div class="metric-content">
+            <div class="metric-item">
+              <span class="metric-label">Total Queries (1h):</span>
+              <span class="metric-value">{{ healthStatus.database_performance.total_queries }}</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Queries/Second:</span>
+              <span class="metric-value">{{ healthStatus.database_performance.queries_per_second.toFixed(2) }}</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Avg Response Time:</span>
+              <span class="metric-value" :class="getResponseTimeClass(healthStatus.database_performance.avg_execution_time_ms)">
+                {{ healthStatus.database_performance.avg_execution_time_ms.toFixed(1) }}ms
+              </span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">P50 Response Time:</span>
+              <span class="metric-value" :class="getResponseTimeClass(healthStatus.database_performance.p50_execution_time_ms)">
+                {{ healthStatus.database_performance.p50_execution_time_ms.toFixed(1) }}ms
+              </span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">P95 Response Time:</span>
+              <span class="metric-value" :class="getResponseTimeClass(healthStatus.database_performance.p95_execution_time_ms)">
+                {{ healthStatus.database_performance.p95_execution_time_ms.toFixed(1) }}ms
+              </span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">P99 Response Time:</span>
+              <span class="metric-value" :class="getResponseTimeClass(healthStatus.database_performance.p99_execution_time_ms)">
+                {{ healthStatus.database_performance.p99_execution_time_ms.toFixed(1) }}ms
+              </span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Max Response Time:</span>
+              <span class="metric-value" :class="getResponseTimeClass(healthStatus.database_performance.max_execution_time_ms)">
+                {{ healthStatus.database_performance.max_execution_time_ms.toFixed(1) }}ms
+              </span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Error Rate:</span>
+              <span class="metric-value" :class="getErrorRateClass(healthStatus.database_performance.error_rate)">
+                {{ healthStatus.database_performance.error_rate.toFixed(2) }}%
+              </span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Slow Queries (>500ms):</span>
+              <span class="metric-value" :class="getSlowQueryClass(healthStatus.database_performance.slow_query_count)">
+                {{ healthStatus.database_performance.slow_query_count }}
+              </span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Critical Queries (>1000ms):</span>
+              <span class="metric-value" :class="getCriticalQueryClass(healthStatus.database_performance.critical_query_count)">
+                {{ healthStatus.database_performance.critical_query_count }}
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -267,7 +335,7 @@ import {
   getAuditLogsHandler,
   getDatabaseTablesHandler
 } from '@/bridge/client'
-import type { HealthResponse } from '@/bridge/client/types.gen'
+import type { HealthResponse, DatabasePerformanceResponse } from '@/bridge/client/types.gen'
 
 interface Metrics {
   totalRequests: number
@@ -479,6 +547,31 @@ const getUsageClass = (usage: number) => {
   if (usage > 90) return 'status-error'
   if (usage > 80) return 'status-warning'
   if (usage > 70) return 'status-warning'
+  return 'status-success'
+}
+
+const getResponseTimeClass = (time: number) => {
+  if (time > 1000) return 'status-error'
+  if (time > 500) return 'status-warning'
+  if (time > 100) return 'status-warning'
+  return 'status-success'
+}
+
+const getErrorRateClass = (rate: number) => {
+  if (rate > 5) return 'status-error'
+  if (rate > 1) return 'status-warning'
+  return 'status-success'
+}
+
+const getSlowQueryClass = (count: number) => {
+  if (count > 10) return 'status-error'
+  if (count > 5) return 'status-warning'
+  return 'status-success'
+}
+
+const getCriticalQueryClass = (count: number) => {
+  if (count > 5) return 'status-error'
+  if (count > 1) return 'status-warning'
   return 'status-success'
 }
 
@@ -841,6 +934,22 @@ onUnmounted(() => {
 
 .status-unknown {
   color: #6c757d;
+}
+
+/* Database Performance specific styles */
+.metric-card .metric-content .metric-item .metric-value.status-success {
+  color: #166534;
+  font-weight: 600;
+}
+
+.metric-card .metric-content .metric-item .metric-value.status-warning {
+  color: #92400e;
+  font-weight: 600;
+}
+
+.metric-card .metric-content .metric-item .metric-value.status-error {
+  color: #991b1b;
+  font-weight: 600;
 }
 
 @media (max-width: 768px) {

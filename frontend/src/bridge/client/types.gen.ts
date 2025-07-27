@@ -36,6 +36,19 @@ export type CreateUserRequest = {
     password: string;
 };
 
+export type DatabasePerformanceResponse = {
+    avg_execution_time_ms: number;
+    critical_query_count: number;
+    error_rate: number;
+    max_execution_time_ms: number;
+    p50_execution_time_ms: number;
+    p95_execution_time_ms: number;
+    p99_execution_time_ms: number;
+    queries_per_second: number;
+    slow_query_count: number;
+    total_queries: number;
+};
+
 export type DatabaseTableResponse = {
     name: string;
     record_count: number;
@@ -52,6 +65,7 @@ export type HealthResponse = {
     active_users_7_days: number;
     cpu_usage: number;
     database_connections?: number | null;
+    database_performance?: null | DatabasePerformanceResponse;
     database_status: string;
     disk_available: string;
     disk_total: string;
