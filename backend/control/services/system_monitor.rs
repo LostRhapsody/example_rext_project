@@ -1,6 +1,7 @@
 use sysinfo::{System, Disks, Networks, Components};
 use sea_orm::DatabaseConnection;
 use chrono::{Utc, Duration};
+use std::fs;
 use crate::control::services::database_service::{DatabaseMonitorService, DatabasePerformanceMetrics};
 
 /// System monitoring service for collecting system metrics
@@ -257,12 +258,39 @@ impl SystemMonitorService {
     }
 
     /// Get project information from Cargo.toml
-    /// TODO - Read from rext.toml
     pub fn get_project_info() -> (String, String) {
-        // For now, return hardcoded values from Cargo.toml
-        // In a real implementation, you might want to read this from the file
-        // or use environment variables set during build
-        ("project_rext_1".to_string(), "0.1.0".to_string())
+        // Try to read Cargo.toml from the project root
+        let cargo_toml_path = "Cargo.toml";
+
+        match fs::read_to_string(cargo_toml_path) {
+            Ok(content) => {
+                match toml::from_str::<toml::Value>(&content) {
+                    Ok(toml_value) => {
+                        if let Some(package) = toml_value.get("package") {
+                            let name = package.get("name")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("unknown")
+                                .to_string();
+                            let version = package.get("version")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("unknown")
+                                .to_string();
+                            (name, version)
+                        } else {
+                            ("unknown".to_string(), "unknown".to_string())
+                        }
+                    }
+                    Err(_) => {
+                        // Fallback to hardcoded values if parsing fails
+                        ("unknown".to_string(), "unknown".to_string())
+                    }
+                }
+            }
+            Err(_) => {
+                // Fallback to hardcoded values if file can't be read
+                ("unknown".to_string(), "unknown".to_string())
+            }
+        }
     }
 }
 
