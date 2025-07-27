@@ -338,6 +338,9 @@ const handleAuditLog = (log: LiveRequest) => {
     liveRequests.value = liveRequests.value.slice(0, 100)
   }
 
+  // Calculate real-time metrics from the audit logs
+  calculateMetrics()
+
   if (autoScroll.value) {
     nextTick(() => {
       if (requestsContainer.value) {
@@ -348,6 +351,7 @@ const handleAuditLog = (log: LiveRequest) => {
 }
 
 const handleSystemLog = (log: SystemLog) => {
+  console.log('handleSystemLog called with:', log)
   systemLogs.value.unshift(log)
 
   // Keep only last 50 logs
@@ -362,6 +366,48 @@ const handleSystemLog = (log: SystemLog) => {
       }
     })
   }
+}
+
+// Calculate real-time metrics from audit logs
+const calculateMetrics = () => {
+  if (liveRequests.value.length === 0) {
+    // Reset metrics if no requests
+    Object.assign(metrics, {
+      totalRequests: 0,
+      successRate: 0,
+      avgResponseTime: 0,
+      errorRate: 0,
+      activeConnections: 1 // At least 1 for the current connection
+    })
+    return
+  }
+
+  const totalRequests = liveRequests.value.length
+  const successfulRequests = liveRequests.value.filter(req =>
+    req.status_code && req.status_code >= 200 && req.status_code < 300
+  ).length
+  const errorRequests = liveRequests.value.filter(req =>
+    req.status_code && req.status_code >= 400
+  ).length
+
+  const successRate = totalRequests > 0 ? successfulRequests / totalRequests : 0
+  const errorRate = totalRequests > 0 ? errorRequests / totalRequests : 0
+
+  const responseTimes = liveRequests.value
+    .map(req => req.response_time_ms || 0)
+    .filter(time => time > 0)
+
+  const avgResponseTime = responseTimes.length > 0
+    ? responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length
+    : 0
+
+  Object.assign(metrics, {
+    totalRequests,
+    successRate,
+    avgResponseTime,
+    errorRate,
+    activeConnections: 1 // We'll update this when we implement connection counting
+  })
 }
 
 const handlePerformanceMetrics = (metricsData: PerformanceMetrics) => {

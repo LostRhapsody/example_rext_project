@@ -22,6 +22,13 @@ pub async fn websocket_handler(
 async fn handle_socket(socket: WebSocket) {
     let connection_id = Uuid::new_v4().to_string();
 
+    // Broadcast connection event
+    crate::infrastructure::websocket::broadcast_system_log(
+        "info".to_string(),
+        format!("WebSocket connection established: {}", connection_id),
+        "websocket".to_string(),
+    ).await;
+
     // Send connection status
     let status_message = WebSocketMessage::ConnectionStatus {
         status: "connected".to_string(),
@@ -45,9 +52,9 @@ async fn handle_socket(socket: WebSocket) {
 
     // Clone values for the broadcast task
     let connection_id_broadcast = connection_id.clone();
-    let tx_broadcast = tx.clone();
 
     // Spawn task to forward broadcast messages to this client
+    let tx_broadcast = tx.clone();
     let broadcast_task = tokio::spawn(async move {
         while let Ok(message) = broadcast_rx.recv().await {
             if let Ok(message_json) = serde_json::to_string(&message) {
@@ -111,5 +118,13 @@ async fn handle_socket(socket: WebSocket) {
 
     // Clean up connection
     WEBSOCKET_MANAGER.remove_connection(&connection_id).await;
+
+    // Broadcast disconnection event
+    crate::infrastructure::websocket::broadcast_system_log(
+        "info".to_string(),
+        format!("WebSocket connection closed: {}", connection_id),
+        "websocket".to_string(),
+    ).await;
+
     tracing::info!("WebSocket connection {} cleaned up", connection_id);
 }

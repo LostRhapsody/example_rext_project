@@ -5,7 +5,7 @@ mod entity;
 mod infrastructure;
 
 use control::services::startup::StartupService;
-use infrastructure::logging::LoggingManager;
+use infrastructure::{logging::LoggingManager, websocket::start_metrics_broadcaster};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -21,7 +21,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _result = tokio::join!(
         StartupService::run_server(db),
         StartupService::run_job_queue_monitor(),
-        StartupService::run_scheduler()
+        StartupService::run_scheduler(),
+        start_metrics_broadcaster()
     );
 
     Ok(())

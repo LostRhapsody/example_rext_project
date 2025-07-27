@@ -211,6 +211,10 @@ pub async fn request_logging_middleware(
     let error_message_for_ws = error_message_clone.clone();
     let user_id_for_ws = user_id_clone.clone();
 
+    // Clone values for system log broadcasting
+    let method_for_logs = method_clone.clone();
+    let path_for_logs = path_clone.clone();
+
     // Insert audit log asynchronously (don't block response)
     let audit_log = audit_logs::ActiveModel {
         id: Set(uuid::Uuid::new_v4()),
@@ -230,6 +234,13 @@ pub async fn request_logging_middleware(
     tokio::spawn(async move {
         if let Err(e) = audit_log.insert(&db_clone).await {
             error!(request_id = %request_id_clone, error = ?e, "Failed to insert audit log");
+
+            // Broadcast error log
+            crate::infrastructure::websocket::broadcast_system_log(
+                "error".to_string(),
+                format!("Failed to insert audit log: {}", e),
+                "audit_logging".to_string(),
+            ).await;
         } else {
             info!(request_id = %request_id_clone, "Audit log inserted");
 
@@ -246,6 +257,29 @@ pub async fn request_logging_middleware(
                 user_agent_for_ws,
                 error_message_for_ws,
             ).await;
+
+            // Broadcast info log for successful requests (but not too frequently)
+            if status_code >= 200 && status_code < 300 {
+                crate::infrastructure::websocket::broadcast_system_log(
+                    "info".to_string(),
+                    format!("Request completed: {} {} ({}ms)", method_for_logs, path_for_logs, response_time_ms),
+                    "request_logging".to_string(),
+                ).await;
+            } else if status_code >= 400 {
+                // Broadcast warning for client errors
+                crate::infrastructure::websocket::broadcast_system_log(
+                    "warn".to_string(),
+                    format!("Client error: {} {} - {}", method_for_logs, path_for_logs, status_code),
+                    "request_logging".to_string(),
+                ).await;
+            } else if status_code >= 500 {
+                // Broadcast error for server errors
+                crate::infrastructure::websocket::broadcast_system_log(
+                    "error".to_string(),
+                    format!("Server error: {} {} - {}", method_for_logs, path_for_logs, status_code),
+                    "request_logging".to_string(),
+                ).await;
+            }
         }
     });
 

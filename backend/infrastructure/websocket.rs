@@ -169,3 +169,38 @@ pub async fn broadcast_performance_metrics(
     };
     WEBSOCKET_MANAGER.broadcast(message).await;
 }
+
+/// Start a background task that periodically broadcasts performance metrics
+pub async fn start_metrics_broadcaster() {
+    let manager = &WEBSOCKET_MANAGER;
+
+    tokio::spawn(async move {
+        let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(30)); // Every 30 seconds
+
+        loop {
+            interval.tick().await;
+
+            // Get connection count
+            let active_connections = manager.connection_count().await as u32;
+
+            // For now, we'll send basic metrics
+            // In a real implementation, you'd calculate these from audit logs
+            let message = WebSocketMessage::PerformanceMetrics {
+                total_requests: 0, // This will be calculated from audit logs
+                success_rate: 0.0,
+                avg_response_time: 0.0,
+                error_rate: 0.0,
+                active_connections,
+            };
+
+            manager.broadcast(message).await;
+
+            // Broadcast a heartbeat log
+            broadcast_system_log(
+                "debug".to_string(),
+                format!("Metrics broadcast - Active connections: {}", active_connections),
+                "metrics_broadcaster".to_string(),
+            ).await;
+        }
+    });
+}
