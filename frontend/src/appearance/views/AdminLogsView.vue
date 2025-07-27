@@ -66,6 +66,9 @@
       <div class="filter-actions">
         <button @click="clearFilters" class="clear-btn">Clear Filters</button>
         <button @click="applyFilters" class="refresh-btn">Refresh</button>
+        <button @click="exportToCsv" class="export-btn">
+          <span>📊</span> Export CSV
+        </button>
       </div>
     </div>
 
@@ -81,6 +84,7 @@
         :animateRows="true"
         :domLayout="'autoHeight'"
         @row-clicked="onRowClicked"
+        @grid-ready="onGridReady"
       />
     </div>
 
@@ -184,6 +188,7 @@ interface PaginationInfo {
 
 const loading = ref(false)
 const logs = ref<LogEntry[]>([])
+const gridApi = ref<any>(null)
 const paginationInfo = ref<PaginationInfo>({
   page: 1,
   limit: 100,
@@ -380,6 +385,29 @@ const clearFilters = () => {
   fetchLogs()
 }
 
+const onGridReady = (params: any) => {
+  gridApi.value = params.api
+}
+
+const exportToCsv = () => {
+  if (!gridApi.value) return
+
+  const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-')
+  const fileName = `audit-logs-${timestamp}.csv`
+
+  gridApi.value.exportDataAsCsv({
+    fileName,
+    processCellCallback: (params: any) => {
+      // Handle special characters that could cause CSV injection
+      const value = params.value?.toString() || ''
+      if (value.startsWith('+') || value.startsWith('-') || value.startsWith('=') || value.startsWith('@')) {
+        return `"${value}"`
+      }
+      return value
+    }
+  })
+}
+
 onMounted(() => {
   fetchLogs()
 })
@@ -449,7 +477,8 @@ onMounted(() => {
 }
 
 .clear-btn,
-.refresh-btn {
+.refresh-btn,
+.export-btn {
   padding: 0.5rem 1rem;
   border: none;
   border-radius: 6px;
@@ -475,6 +504,18 @@ onMounted(() => {
 
 .refresh-btn:hover {
   background: #5a6fd8;
+}
+
+.export-btn {
+  background: #28a745;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.export-btn:hover {
+  background: #218838;
 }
 
 .grid-container {

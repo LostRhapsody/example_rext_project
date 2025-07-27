@@ -28,6 +28,9 @@
         <button @click="refreshUsers" class="refresh-btn">
           <span>🔄</span> Refresh
         </button>
+        <button @click="exportToCsv" class="export-btn">
+          <span>📊</span> Export CSV
+        </button>
       </div>
     </div>
 
@@ -43,6 +46,7 @@
         :animateRows="true"
         :domLayout="'autoHeight'"
         @row-clicked="onRowClicked"
+        @grid-ready="onGridReady"
       />
     </div>
 
@@ -255,6 +259,7 @@ interface PaginationInfo {
 
 const loading = ref(false)
 const users = ref<User[]>([])
+const gridApi = ref<any>(null)
 const paginationInfo = ref<PaginationInfo>({
   page: 1,
   limit: 20,
@@ -635,6 +640,29 @@ const changePage = (newPage: number) => {
   }
 }
 
+const onGridReady = (params: any) => {
+  gridApi.value = params.api
+}
+
+const exportToCsv = () => {
+  if (!gridApi.value) return
+
+  const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-')
+  const fileName = `users-${timestamp}.csv`
+
+  gridApi.value.exportDataAsCsv({
+    fileName,
+    processCellCallback: (params: any) => {
+      // Handle special characters that could cause CSV injection
+      const value = params.value?.toString() || ''
+      if (value.startsWith('+') || value.startsWith('-') || value.startsWith('=') || value.startsWith('@')) {
+        return `"${value}"`
+      }
+      return value
+    }
+  })
+}
+
 onMounted(() => {
   fetchUsers()
 })
@@ -700,7 +728,8 @@ onMounted(() => {
 }
 
 .create-btn,
-.refresh-btn {
+.refresh-btn,
+.export-btn {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -728,6 +757,15 @@ onMounted(() => {
 
 .refresh-btn:hover {
   background: #5a6fd8;
+}
+
+.export-btn {
+  background: #28a745;
+  color: white;
+}
+
+.export-btn:hover {
+  background: #218838;
 }
 
 .grid-container {

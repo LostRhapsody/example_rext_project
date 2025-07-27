@@ -28,6 +28,13 @@
     <!-- Table Records -->
     <div v-if="selectedTable" class="records-section">
 
+      <!-- Export Button -->
+      <div class="export-section" v-if="columns.length > 0">
+        <button @click="exportToCsv" class="export-btn">
+          <span>📊</span> Export CSV
+        </button>
+      </div>
+
       <!-- AG Grid for Records -->
       <div class="grid-container">
         <ag-grid-vue
@@ -41,6 +48,7 @@
           :animateRows="true"
           :domLayout="'autoHeight'"
           @row-clicked="onRowClicked"
+          @grid-ready="onGridReady"
         />
         <div v-else class="no-records">
           <p>No records found in this table</p>
@@ -110,6 +118,7 @@ const tables = ref<DatabaseTable[]>([])
 const selectedTable = ref('')
 const columns = ref<string[]>([])
 const records = ref<{ [key: string]: unknown }[]>([])
+const gridApi = ref<any>(null)
 const paginationInfo = ref<PaginationInfo>({
   page: 1,
   limit: 20,
@@ -350,7 +359,7 @@ const nextPage = () => {
 }
 
 const onGridReady = (params: any) => {
-  // gridApi.value = params.api // This line is removed as per the new_code
+  gridApi.value = params.api
 }
 
 const onRowClicked = (event: any) => {
@@ -377,6 +386,25 @@ const formatTimestamp = (timestamp?: string) => {
   } catch {
     return timestamp
   }
+}
+
+const exportToCsv = () => {
+  if (!gridApi.value || !selectedTable.value) return
+
+  const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-')
+  const fileName = `${selectedTable.value}-${timestamp}.csv`
+
+  gridApi.value.exportDataAsCsv({
+    fileName,
+    processCellCallback: (params: any) => {
+      // Handle special characters that could cause CSV injection
+      const value = params.value?.toString() || ''
+      if (value.startsWith('+') || value.startsWith('-') || value.startsWith('=') || value.startsWith('@')) {
+        return `"${value}"`
+      }
+      return value
+    }
+  })
 }
 
 onMounted(() => {
@@ -478,6 +506,31 @@ onMounted(() => {
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   overflow: hidden;
+}
+
+.export-section {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.export-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.export-btn:hover {
+  background: #218838;
 }
 
 .records-header {

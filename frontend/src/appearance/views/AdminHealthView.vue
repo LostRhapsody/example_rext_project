@@ -272,17 +272,21 @@
 
     <!-- System Information -->
     <div class="system-info-section">
-      <h2>System Information - Not yet implemented</h2>
+      <h2>System Information</h2>
       <div class="system-info-grid">
         <div class="info-card">
           <h3>Application</h3>
           <div class="info-item">
+            <span class="info-label">Project Name:</span>
+            <span class="info-value">{{ healthStatus.project_name }}</span>
+          </div>
+          <div class="info-item">
             <span class="info-label">Version:</span>
-            <span class="info-value">{{ systemInfo.version }}</span>
+            <span class="info-value">{{ healthStatus.project_version }}</span>
           </div>
           <div class="info-item">
             <span class="info-label">Environment:</span>
-            <span class="info-value">{{ systemInfo.environment }}</span>
+            <span class="info-value">{{ healthStatus.environment }}</span>
           </div>
           <div class="info-item">
             <span class="info-label">Start Time:</span>
@@ -309,27 +313,7 @@
         </div>
 
         <div class="info-card">
-          <h3>Server</h3>
-          <div class="info-item">
-            <span class="info-label">Host:</span>
-            <span class="info-value">{{ systemInfo.host }}</span>
-          </div>
-          <div class="info-item">
-            <span class="info-label">Port:</span>
-            <span class="info-value">{{ systemInfo.port }}</span>
-          </div>
-          <div class="info-item">
-            <span class="info-label">Protocol:</span>
-            <span class="info-value">{{ systemInfo.protocol }}</span>
-          </div>
-        </div>
-
-        <div class="info-card">
           <h3>System Information</h3>
-          <div class="info-item">
-            <span class="info-label">Project:</span>
-            <span class="info-value">{{ healthStatus.project_name }} v{{ healthStatus.project_version }}</span>
-          </div>
           <div class="info-item">
             <span class="info-label">System:</span>
             <span class="info-value">{{ healthStatus.system_name || 'Unknown' }}</span>
@@ -353,6 +337,26 @@
           <div class="info-item" v-if="healthStatus.temperature">
             <span class="info-label">Temperature:</span>
             <span class="info-value">{{ healthStatus.temperature }}°C</span>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <h3>Server Information</h3>
+          <div class="info-item">
+            <span class="info-label">Host:</span>
+            <span class="info-value">{{ healthStatus.server_host }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Port:</span>
+            <span class="info-value">{{ healthStatus.server_port }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Protocol:</span>
+            <span class="info-value">{{ healthStatus.server_protocol }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">URL:</span>
+            <span class="info-value">{{ healthStatus.server_protocol.toLowerCase() }}://{{ healthStatus.server_host }}:{{ healthStatus.server_port }}</span>
           </div>
         </div>
       </div>
@@ -433,9 +437,14 @@ const healthStatus = ref<HealthResponse>({
   host_name: null,
   cpu_count: 0,
   temperature: null,
-  project_name: '',
-  project_version: ''
-})
+        project_name: '',
+      project_version: '',
+      // Server Information
+      server_host: '',
+      server_port: 0,
+      server_protocol: '',
+      environment: ''
+    })
 const metrics = ref<Metrics>({
   totalRequests: 0,
   successRate: 0,
@@ -503,7 +512,12 @@ const fetchHealthStatus = async () => {
       cpu_count: 0,
       temperature: null,
       project_name: 'Unknown',
-      project_version: 'Unknown'
+      project_version: 'Unknown',
+      // Server Information
+      server_host: 'Unknown',
+      server_port: 0,
+      server_protocol: 'Unknown',
+      environment: 'Unknown'
     }
   }
 }
