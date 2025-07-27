@@ -63,6 +63,7 @@ export type ErrorResponse = {
 
 export type HealthResponse = {
     active_users_7_days: number;
+    cpu_count: number;
     cpu_usage: number;
     database_connections?: number | null;
     database_performance?: null | DatabasePerformanceResponse;
@@ -71,6 +72,8 @@ export type HealthResponse = {
     disk_total: string;
     disk_usage: number;
     disk_used: string;
+    host_name?: string | null;
+    kernel_version?: string | null;
     memory_available: string;
     memory_total: string;
     memory_usage: number;
@@ -80,8 +83,13 @@ export type HealthResponse = {
     new_users_24_hours: number;
     new_users_30_days: number;
     new_users_7_days: number;
+    os_version?: string | null;
     process_count: number;
+    project_name: string;
+    project_version: string;
     status: string;
+    system_name?: string | null;
+    temperature?: number | null;
     timestamp: string;
     total_users: number;
     uptime: string;

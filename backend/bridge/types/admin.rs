@@ -158,6 +158,15 @@ pub struct HealthResponse {
     pub new_users_24_hours: u64,
     pub new_users_7_days: u64,
     pub new_users_30_days: u64,
+    // System Information
+    pub system_name: Option<String>,
+    pub kernel_version: Option<String>,
+    pub os_version: Option<String>,
+    pub host_name: Option<String>,
+    pub cpu_count: usize,
+    pub temperature: Option<f32>,
+    pub project_name: String,
+    pub project_version: String,
 }
 
 #[derive(Serialize, ToSchema)]

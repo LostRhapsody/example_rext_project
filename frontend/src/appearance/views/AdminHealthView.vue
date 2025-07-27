@@ -323,6 +323,38 @@
             <span class="info-value">{{ systemInfo.protocol }}</span>
           </div>
         </div>
+
+        <div class="info-card">
+          <h3>System Information</h3>
+          <div class="info-item">
+            <span class="info-label">Project:</span>
+            <span class="info-value">{{ healthStatus.project_name }} v{{ healthStatus.project_version }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">System:</span>
+            <span class="info-value">{{ healthStatus.system_name || 'Unknown' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">OS:</span>
+            <span class="info-value">{{ healthStatus.os_version || 'Unknown' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Kernel:</span>
+            <span class="info-value">{{ healthStatus.kernel_version || 'Unknown' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Hostname:</span>
+            <span class="info-value">{{ healthStatus.host_name || 'Unknown' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">CPU Cores:</span>
+            <span class="info-value">{{ healthStatus.cpu_count }}</span>
+          </div>
+          <div class="info-item" v-if="healthStatus.temperature">
+            <span class="info-label">Temperature:</span>
+            <span class="info-value">{{ healthStatus.temperature }}°C</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -393,7 +425,16 @@ const healthStatus = ref<HealthResponse>({
   active_users_7_days: 0,
   new_users_24_hours: 0,
   new_users_7_days: 0,
-  new_users_30_days: 0
+  new_users_30_days: 0,
+  // System Information
+  system_name: null,
+  kernel_version: null,
+  os_version: null,
+  host_name: null,
+  cpu_count: 0,
+  temperature: null,
+  project_name: '',
+  project_version: ''
 })
 const metrics = ref<Metrics>({
   totalRequests: 0,
@@ -453,7 +494,16 @@ const fetchHealthStatus = async () => {
       active_users_7_days: 0,
       new_users_24_hours: 0,
       new_users_7_days: 0,
-      new_users_30_days: 0
+      new_users_30_days: 0,
+      // System Information
+      system_name: null,
+      kernel_version: null,
+      os_version: null,
+      host_name: null,
+      cpu_count: 0,
+      temperature: null,
+      project_name: 'Unknown',
+      project_version: 'Unknown'
     }
   }
 }

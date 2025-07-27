@@ -502,6 +502,9 @@ impl AdminService {
         let memory_usage = SystemMonitorService::get_memory_usage_percentage(&system_metrics);
         let disk_usage = SystemMonitorService::get_disk_usage_percentage(&system_metrics);
 
+        // Get project information
+        let (project_name, project_version) = SystemMonitorService::get_project_info();
+
         HealthResponse {
             status,
             timestamp: chrono::Utc::now().to_rfc3339(),
@@ -527,6 +530,15 @@ impl AdminService {
             new_users_24_hours: user_analytics.new_users_24_hours,
             new_users_7_days: user_analytics.new_users_7_days,
             new_users_30_days: user_analytics.new_users_30_days,
+            // System Information
+            system_name: system_metrics.system_name,
+            kernel_version: system_metrics.kernel_version,
+            os_version: system_metrics.os_version,
+            host_name: system_metrics.host_name,
+            cpu_count: system_metrics.cpu_count,
+            temperature: system_metrics.temperature,
+            project_name,
+            project_version,
         }
     }
 }

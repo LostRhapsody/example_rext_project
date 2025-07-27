@@ -92,6 +92,7 @@ export const zErrorResponse = z.object({
 
 export const zHealthResponse = z.object({
     active_users_7_days: z.coerce.bigint().gte(BigInt(0)),
+    cpu_count: z.int().gte(0),
     cpu_usage: z.number(),
     database_connections: z.optional(z.union([
         z.int().gte(0),
@@ -106,6 +107,14 @@ export const zHealthResponse = z.object({
     disk_total: z.string(),
     disk_usage: z.number(),
     disk_used: z.string(),
+    host_name: z.optional(z.union([
+        z.string(),
+        z.null()
+    ])),
+    kernel_version: z.optional(z.union([
+        z.string(),
+        z.null()
+    ])),
     memory_available: z.string(),
     memory_total: z.string(),
     memory_usage: z.number(),
@@ -115,8 +124,22 @@ export const zHealthResponse = z.object({
     new_users_24_hours: z.coerce.bigint().gte(BigInt(0)),
     new_users_30_days: z.coerce.bigint().gte(BigInt(0)),
     new_users_7_days: z.coerce.bigint().gte(BigInt(0)),
+    os_version: z.optional(z.union([
+        z.string(),
+        z.null()
+    ])),
     process_count: z.int().gte(0),
+    project_name: z.string(),
+    project_version: z.string(),
     status: z.string(),
+    system_name: z.optional(z.union([
+        z.string(),
+        z.null()
+    ])),
+    temperature: z.optional(z.union([
+        z.number(),
+        z.null()
+    ])),
     timestamp: z.string(),
     total_users: z.coerce.bigint().gte(BigInt(0)),
     uptime: z.string()

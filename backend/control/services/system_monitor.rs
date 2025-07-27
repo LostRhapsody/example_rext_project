@@ -1,4 +1,4 @@
-use sysinfo::System;
+use sysinfo::{System, Disks, Networks, Components};
 use sea_orm::DatabaseConnection;
 use chrono::{Utc, Duration};
 use crate::control::services::database_service::{DatabaseMonitorService, DatabasePerformanceMetrics};
@@ -23,6 +23,13 @@ pub struct SystemMetrics {
     pub database_connections: Option<u32>,
     #[allow(dead_code)]
     pub database_performance: Option<DatabasePerformanceMetrics>,
+    // System information
+    pub system_name: Option<String>,
+    pub kernel_version: Option<String>,
+    pub os_version: Option<String>,
+    pub host_name: Option<String>,
+    pub cpu_count: usize,
+    pub temperature: Option<f32>,
 }
 
 /// User analytics data structure
@@ -49,20 +56,49 @@ impl SystemMonitorService {
         let memory_used = sys.used_memory();
         let memory_available = sys.free_memory();
 
-        // For now, we'll set disk and network to 0 since the methods aren't available
-        // We can enhance this later with proper disk and network monitoring
-        let disk_total = 0;
-        let disk_used = 0;
-        let disk_available = 0;
-        let network_bytes_sent = 0;
-        let network_bytes_received = 0;
+        // Get disk information
+        let disks = Disks::new_with_refreshed_list();
+        let mut disk_total = 0u64;
+        let mut disk_used = 0u64;
+        let mut disk_available = 0u64;
 
-        // Get system uptime (using the associated function)
+        for disk in &disks {
+            disk_total += disk.total_space();
+            disk_used += disk.total_space() - disk.available_space();
+            disk_available += disk.available_space();
+        }
+
+        // Get network information
+        let networks = Networks::new_with_refreshed_list();
+        let mut network_bytes_sent = 0u64;
+        let mut network_bytes_received = 0u64;
+
+        for (_, data) in &networks {
+            network_bytes_sent += data.total_transmitted();
+            network_bytes_received += data.total_received();
+        }
+
+        // Get system uptime
         let uptime = System::uptime();
 
         // Get process count
         let process_count = sys.processes().len();
 
+        // Get system information
+        let system_name = System::name();
+        let kernel_version = System::kernel_version();
+        let os_version = System::os_version();
+        let host_name = System::host_name();
+        let cpu_count = sys.cpus().len();
+
+        // Get temperature information if available
+        let components = Components::new_with_refreshed_list();
+        println!("components: {:?}", components);
+        let temperature = components.iter()
+            .find(|component| component.label().to_lowercase().contains("cpu"))
+            .and_then(|component| component.temperature());
+
+        println!("temperature: {:?}", temperature);
         // Get database connection count (if available)
         let database_connections = Self::get_database_connections(db).await;
 
@@ -83,6 +119,12 @@ impl SystemMonitorService {
             process_count,
             database_connections,
             database_performance,
+            system_name,
+            kernel_version,
+            os_version,
+            host_name,
+            cpu_count,
+            temperature,
         }
     }
 
@@ -213,6 +255,15 @@ impl SystemMonitorService {
             "Healthy".to_string()
         }
     }
+
+    /// Get project information from Cargo.toml
+    /// TODO - Read from rext.toml
+    pub fn get_project_info() -> (String, String) {
+        // For now, return hardcoded values from Cargo.toml
+        // In a real implementation, you might want to read this from the file
+        // or use environment variables set during build
+        ("project_rext_1".to_string(), "0.1.0".to_string())
+    }
 }
 
 #[cfg(test)]
@@ -251,6 +302,12 @@ mod tests {
             process_count: 0,
             database_connections: None,
             database_performance: None,
+            system_name: None,
+            kernel_version: None,
+            os_version: None,
+            host_name: None,
+            cpu_count: 0,
+            temperature: None,
         };
 
         assert_eq!(SystemMonitorService::get_memory_usage_percentage(&metrics), 50.0);
@@ -272,6 +329,12 @@ mod tests {
             process_count: 0,
             database_connections: None,
             database_performance: None,
+            system_name: None,
+            kernel_version: None,
+            os_version: None,
+            host_name: None,
+            cpu_count: 0,
+            temperature: None,
         };
 
         assert_eq!(SystemMonitorService::get_health_status(&healthy_metrics), "Healthy");
