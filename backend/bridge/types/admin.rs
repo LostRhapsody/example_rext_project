@@ -78,6 +78,7 @@ pub struct CreateUserRequest {
     pub email: String,
     pub password: String,
     pub is_admin: Option<bool>,
+    pub role_id: Option<i32>,
 }
 
 #[derive(Deserialize, ToSchema)]
@@ -85,6 +86,7 @@ pub struct UpdateUserRequest {
     pub email: Option<String>,
     pub password: Option<String>,
     pub is_admin: Option<bool>,
+    pub role_id: Option<i32>,
 }
 
 #[derive(Serialize, ToSchema)]
@@ -93,6 +95,8 @@ pub struct UserResponse {
     pub email: String,
     pub created_at: Option<String>,
     pub is_admin: Option<bool>,
+    pub role_id: Option<i32>,
+    pub role_name: Option<String>,
 }
 
 // Database Inspection
@@ -186,6 +190,56 @@ pub struct SystemInfoResponse {
     pub port: u16,
     pub protocol: String,
     pub system_metrics: HealthResponse,
+}
+
+/// Role response
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct RoleResponse {
+    pub id: i32,
+    pub name: String,
+    pub description: Option<String>,
+    pub permissions: Vec<String>,
+    pub created_at: Option<String>,
+    pub updated_at: Option<String>,
+}
+
+/// Create role request
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CreateRoleRequest {
+    pub name: String,
+    pub description: Option<String>,
+    pub permissions: Vec<String>,
+}
+
+/// Update role request
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct UpdateRoleRequest {
+    pub name: Option<String>,
+    pub description: Option<String>,
+    pub permissions: Option<Vec<String>>,
+}
+
+/// Role query parameters
+#[derive(Debug, Deserialize, ToSchema, IntoParams)]
+pub struct RolesQueryParams {
+    pub page: u64,
+    pub limit: u64,
+    pub search: Option<String>,
+}
+
+/// Permission check request
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct PermissionCheckRequest {
+    pub user_id: String,
+    pub permission: String,
+}
+
+/// Permission check response
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct PermissionCheckResponse {
+    pub has_permission: bool,
+    pub user_role: Option<String>,
+    pub required_permission: String,
 }
 
 // Helper functions for defaults

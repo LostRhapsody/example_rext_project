@@ -5,7 +5,7 @@ use base64::Engine;
 use crate::{
     bridge::types::admin::*,
     domain::{validation::*},
-    entity::models::{audit_logs, users},
+    entity::models::{audit_logs, users, roles},
     infrastructure::{app_error::AppError, jwt_claims::Claims},
     control::services::{user_service::UserService, system_monitor::SystemMonitorService, database_service::DatabaseMonitorService, database_service::DatabaseService},
 };
@@ -216,6 +216,8 @@ impl AdminService {
                 email: user.email,
                 created_at: user.created_at.map(|t| t.to_rfc3339()),
                 is_admin: user.is_admin,
+                role_id: user.role_id,
+                role_name: None, // Will be populated in a separate query if needed
             })
             .collect();
 
@@ -249,6 +251,8 @@ impl AdminService {
             email: user.email,
             created_at: user.created_at.map(|t| t.to_rfc3339()),
             is_admin: Some(user.is_admin),
+            role_id: user.role_id,
+            role_name: None, // Will be populated in a separate query if needed
         })
     }
 
@@ -262,6 +266,7 @@ impl AdminService {
             request.email,
             request.password,
             request.is_admin.unwrap_or(false),
+            request.role_id,
         )
         .await?;
 
@@ -270,6 +275,8 @@ impl AdminService {
             email: user.email,
             created_at: user.created_at.map(|t| t.to_rfc3339()),
             is_admin: Some(request.is_admin.unwrap_or(false)),
+            role_id: user.role_id,
+            role_name: None, // Will be populated in a separate query if needed
         })
     }
 
@@ -285,6 +292,7 @@ impl AdminService {
             request.email,
             request.password,
             request.is_admin,
+            request.role_id,
         )
         .await?;
 
@@ -293,6 +301,8 @@ impl AdminService {
             email: user.email,
             created_at: user.created_at.map(|t| t.to_rfc3339()),
             is_admin: Some(user.is_admin),
+            role_id: user.role_id,
+            role_name: None, // Will be populated in a separate query if needed
         })
     }
 
@@ -548,5 +558,366 @@ impl AdminService {
             server_protocol,
             environment,
         }
+    }
+
+    /// Get paginated roles with filtering
+    pub async fn get_roles(
+        db: &DatabaseConnection,
+        params: RolesQueryParams,
+    ) -> Result<PaginatedResponse<RoleResponse>, AppError> {
+        let offset = (params.page - 1) * params.limit;
+
+        // Build query with filters
+        let mut query = roles::Entity::find();
+
+        if let Some(search) = params.search {
+            if !search.is_empty() {
+                query = query.filter(
+                    roles::Column::Name.contains(&search)
+                        .or(roles::Column::Description.contains(&search))
+                );
+            }
+        }
+
+        // Get total count
+        let total = query.clone().count(db).await.map_err(|e| AppError {
+            message: format!("Database error: {}", e),
+            status_code: StatusCode::INTERNAL_SERVER_ERROR,
+        })?;
+
+        // Get paginated results
+        let roles = query
+            .offset(offset as u64)
+            .limit(params.limit as u64)
+            .all(db)
+            .await
+            .map_err(|e| AppError {
+                message: format!("Database error: {}", e),
+                status_code: StatusCode::INTERNAL_SERVER_ERROR,
+            })?;
+
+        // Convert to response format
+        let role_responses: Vec<RoleResponse> = roles
+            .into_iter()
+            .map(|role| {
+                let permissions: Vec<String> = serde_json::from_str(&role.permissions)
+                    .unwrap_or_else(|_| vec![]);
+
+                RoleResponse {
+                    id: role.id,
+                    name: role.name,
+                    description: role.description,
+                    permissions,
+                    created_at: role.created_at.map(|dt| dt.to_rfc3339()),
+                    updated_at: role.updated_at.map(|dt| dt.to_rfc3339()),
+                }
+            })
+            .collect();
+
+        let total_pages = (total as f64 / params.limit as f64).ceil() as u32;
+
+        Ok(PaginatedResponse {
+            data: role_responses,
+            pagination: PaginationMeta {
+                page: params.page as u64,
+                limit: params.limit as u64,
+                total: total as u64,
+                total_pages: total_pages as u64,
+            },
+        })
+    }
+
+    /// Get role by ID
+    pub async fn get_role(
+        db: &DatabaseConnection,
+        role_id: i32,
+    ) -> Result<RoleResponse, AppError> {
+        let role = roles::Entity::find_by_id(role_id)
+            .one(db)
+            .await
+            .map_err(|e| AppError {
+                message: format!("Database error: {}", e),
+                status_code: StatusCode::INTERNAL_SERVER_ERROR,
+            })?
+            .ok_or(AppError {
+                message: "Role not found".to_string(),
+                status_code: StatusCode::NOT_FOUND,
+            })?;
+
+        let permissions: Vec<String> = serde_json::from_str(&role.permissions)
+            .unwrap_or_else(|_| vec![]);
+
+        Ok(RoleResponse {
+            id: role.id,
+            name: role.name,
+            description: role.description,
+            permissions,
+            created_at: role.created_at.map(|dt| dt.to_rfc3339()),
+            updated_at: role.updated_at.map(|dt| dt.to_rfc3339()),
+        })
+    }
+
+    /// Create a new role
+    pub async fn create_role(
+        db: &DatabaseConnection,
+        request: CreateRoleRequest,
+    ) -> Result<RoleResponse, AppError> {
+        // Check if role name already exists
+        let existing_role = roles::Entity::find()
+            .filter(roles::Column::Name.eq(&request.name))
+            .one(db)
+            .await
+            .map_err(|e| AppError {
+                message: format!("Database error: {}", e),
+                status_code: StatusCode::INTERNAL_SERVER_ERROR,
+            })?;
+
+        if existing_role.is_some() {
+            return Err(AppError {
+                message: "Role name already exists".to_string(),
+                status_code: StatusCode::CONFLICT,
+            });
+        }
+
+        // Convert permissions to JSON string
+        let permissions_json = serde_json::to_string(&request.permissions)
+            .map_err(|_| AppError {
+                message: "Invalid permissions format".to_string(),
+                status_code: StatusCode::BAD_REQUEST,
+            })?;
+
+        // Create new role
+        let role_model = roles::ActiveModel {
+            name: Set(request.name),
+            description: Set(request.description),
+            permissions: Set(permissions_json),
+            ..Default::default()
+        };
+
+        let role = role_model
+            .insert(db)
+            .await
+            .map_err(|e| AppError {
+                message: format!("Database error: {}", e),
+                status_code: StatusCode::INTERNAL_SERVER_ERROR,
+            })?;
+
+        Ok(RoleResponse {
+            id: role.id,
+            name: role.name,
+            description: role.description,
+            permissions: request.permissions,
+            created_at: role.created_at.map(|dt| dt.to_rfc3339()),
+            updated_at: role.updated_at.map(|dt| dt.to_rfc3339()),
+        })
+    }
+
+    /// Update an existing role
+    pub async fn update_role(
+        db: &DatabaseConnection,
+        role_id: i32,
+        request: UpdateRoleRequest,
+    ) -> Result<RoleResponse, AppError> {
+        // Get existing role
+        let role = roles::Entity::find_by_id(role_id)
+            .one(db)
+            .await
+            .map_err(|e| AppError {
+                message: format!("Database error: {}", e),
+                status_code: StatusCode::INTERNAL_SERVER_ERROR,
+            })?
+            .ok_or(AppError {
+                message: "Role not found".to_string(),
+                status_code: StatusCode::NOT_FOUND,
+            })?;
+
+        // Check if new name conflicts with existing role
+        if let Some(new_name) = &request.name {
+            let existing_role = roles::Entity::find()
+                .filter(roles::Column::Name.eq(new_name))
+                .filter(roles::Column::Id.ne(role_id))
+                .one(db)
+                .await
+                .map_err(|e| AppError {
+                    message: format!("Database error: {}", e),
+                    status_code: StatusCode::INTERNAL_SERVER_ERROR,
+                })?;
+
+            if existing_role.is_some() {
+                return Err(AppError {
+                    message: "Role name already exists".to_string(),
+                    status_code: StatusCode::CONFLICT,
+                });
+            }
+        }
+
+        // Prepare update model
+        let mut role_model: roles::ActiveModel = role.into();
+
+        if let Some(name) = request.name {
+            role_model.name = Set(name);
+        }
+
+        if let Some(description) = request.description {
+            role_model.description = Set(Some(description));
+        }
+
+        if let Some(permissions) = request.permissions {
+            let permissions_json = serde_json::to_string(&permissions)
+                .map_err(|_| AppError {
+                    message: "Invalid permissions format".to_string(),
+                    status_code: StatusCode::BAD_REQUEST,
+                })?;
+            role_model.permissions = Set(permissions_json);
+        }
+
+        // Update timestamp
+        role_model.updated_at = Set(Some(chrono::Utc::now().fixed_offset()));
+
+        // Save updated role
+        let updated_role = role_model
+            .update(db)
+            .await
+            .map_err(|e| AppError {
+                message: format!("Database error: {}", e),
+                status_code: StatusCode::INTERNAL_SERVER_ERROR,
+            })?;
+
+        // Get permissions for response
+        let permissions: Vec<String> = serde_json::from_str(&updated_role.permissions)
+            .unwrap_or_else(|_| vec![]);
+
+        Ok(RoleResponse {
+            id: updated_role.id,
+            name: updated_role.name,
+            description: updated_role.description,
+            permissions,
+            created_at: updated_role.created_at.map(|dt| dt.to_rfc3339()),
+            updated_at: updated_role.updated_at.map(|dt| dt.to_rfc3339()),
+        })
+    }
+
+    /// Delete a role
+    pub async fn delete_role(
+        db: &DatabaseConnection,
+        role_id: i32,
+    ) -> Result<(), AppError> {
+        // Check if role exists
+        let role = roles::Entity::find_by_id(role_id)
+            .one(db)
+            .await
+            .map_err(|e| AppError {
+                message: format!("Database error: {}", e),
+                status_code: StatusCode::INTERNAL_SERVER_ERROR,
+            })?
+            .ok_or(AppError {
+                message: "Role not found".to_string(),
+                status_code: StatusCode::NOT_FOUND,
+            })?;
+
+        // Check if role is assigned to any users
+        let users_with_role = users::Entity::find()
+            .filter(users::Column::RoleId.eq(role_id))
+            .count(db)
+            .await
+            .map_err(|e| AppError {
+                message: format!("Database error: {}", e),
+                status_code: StatusCode::INTERNAL_SERVER_ERROR,
+            })?;
+
+        if users_with_role > 0 {
+            return Err(AppError {
+                message: "Cannot delete role: it is assigned to users".to_string(),
+                status_code: StatusCode::CONFLICT,
+            });
+        }
+
+        // Delete the role
+        roles::Entity::delete_by_id(role_id)
+            .exec(db)
+            .await
+            .map_err(|e| AppError {
+                message: format!("Database error: {}", e),
+                status_code: StatusCode::INTERNAL_SERVER_ERROR,
+            })?;
+
+        Ok(())
+    }
+
+    /// Check if a user has a specific permission
+    pub async fn check_permission(
+        db: &DatabaseConnection,
+        request: PermissionCheckRequest,
+    ) -> Result<PermissionCheckResponse, AppError> {
+        let user_id = Uuid::parse_str(&request.user_id)
+            .map_err(|_| AppError {
+                message: "Invalid user ID".to_string(),
+                status_code: StatusCode::BAD_REQUEST,
+            })?;
+
+        // Get user with role information
+        let user = users::Entity::find_by_id(user_id)
+            .find_also_related(roles::Entity)
+            .one(db)
+            .await
+            .map_err(|e| AppError {
+                message: format!("Database error: {}", e),
+                status_code: StatusCode::INTERNAL_SERVER_ERROR,
+            })?
+            .ok_or(AppError {
+                message: "User not found".to_string(),
+                status_code: StatusCode::NOT_FOUND,
+            })?;
+
+        let (user_model, role_model) = user;
+
+        // Check if user is admin (override all permissions)
+        if user_model.is_admin.unwrap_or(false) {
+            return Ok(PermissionCheckResponse {
+                has_permission: true,
+                user_role: Some("admin".to_string()),
+                required_permission: request.permission,
+            });
+        }
+
+        // Check role-based permissions
+        if let Some(role) = role_model {
+            let permissions: Vec<String> = serde_json::from_str(&role.permissions)
+                .unwrap_or_else(|_| vec![]);
+
+            let has_permission = permissions.contains(&"*".to_string()) ||
+                                permissions.contains(&request.permission);
+
+            return Ok(PermissionCheckResponse {
+                has_permission,
+                user_role: Some(role.name),
+                required_permission: request.permission,
+            });
+        }
+
+        // No role assigned
+        Ok(PermissionCheckResponse {
+            has_permission: false,
+            user_role: None,
+            required_permission: request.permission,
+        })
+    }
+
+    /// Helper function to check if a user can perform an action
+    pub async fn user_can_perform_action(
+        db: &DatabaseConnection,
+        user_id: Uuid,
+        permission: &str,
+    ) -> Result<bool, AppError> {
+        let response = Self::check_permission(
+            db,
+            PermissionCheckRequest {
+                user_id: user_id.to_string(),
+                permission: permission.to_string(),
+            },
+        )
+        .await?;
+
+        Ok(response.has_permission)
     }
 }

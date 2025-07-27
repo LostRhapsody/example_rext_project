@@ -3,8 +3,10 @@
 pub mod audit_logs;
 pub mod database_metrics;
 pub mod prelude;
+pub mod roles;
 pub mod users;
 
 pub use audit_logs::*;
 pub use database_metrics::*;
+pub use roles::*;
 pub use users::*;

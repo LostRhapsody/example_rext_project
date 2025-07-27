@@ -19,9 +19,23 @@ pub struct Model {
     pub is_admin: Option<bool>,
     #[schema(value_type = String)]
     pub last_login: Option<DateTimeWithTimeZone>,
+    pub role_id: Option<i32>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
-pub enum Relation {}
+pub enum Relation {
+    #[sea_orm(
+        belongs_to = "super::roles::Entity",
+        from = "Column::RoleId",
+        to = "super::roles::Column::Id"
+    )]
+    Roles,
+}
+
+impl Related<super::roles::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Roles.def()
+    }
+}
 
 impl ActiveModelBehavior for ActiveModel {}

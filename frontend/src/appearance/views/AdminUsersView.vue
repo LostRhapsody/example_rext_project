@@ -89,6 +89,23 @@
                 Admin privileges
               </label>
             </div>
+            <div class="form-group">
+              <label for="create-role">Role</label>
+              <select
+                id="create-role"
+                v-model="createForm.role_id"
+                class="role-select"
+              >
+                <option value="">No Role</option>
+                <option
+                  v-for="role in roles"
+                  :key="role.id"
+                  :value="role.id"
+                >
+                  {{ role.name }} - {{ role.description }}
+                </option>
+              </select>
+            </div>
             <div class="form-actions">
               <button type="button" @click="closeCreateModal" class="cancel-btn">Cancel</button>
               <button type="submit" :disabled="creating" class="submit-btn">
@@ -138,6 +155,23 @@
                 />
                 Admin privileges
               </label>
+            </div>
+            <div class="form-group">
+              <label for="edit-role">Role</label>
+              <select
+                id="edit-role"
+                v-model="editForm.role_id"
+                class="role-select"
+              >
+                <option value="">No Role</option>
+                <option
+                  v-for="role in roles"
+                  :key="role.id"
+                  :value="role.id"
+                >
+                  {{ role.name }} - {{ role.description }}
+                </option>
+              </select>
             </div>
             <div class="form-actions">
               <button type="button" @click="closeEditModal" class="cancel-btn">Cancel</button>
@@ -234,18 +268,29 @@ interface User {
   email: string
   is_admin?: boolean | null
   created_at?: string | null
+  role_id?: number | null
+  role_name?: string | null
+}
+
+interface Role {
+  id: number
+  name: string
+  description?: string | null
+  permissions: string[]
 }
 
 interface CreateUserForm {
   email: string
   password: string
   is_admin: boolean
+  role_id?: number | null
 }
 
 interface UpdateUserForm {
   email: string
   password: string
   is_admin: boolean
+  role_id?: number | null
 }
 
 interface PaginationInfo {
@@ -259,6 +304,7 @@ interface PaginationInfo {
 
 const loading = ref(false)
 const users = ref<User[]>([])
+const roles = ref<Role[]>([])
 const gridApi = ref<any>(null)
 const paginationInfo = ref<PaginationInfo>({
   page: 1,
@@ -284,13 +330,15 @@ const selectedUser = ref<User | null>(null)
 const createForm = reactive<CreateUserForm>({
   email: '',
   password: '',
-  is_admin: false
+  is_admin: false,
+  role_id: null
 })
 
 const editForm = reactive<UpdateUserForm>({
   email: '',
   password: '',
-  is_admin: false
+  is_admin: false,
+  role_id: null
 })
 
 const columnDefs = ref([
@@ -606,18 +654,21 @@ const populateEditForm = (user: User) => {
   editForm.email = user.email
   editForm.password = ''
   editForm.is_admin = user.is_admin || false
+  editForm.role_id = user.role_id || null
 }
 
 const resetCreateForm = () => {
   createForm.email = ''
   createForm.password = ''
   createForm.is_admin = false
+  createForm.role_id = null
 }
 
 const resetEditForm = () => {
   editForm.email = ''
   editForm.password = ''
   editForm.is_admin = false
+  editForm.role_id = null
   selectedUser.value = null
 }
 
@@ -663,8 +714,30 @@ const exportToCsv = () => {
   })
 }
 
+const fetchRoles = async () => {
+  try {
+    const token = localStorage.getItem('adminToken')
+    if (!token) return
+
+    // For now, we'll use a simple fetch until the API client is generated
+    const response = await fetch('http://localhost:3000/api/v1/admin/roles', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+
+    if (response.ok) {
+      const data = await response.json()
+      roles.value = data.data || []
+    }
+  } catch (error) {
+    console.error('Error fetching roles:', error)
+  }
+}
+
 onMounted(() => {
   fetchUsers()
+  fetchRoles()
 })
 </script>
 
@@ -895,11 +968,16 @@ onMounted(() => {
   font-size: 0.9rem;
 }
 
-.form-group input {
+.form-group input,
+.form-group select {
   padding: 0.75rem;
   border: 1px solid #ddd;
   border-radius: 6px;
   font-size: 0.9rem;
+}
+
+.role-select {
+  width: 100%;
 }
 
 .checkbox-label {

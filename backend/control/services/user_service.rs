@@ -57,6 +57,7 @@ impl UserService {
             created_at: Set(user.created_at.map(|dt| dt.fixed_offset())),
             is_admin: Set(Some(false)), // Default to non-admin
             last_login: Set(None),
+            role_id: Set(None), // Default to no role
         };
 
         Users::insert(user_active_model)
@@ -76,6 +77,7 @@ impl UserService {
         email: String,
         password: String,
         is_admin: bool,
+        role_id: Option<i32>,
     ) -> Result<User, AppError> {
         // Validate input
         validate_registration_input(&email, &password)?;
@@ -113,6 +115,7 @@ impl UserService {
             created_at: Set(user.created_at.map(|dt| dt.fixed_offset())),
             is_admin: Set(Some(is_admin)),
             last_login: Set(None),
+            role_id: Set(role_id),
         };
 
         Users::insert(user_active_model)
@@ -173,6 +176,7 @@ impl UserService {
                 model.created_at.map(|dt| dt.to_utc()),
                 model.last_login.map(|dt| dt.to_utc()),
                 model.is_admin.unwrap_or(false),
+                model.role_id,
             )
         }))
     }
@@ -201,6 +205,7 @@ impl UserService {
                 model.created_at.map(|dt| dt.to_utc()),
                 model.last_login.map(|dt| dt.to_utc()),
                 model.is_admin.unwrap_or(false),
+                model.role_id,
             )
         }))
     }
@@ -212,6 +217,7 @@ impl UserService {
         email: Option<String>,
         password: Option<String>,
         is_admin: Option<bool>,
+        role_id: Option<i32>,
     ) -> Result<User, AppError> {
         let user_model = DatabaseService::find_one_with_tracking(
             db,
@@ -270,6 +276,11 @@ impl UserService {
             user_active_model.is_admin = Set(Some(admin_status));
         }
 
+        // Update role_id if provided
+        if let Some(new_role_id) = role_id {
+            user_active_model.role_id = Set(Some(new_role_id));
+        }
+
         let updated_user = user_active_model.update(db).await.map_err(|_| AppError {
             message: "Failed to update user".to_string(),
             status_code: StatusCode::INTERNAL_SERVER_ERROR,
@@ -282,6 +293,7 @@ impl UserService {
             updated_user.created_at.map(|dt| dt.to_utc()),
             updated_user.last_login.map(|dt| dt.to_utc()),
             updated_user.is_admin.unwrap_or(false),
+            updated_user.role_id,
         ))
     }
 

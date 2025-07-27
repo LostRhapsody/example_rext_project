@@ -70,7 +70,7 @@ impl StartupService {
             }
             Ok(None) => {
                 // Create admin user
-                match UserService::create_user_with_admin(db, admin_email.clone(), admin_password, true).await {
+                match UserService::create_user_with_admin(db, admin_email.clone(), admin_password, true, None).await {
                     Ok(user) => {
                         println!("✅ Admin user created successfully: {} (ID: {})", admin_email, user.id);
                         println!("⚠️  IMPORTANT: Change the default admin password immediately!");

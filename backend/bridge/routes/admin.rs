@@ -20,6 +20,13 @@ pub fn admin_router(db: DatabaseConnection) -> OpenApiRouter {
         .routes(routes!(crate::bridge::handlers::admin::get_user_handler))
         .routes(routes!(crate::bridge::handlers::admin::update_user_handler))
         .routes(routes!(crate::bridge::handlers::admin::delete_user_handler))
+        // Role management
+        .routes(routes!(crate::bridge::handlers::roles::get_roles_handler))
+        .routes(routes!(crate::bridge::handlers::roles::create_role_handler))
+        .routes(routes!(crate::bridge::handlers::roles::get_role_handler))
+        .routes(routes!(crate::bridge::handlers::roles::update_role_handler))
+        .routes(routes!(crate::bridge::handlers::roles::delete_role_handler))
+        .routes(routes!(crate::bridge::handlers::roles::check_permission_handler))
         // Database inspection
         .routes(routes!(crate::bridge::handlers::admin::get_database_tables_handler))
         .routes(routes!(crate::bridge::handlers::admin::get_table_records_handler))
