@@ -5,6 +5,7 @@ use std::env;
 
 use crate::entity::models::roles;
 use crate::infrastructure::app_error::AppError;
+use crate::domain::permissions::DefaultPermissions;
 use crate::infrastructure::{
     database::DatabaseManager, job_queue::JobQueueManager, scheduler::SchedulerManager,
     server::ServerManager,
@@ -125,15 +126,15 @@ impl StartupService {
         let default_roles = env::var("DEFAULT_ROLES").unwrap_or_else(|_| "admin,user".to_string());
         let default_roles = default_roles.split(',').map(|r| r.trim().to_string()).collect::<Vec<String>>();
 
-        // Define default role configurations
+        // Define default role configurations using the new permission system
         let role_configs = vec![
-            ("admin", "Full system access", vec!["*"]),
-            ("user", "Basic user access", vec!["profile:read", "profile:write"]),
+            ("admin", "Full system access", DefaultPermissions::admin()),
+            ("user", "Basic user access", DefaultPermissions::user()),
         ];
 
         // Create default roles (admin, user, only if found in .env)
         for role_name in default_roles {
-            if let Some((_, description, permissions)) = role_configs.iter()
+            if let Some((_, description, permission_set)) = role_configs.iter()
                 .find(|(name, _, _)| name == &role_name) {
                 
                 // Check if role already exists
@@ -151,7 +152,8 @@ impl StartupService {
                     continue;
                 }
                 
-                let permissions_json = serde_json::to_string(permissions)
+                // Convert permission set to JSON string
+                let permissions_json = serde_json::to_string(&permission_set.to_strings())
                     .map_err(|e| AppError {
                         message: format!("Failed to serialize permissions: {}", e),
                         status_code: StatusCode::INTERNAL_SERVER_ERROR,
