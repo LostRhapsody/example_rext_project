@@ -15,10 +15,10 @@
           @input="applyFilters"
           class="search-input"
         />
-        <select v-model="filters.is_admin" @change="applyFilters" class="admin-filter">
+        <select v-model="filters.role_id" @change="applyFilters" class="role-filter">
           <option value="">All Users</option>
-          <option value="true">Admins Only</option>
-          <option value="false">Regular Users Only</option>
+          <option value="1">Admins Only</option>
+          <option value="2">Regular Users Only</option>
         </select>
       </div>
       <div class="action-buttons">
@@ -81,13 +81,16 @@
               />
             </div>
             <div class="form-group">
-              <label class="checkbox-label">
-                <input
-                  v-model="createForm.is_admin"
-                  type="checkbox"
-                />
-                Admin privileges
-              </label>
+              <label for="create-role">Role</label>
+              <select
+                id="create-role"
+                v-model="createForm.role_id"
+                class="role-select"
+              >
+                <option value="">No Role</option>
+                <option value="1">Admin</option>
+                <option value="2">User</option>
+              </select>
             </div>
             <div class="form-group">
               <label for="create-role">Role</label>
@@ -148,13 +151,16 @@
               <small>Leave blank to keep current password</small>
             </div>
             <div class="form-group">
-              <label class="checkbox-label">
-                <input
-                  v-model="editForm.is_admin"
-                  type="checkbox"
-                />
-                Admin privileges
-              </label>
+              <label for="edit-role">Role</label>
+              <select
+                id="edit-role"
+                v-model="editForm.role_id"
+                class="role-select"
+              >
+                <option value="">No Role</option>
+                <option value="1">Admin</option>
+                <option value="2">User</option>
+              </select>
             </div>
             <div class="form-group">
               <label for="edit-role">Role</label>
@@ -265,7 +271,6 @@ import type { GetUsersHandlerData } from '@/bridge/client/types.gen'
 interface User {
   id: string
   email: string
-  is_admin?: boolean | null
   created_at?: string | null
   role_id?: number | null
   role_name?: string | null
@@ -281,14 +286,12 @@ interface Role {
 interface CreateUserForm {
   email: string
   password: string
-  is_admin: boolean
   role_id?: number | null
 }
 
 interface UpdateUserForm {
   email: string
   password: string
-  is_admin: boolean
   role_id?: number | null
 }
 
@@ -318,7 +321,7 @@ const filters = reactive({
   page: 1,
   limit: 9999,
   search: '',
-  is_admin: ''
+  role_id: ''
 })
 
 const showCreateModal = ref(false)
@@ -329,14 +332,12 @@ const selectedUser = ref<User | null>(null)
 const createForm = reactive<CreateUserForm>({
   email: '',
   password: '',
-  is_admin: false,
   role_id: null
 })
 
 const editForm = reactive<UpdateUserForm>({
   email: '',
   password: '',
-  is_admin: false,
   role_id: null
 })
 
@@ -420,10 +421,8 @@ const fetchUsers = async () => {
     }
 
     if (filters.search) query.search = filters.search
-    if (filters.is_admin === 'true') {
-      query.is_admin = true
-    } else if (filters.is_admin === 'false') {
-      query.is_admin = false
+    if (filters.role_id) {
+      query.role_id = parseInt(filters.role_id)
     }
 
     const response = await getUsersHandler({
@@ -462,7 +461,7 @@ const createUser = async () => {
       body: {
         email: createForm.email,
         password: createForm.password,
-        is_admin: createForm.is_admin
+        role_id: createForm.role_id
       },
       headers: {
         'Authorization': `Bearer ${token}`
@@ -491,7 +490,7 @@ const updateUser = async () => {
 
     const updateData: any = {
       email: editForm.email,
-      is_admin: editForm.is_admin
+      role_id: editForm.role_id
     }
 
     if (editForm.password) {
@@ -656,21 +655,18 @@ const deleteUser = (userId: string) => {
 const populateEditForm = (user: User) => {
   editForm.email = user.email
   editForm.password = ''
-  editForm.is_admin = user.is_admin || false
   editForm.role_id = user.role_id || null
 }
 
 const resetCreateForm = () => {
   createForm.email = ''
   createForm.password = ''
-  createForm.is_admin = false
   createForm.role_id = null
 }
 
 const resetEditForm = () => {
   editForm.email = ''
   editForm.password = ''
-  editForm.is_admin = false
   editForm.role_id = null
   selectedUser.value = null
 }
@@ -682,7 +678,7 @@ const applyFilters = () => {
 
 const clearFilters = () => {
   filters.search = ''
-  filters.is_admin = ''
+  filters.role_id = ''
   filters.page = 1
   fetchUsers()
 }

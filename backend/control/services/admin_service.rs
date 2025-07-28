@@ -18,6 +18,16 @@ pub struct AdminService;
 
 impl AdminService {
     /// Authenticates an admin user and returns a JWT token
+    /// Specifically for "super admin" privileges, defined with the "*" permission
+    /// Other "admin" permissions like "admin:read" are handled by the user_can_perform_action function
+    /// 
+    /// Example:
+    /// ```rust,no_run
+    /// // Super admin auth
+    /// let response = AdminService::authenticate_admin(db, login).await;
+    /// // other admin permission auth
+    /// let user_can_perform_action = AdminService::user_can_perform_action(db, user_id, "admin:read").await.unwrap();
+    /// ```
     pub async fn authenticate_admin(
         db: &DatabaseConnection,
         login: AdminLoginRequest,
@@ -33,7 +43,7 @@ impl AdminService {
                 status_code: StatusCode::UNAUTHORIZED,
             })?;
 
-        // Check if user is admin by querying the database directly for the is_admin field
+        // Check if user has admin role by querying the database directly
         let user_model = DatabaseService::find_one_with_tracking(
             db,
             "users",
@@ -50,7 +60,33 @@ impl AdminService {
             status_code: StatusCode::UNAUTHORIZED,
         })?;
 
-        if !user_model.is_admin.unwrap_or(false) {
+        // Check if user has admin role
+        if let Some(role_id) = user_model.role_id {
+            let role = roles::Entity::find_by_id(role_id)
+                .one(db)
+                .await
+                .map_err(|e| AppError {
+                    message: format!("Database error: {}", e),
+                    status_code: StatusCode::INTERNAL_SERVER_ERROR,
+                })?;
+
+            if let Some(role_model) = role {
+                let permissions: Vec<String> = serde_json::from_str(&role_model.permissions)
+                    .unwrap_or_else(|_| vec![]);
+
+                if !permissions.contains(&"*".to_string()) {
+                    return Err(AppError {
+                        message: "Access denied: Admin privileges required".to_string(),
+                        status_code: StatusCode::FORBIDDEN,
+                    });
+                }
+            } else {
+                return Err(AppError {
+                    message: "Access denied: Admin privileges required".to_string(),
+                    status_code: StatusCode::FORBIDDEN,
+                });
+            }
+        } else {
             return Err(AppError {
                 message: "Access denied: Admin privileges required".to_string(),
                 status_code: StatusCode::FORBIDDEN,
@@ -187,9 +223,6 @@ impl AdminService {
             query = query.filter(users::Column::Email.contains(&search));
         }
 
-        if let Some(is_admin) = params.is_admin {
-            query = query.filter(users::Column::IsAdmin.eq(is_admin));
-        }
 
         // Get total count
         let total = query.clone().count(db).await.map_err(|e| AppError {
@@ -215,7 +248,6 @@ impl AdminService {
                 id: user.id.to_string(),
                 email: user.email,
                 created_at: user.created_at.map(|t| t.to_rfc3339()),
-                is_admin: user.is_admin,
                 role_id: user.role_id,
                 role_name: None, // Will be populated in a separate query if needed
             })
@@ -250,7 +282,6 @@ impl AdminService {
             id: user.id.to_string(),
             email: user.email,
             created_at: user.created_at.map(|t| t.to_rfc3339()),
-            is_admin: Some(user.is_admin),
             role_id: user.role_id,
             role_name: None, // Will be populated in a separate query if needed
         })
@@ -261,11 +292,10 @@ impl AdminService {
         db: &DatabaseConnection,
         request: CreateUserRequest,
     ) -> Result<UserResponse, AppError> {
-        let user = UserService::create_user_with_admin(
+        let user = UserService::create_user_with_role(
             db,
             request.email,
             request.password,
-            request.is_admin.unwrap_or(false),
             request.role_id,
         )
         .await?;
@@ -274,7 +304,6 @@ impl AdminService {
             id: user.id.to_string(),
             email: user.email,
             created_at: user.created_at.map(|t| t.to_rfc3339()),
-            is_admin: Some(request.is_admin.unwrap_or(false)),
             role_id: user.role_id,
             role_name: None, // Will be populated in a separate query if needed
         })
@@ -291,7 +320,6 @@ impl AdminService {
             user_id,
             request.email,
             request.password,
-            request.is_admin,
             request.role_id,
         )
         .await?;
@@ -300,7 +328,6 @@ impl AdminService {
             id: user.id.to_string(),
             email: user.email,
             created_at: user.created_at.map(|t| t.to_rfc3339()),
-            is_admin: Some(user.is_admin),
             role_id: user.role_id,
             role_name: None, // Will be populated in a separate query if needed
         })
@@ -869,16 +896,7 @@ impl AdminService {
                 status_code: StatusCode::NOT_FOUND,
             })?;
 
-        let (user_model, role_model) = user;
-
-        // Check if user is admin (override all permissions)
-        if user_model.is_admin.unwrap_or(false) {
-            return Ok(PermissionCheckResponse {
-                has_permission: true,
-                user_role: Some("admin".to_string()),
-                required_permission: request.permission,
-            });
-        }
+        let (_, role_model) = user;
 
         // Check role-based permissions
         if let Some(role) = role_model {

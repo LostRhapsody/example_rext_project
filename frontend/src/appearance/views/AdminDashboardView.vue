@@ -131,7 +131,6 @@ interface Log {
 interface User {
   id: string
   email: string
-  is_admin: boolean
   created_at: string
 }
 

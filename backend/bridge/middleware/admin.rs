@@ -3,14 +3,14 @@ use axum::{
     middleware::Next,
     response::Response,
 };
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
+use sea_orm::{DatabaseConnection, EntityTrait};
 use tracing::{error, info, warn};
 
 use crate::{
     bridge::types::auth::AuthUser,
     control::services::token_service::TokenService,
     control::services::database_service::DatabaseService,
-    entity::models::users,
+    entity::models::{users, roles},
     infrastructure::{app_error::AppError, logging::LoggingManager},
 };
 
@@ -25,12 +25,11 @@ pub async fn admin_middleware(
     // Extract and validate token using TokenService
     let user_id = TokenService::extract_and_validate_token(&request)?;
 
-    // Check if user has admin privileges
+    // Check if user has admin privileges by checking their role
     let user = DatabaseService::find_one_with_tracking(
         &db,
         "users",
         users::Entity::find_by_id(user_id)
-            .filter(users::Column::IsAdmin.eq(true))
     )
     .await
     .map_err(|e| {
@@ -41,9 +40,42 @@ pub async fn admin_middleware(
         }
     })?
     .ok_or(AppError {
-        message: "Access denied: Admin privileges required".to_string(),
-        status_code: axum::http::StatusCode::FORBIDDEN,
+        message: "Failed to verify admin status".to_string(),
+        status_code: axum::http::StatusCode::INTERNAL_SERVER_ERROR,
     })?;
+
+    // Check if user has admin role
+    let has_admin_permissions = if let Some(role_id) = user.role_id {
+        let role = roles::Entity::find_by_id(role_id)
+            .one(&db)
+            .await
+            .map_err(|e| {
+                error!(request_id = %request_id, error = ?e, "Database error checking role");
+                AppError {
+                    message: "Failed to verify role".to_string(),
+                    status_code: axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+                }
+            })?;
+
+        if let Some(role_model) = role {
+            let permissions: Vec<String> = serde_json::from_str(&role_model.permissions)
+                .unwrap_or_else(|_| vec![]);
+            permissions.contains(&"*".to_string())
+        } else {
+            false
+        }
+    } else {
+        false
+    };
+
+
+
+    if !has_admin_permissions {
+        return Err(AppError {
+            message: "Access denied: Admin privileges required".to_string(),
+            status_code: axum::http::StatusCode::FORBIDDEN,
+        });
+    }
 
     info!(
         request_id = %request_id,

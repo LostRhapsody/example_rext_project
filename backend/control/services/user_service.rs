@@ -55,7 +55,6 @@ impl UserService {
             email: Set(user.email.clone()),
             password_hash: Set(user.password_hash.clone()),
             created_at: Set(user.created_at.map(|dt| dt.fixed_offset())),
-            is_admin: Set(Some(false)), // Default to non-admin
             last_login: Set(None),
             role_id: Set(None), // Default to no role
         };
@@ -71,12 +70,11 @@ impl UserService {
         Ok(user)
     }
 
-    /// Creates a new user with admin privileges (for admin service)
-    pub async fn create_user_with_admin(
+    /// Creates a new user with role assignment (for admin service)
+    pub async fn create_user_with_role(
         db: &DatabaseConnection,
         email: String,
         password: String,
-        is_admin: bool,
         role_id: Option<i32>,
     ) -> Result<User, AppError> {
         // Validate input
@@ -113,7 +111,6 @@ impl UserService {
             email: Set(user.email.clone()),
             password_hash: Set(user.password_hash.clone()),
             created_at: Set(user.created_at.map(|dt| dt.fixed_offset())),
-            is_admin: Set(Some(is_admin)),
             last_login: Set(None),
             role_id: Set(role_id),
         };
@@ -175,7 +172,6 @@ impl UserService {
                 model.password_hash,
                 model.created_at.map(|dt| dt.to_utc()),
                 model.last_login.map(|dt| dt.to_utc()),
-                model.is_admin.unwrap_or(false),
                 model.role_id,
             )
         }))
@@ -204,7 +200,6 @@ impl UserService {
                 model.password_hash,
                 model.created_at.map(|dt| dt.to_utc()),
                 model.last_login.map(|dt| dt.to_utc()),
-                model.is_admin.unwrap_or(false),
                 model.role_id,
             )
         }))
@@ -216,7 +211,6 @@ impl UserService {
         user_id: Uuid,
         email: Option<String>,
         password: Option<String>,
-        is_admin: Option<bool>,
         role_id: Option<i32>,
     ) -> Result<User, AppError> {
         let user_model = DatabaseService::find_one_with_tracking(
@@ -271,11 +265,6 @@ impl UserService {
             user_active_model.password_hash = Set(password_hash);
         }
 
-        // Update admin status if provided
-        if let Some(admin_status) = is_admin {
-            user_active_model.is_admin = Set(Some(admin_status));
-        }
-
         // Update role_id if provided
         if let Some(new_role_id) = role_id {
             user_active_model.role_id = Set(Some(new_role_id));
@@ -292,7 +281,6 @@ impl UserService {
             updated_user.password_hash,
             updated_user.created_at.map(|dt| dt.to_utc()),
             updated_user.last_login.map(|dt| dt.to_utc()),
-            updated_user.is_admin.unwrap_or(false),
             updated_user.role_id,
         ))
     }

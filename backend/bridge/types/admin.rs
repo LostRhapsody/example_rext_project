@@ -70,14 +70,12 @@ pub struct UsersQueryParams {
     #[serde(default = "default_limit")]
     pub limit: u64,
     pub search: Option<String>,
-    pub is_admin: Option<bool>,
 }
 
 #[derive(Deserialize, ToSchema)]
 pub struct CreateUserRequest {
     pub email: String,
     pub password: String,
-    pub is_admin: Option<bool>,
     pub role_id: Option<i32>,
 }
 
@@ -85,7 +83,6 @@ pub struct CreateUserRequest {
 pub struct UpdateUserRequest {
     pub email: Option<String>,
     pub password: Option<String>,
-    pub is_admin: Option<bool>,
     pub role_id: Option<i32>,
 }
 
@@ -94,7 +91,6 @@ pub struct UserResponse {
     pub id: String,
     pub email: String,
     pub created_at: Option<String>,
-    pub is_admin: Option<bool>,
     pub role_id: Option<i32>,
     pub role_name: Option<String>,
 }

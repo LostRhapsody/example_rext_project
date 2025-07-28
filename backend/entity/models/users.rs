@@ -16,7 +16,6 @@ pub struct Model {
     pub password_hash: String,
     #[schema(value_type = String)]
     pub created_at: Option<DateTimeWithTimeZone>,
-    pub is_admin: Option<bool>,
     #[schema(value_type = String)]
     pub last_login: Option<DateTimeWithTimeZone>,
     pub role_id: Option<i32>,

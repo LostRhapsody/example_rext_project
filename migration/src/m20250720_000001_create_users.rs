@@ -1,12 +1,9 @@
 use sea_orm_migration::prelude::*;
 
+#[derive(DeriveMigrationName)]
 pub struct Migration;
 
-impl MigrationName for Migration {
-    fn name(&self) -> &str {
-        "m20250720_000001_create_users"
-    }
-}
+
 
 #[async_trait::async_trait]
 impl MigrationTrait for Migration {
@@ -28,6 +25,16 @@ impl MigrationTrait for Migration {
                             .timestamp_with_time_zone()
                             .default(Expr::current_timestamp()),
                     )
+                    .col(ColumnDef::new(Users::LastLogin).timestamp_with_time_zone().null())
+                    .col(ColumnDef::new(Users::RoleId).integer().null())
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("fk_users_role_id")
+                            .from(Users::Table, Users::RoleId)
+                            .to(Roles::Table, Roles::Id)
+                            .on_delete(ForeignKeyAction::SetNull)
+                            .on_update(ForeignKeyAction::Cascade)
+                    )
                     .to_owned(),
             )
             .await
@@ -47,4 +54,12 @@ enum Users {
     Email,
     PasswordHash,
     CreatedAt,
+    LastLogin,
+    RoleId,
+}
+
+#[derive(DeriveIden)]
+enum Roles {
+    Table,
+    Id,
 }

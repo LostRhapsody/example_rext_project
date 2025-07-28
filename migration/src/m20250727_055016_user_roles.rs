@@ -28,44 +28,10 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
-        // Add role_id column to users table
-        manager
-            .alter_table(
-                Table::alter()
-                    .table(Users::Table)
-                    .add_column(
-                        ColumnDef::new(Users::RoleId)
-                            .integer()
-                            .null()
-                    )
-                    .to_owned(),
-            )
-            .await?;
-
         Ok(())
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        // Drop foreign key constraint
-        manager
-            .drop_foreign_key(
-                ForeignKey::drop()
-                    .name("fk_users_role_id")
-                    .table(Users::Table)
-                    .to_owned(),
-            )
-            .await?;
-
-        // Drop role_id column from users table
-        manager
-            .alter_table(
-                Table::alter()
-                    .table(Users::Table)
-                    .drop_column(Users::RoleId)
-                    .to_owned(),
-            )
-            .await?;
-
         // Drop roles table
         manager
             .drop_table(Table::drop().table(Roles::Table).to_owned())
@@ -86,8 +52,4 @@ enum Roles {
     UpdatedAt,
 }
 
-#[derive(DeriveIden)]
-enum Users {
-    Table,
-    RoleId,
-}
+
