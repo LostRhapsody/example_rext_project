@@ -30,10 +30,20 @@ export type AuthUser = {
     user_id: string;
 };
 
+/**
+ * Create role request
+ */
+export type CreateRoleRequest = {
+    description?: string | null;
+    name: string;
+    permissions: Array<string>;
+};
+
 export type CreateUserRequest = {
     email: string;
     is_admin?: boolean | null;
     password: string;
+    role_id?: number | null;
 };
 
 export type DatabasePerformanceResponse = {
@@ -143,12 +153,26 @@ export type PaginatedResponseAuditLogResponse = {
     pagination: PaginationMeta;
 };
 
+export type PaginatedResponseRoleResponse = {
+    data: Array<{
+        created_at?: string | null;
+        description?: string | null;
+        id: number;
+        name: string;
+        permissions: Array<string>;
+        updated_at?: string | null;
+    }>;
+    pagination: PaginationMeta;
+};
+
 export type PaginatedResponseUserResponse = {
     data: Array<{
         created_at?: string | null;
         email: string;
         id: string;
         is_admin?: boolean | null;
+        role_id?: number | null;
+        role_name?: string | null;
     }>;
     pagination: PaginationMeta;
 };
@@ -158,6 +182,23 @@ export type PaginationMeta = {
     page: number;
     total: number;
     total_pages: number;
+};
+
+/**
+ * Permission check request
+ */
+export type PermissionCheckRequest = {
+    permission: string;
+    user_id: string;
+};
+
+/**
+ * Permission check response
+ */
+export type PermissionCheckResponse = {
+    has_permission: boolean;
+    required_permission: string;
+    user_role?: string | null;
 };
 
 export type ProfileResponse = {
@@ -196,6 +237,18 @@ export type RegisterResponse = {
     userId: string;
 };
 
+/**
+ * Role response
+ */
+export type RoleResponse = {
+    created_at?: string | null;
+    description?: string | null;
+    id: number;
+    name: string;
+    permissions: Array<string>;
+    updated_at?: string | null;
+};
+
 export type TableRecordResponse = {
     columns: Array<string>;
     records: Array<Array<unknown>>;
@@ -206,10 +259,20 @@ export type TableRecordsQueryParams = {
     page?: number;
 };
 
+/**
+ * Update role request
+ */
+export type UpdateRoleRequest = {
+    description?: string | null;
+    name?: string | null;
+    permissions?: Array<string> | null;
+};
+
 export type UpdateUserRequest = {
     email?: string | null;
     is_admin?: boolean | null;
     password?: string | null;
+    role_id?: number | null;
 };
 
 export type UserResponse = {
@@ -217,6 +280,8 @@ export type UserResponse = {
     email: string;
     id: string;
     is_admin?: boolean | null;
+    role_id?: number | null;
+    role_name?: string | null;
 };
 
 export type UsersQueryParams = {
@@ -422,6 +487,259 @@ export type GetAuditLogsHandlerResponses = {
 };
 
 export type GetAuditLogsHandlerResponse = GetAuditLogsHandlerResponses[keyof GetAuditLogsHandlerResponses];
+
+export type CheckPermissionHandlerData = {
+    body: PermissionCheckRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/permissions/check';
+};
+
+export type CheckPermissionHandlerErrors = {
+    /**
+     * Bad request - validation errors
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized - authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden - admin privileges required
+     */
+    403: ErrorResponse;
+    /**
+     * Internal server error
+     */
+    500: ErrorResponse;
+};
+
+export type CheckPermissionHandlerError = CheckPermissionHandlerErrors[keyof CheckPermissionHandlerErrors];
+
+export type CheckPermissionHandlerResponses = {
+    /**
+     * Permission check completed
+     */
+    200: PermissionCheckResponse;
+};
+
+export type CheckPermissionHandlerResponse = CheckPermissionHandlerResponses[keyof CheckPermissionHandlerResponses];
+
+export type GetRolesHandlerData = {
+    body?: never;
+    path?: never;
+    query: {
+        page: number;
+        limit: number;
+        search?: string | null;
+    };
+    url: '/api/v1/admin/roles';
+};
+
+export type GetRolesHandlerErrors = {
+    /**
+     * Unauthorized - authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden - admin privileges required
+     */
+    403: ErrorResponse;
+    /**
+     * Internal server error
+     */
+    500: ErrorResponse;
+};
+
+export type GetRolesHandlerError = GetRolesHandlerErrors[keyof GetRolesHandlerErrors];
+
+export type GetRolesHandlerResponses = {
+    /**
+     * Roles retrieved successfully
+     */
+    200: PaginatedResponseRoleResponse;
+};
+
+export type GetRolesHandlerResponse = GetRolesHandlerResponses[keyof GetRolesHandlerResponses];
+
+export type CreateRoleHandlerData = {
+    body: CreateRoleRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/roles';
+};
+
+export type CreateRoleHandlerErrors = {
+    /**
+     * Bad request - validation errors
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized - authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden - admin privileges required
+     */
+    403: ErrorResponse;
+    /**
+     * Conflict - role name already exists
+     */
+    409: ErrorResponse;
+    /**
+     * Internal server error
+     */
+    500: ErrorResponse;
+};
+
+export type CreateRoleHandlerError = CreateRoleHandlerErrors[keyof CreateRoleHandlerErrors];
+
+export type CreateRoleHandlerResponses = {
+    /**
+     * Role created successfully
+     */
+    201: RoleResponse;
+};
+
+export type CreateRoleHandlerResponse = CreateRoleHandlerResponses[keyof CreateRoleHandlerResponses];
+
+export type DeleteRoleHandlerData = {
+    body?: never;
+    path: {
+        /**
+         * Role ID
+         */
+        id: number;
+    };
+    query?: never;
+    url: '/api/v1/admin/roles/{id}';
+};
+
+export type DeleteRoleHandlerErrors = {
+    /**
+     * Unauthorized - authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden - admin privileges required
+     */
+    403: ErrorResponse;
+    /**
+     * Role not found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict - role is in use by users
+     */
+    409: ErrorResponse;
+    /**
+     * Internal server error
+     */
+    500: ErrorResponse;
+};
+
+export type DeleteRoleHandlerError = DeleteRoleHandlerErrors[keyof DeleteRoleHandlerErrors];
+
+export type DeleteRoleHandlerResponses = {
+    /**
+     * Role deleted successfully
+     */
+    200: MessageResponse;
+};
+
+export type DeleteRoleHandlerResponse = DeleteRoleHandlerResponses[keyof DeleteRoleHandlerResponses];
+
+export type GetRoleHandlerData = {
+    body?: never;
+    path: {
+        /**
+         * Role ID
+         */
+        id: number;
+    };
+    query?: never;
+    url: '/api/v1/admin/roles/{id}';
+};
+
+export type GetRoleHandlerErrors = {
+    /**
+     * Unauthorized - authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden - admin privileges required
+     */
+    403: ErrorResponse;
+    /**
+     * Role not found
+     */
+    404: ErrorResponse;
+    /**
+     * Internal server error
+     */
+    500: ErrorResponse;
+};
+
+export type GetRoleHandlerError = GetRoleHandlerErrors[keyof GetRoleHandlerErrors];
+
+export type GetRoleHandlerResponses = {
+    /**
+     * Role retrieved successfully
+     */
+    200: RoleResponse;
+};
+
+export type GetRoleHandlerResponse = GetRoleHandlerResponses[keyof GetRoleHandlerResponses];
+
+export type UpdateRoleHandlerData = {
+    body: UpdateRoleRequest;
+    path: {
+        /**
+         * Role ID
+         */
+        id: number;
+    };
+    query?: never;
+    url: '/api/v1/admin/roles/{id}';
+};
+
+export type UpdateRoleHandlerErrors = {
+    /**
+     * Bad request - validation errors
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized - authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden - admin privileges required
+     */
+    403: ErrorResponse;
+    /**
+     * Role not found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict - role name already exists
+     */
+    409: ErrorResponse;
+    /**
+     * Internal server error
+     */
+    500: ErrorResponse;
+};
+
+export type UpdateRoleHandlerError = UpdateRoleHandlerErrors[keyof UpdateRoleHandlerErrors];
+
+export type UpdateRoleHandlerResponses = {
+    /**
+     * Role updated successfully
+     */
+    200: RoleResponse;
+};
+
+export type UpdateRoleHandlerResponse = UpdateRoleHandlerResponses[keyof UpdateRoleHandlerResponses];
 
 export type GetUsersHandlerData = {
     body?: never;

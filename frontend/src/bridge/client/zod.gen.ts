@@ -59,13 +59,29 @@ export const zAuthUser = z.object({
     user_id: z.string()
 });
 
+/**
+ * Create role request
+ */
+export const zCreateRoleRequest = z.object({
+    description: z.optional(z.union([
+        z.string(),
+        z.null()
+    ])),
+    name: z.string(),
+    permissions: z.array(z.string())
+});
+
 export const zCreateUserRequest = z.object({
     email: z.string(),
     is_admin: z.optional(z.union([
         z.boolean(),
         z.null()
     ])),
-    password: z.string()
+    password: z.string(),
+    role_id: z.optional(z.union([
+        z.int(),
+        z.null()
+    ]))
 });
 
 export const zDatabasePerformanceResponse = z.object({
@@ -239,6 +255,27 @@ export const zPaginatedResponseAuditLogResponse = z.object({
     pagination: zPaginationMeta
 });
 
+export const zPaginatedResponseRoleResponse = z.object({
+    data: z.array(z.object({
+        created_at: z.optional(z.union([
+            z.string(),
+            z.null()
+        ])),
+        description: z.optional(z.union([
+            z.string(),
+            z.null()
+        ])),
+        id: z.int(),
+        name: z.string(),
+        permissions: z.array(z.string()),
+        updated_at: z.optional(z.union([
+            z.string(),
+            z.null()
+        ]))
+    })),
+    pagination: zPaginationMeta
+});
+
 export const zPaginatedResponseUserResponse = z.object({
     data: z.array(z.object({
         created_at: z.optional(z.union([
@@ -250,9 +287,37 @@ export const zPaginatedResponseUserResponse = z.object({
         is_admin: z.optional(z.union([
             z.boolean(),
             z.null()
+        ])),
+        role_id: z.optional(z.union([
+            z.int(),
+            z.null()
+        ])),
+        role_name: z.optional(z.union([
+            z.string(),
+            z.null()
         ]))
     })),
     pagination: zPaginationMeta
+});
+
+/**
+ * Permission check request
+ */
+export const zPermissionCheckRequest = z.object({
+    permission: z.string(),
+    user_id: z.string()
+});
+
+/**
+ * Permission check response
+ */
+export const zPermissionCheckResponse = z.object({
+    has_permission: z.boolean(),
+    required_permission: z.string(),
+    user_role: z.optional(z.union([
+        z.string(),
+        z.null()
+    ]))
 });
 
 export const zProfileResponse = z.object({
@@ -279,6 +344,27 @@ export const zRegisterResponse = z.object({
     userId: z.string()
 });
 
+/**
+ * Role response
+ */
+export const zRoleResponse = z.object({
+    created_at: z.optional(z.union([
+        z.string(),
+        z.null()
+    ])),
+    description: z.optional(z.union([
+        z.string(),
+        z.null()
+    ])),
+    id: z.int(),
+    name: z.string(),
+    permissions: z.array(z.string()),
+    updated_at: z.optional(z.union([
+        z.string(),
+        z.null()
+    ]))
+});
+
 export const zTableRecordResponse = z.object({
     columns: z.array(z.string()),
     records: z.array(z.array(z.unknown()))
@@ -287,6 +373,24 @@ export const zTableRecordResponse = z.object({
 export const zTableRecordsQueryParams = z.object({
     limit: z.optional(z.coerce.bigint().gte(BigInt(0))),
     page: z.optional(z.coerce.bigint().gte(BigInt(0)))
+});
+
+/**
+ * Update role request
+ */
+export const zUpdateRoleRequest = z.object({
+    description: z.optional(z.union([
+        z.string(),
+        z.null()
+    ])),
+    name: z.optional(z.union([
+        z.string(),
+        z.null()
+    ])),
+    permissions: z.optional(z.union([
+        z.array(z.string()),
+        z.null()
+    ]))
 });
 
 export const zUpdateUserRequest = z.object({
@@ -301,6 +405,10 @@ export const zUpdateUserRequest = z.object({
     password: z.optional(z.union([
         z.string(),
         z.null()
+    ])),
+    role_id: z.optional(z.union([
+        z.int(),
+        z.null()
     ]))
 });
 
@@ -313,6 +421,14 @@ export const zUserResponse = z.object({
     id: z.string(),
     is_admin: z.optional(z.union([
         z.boolean(),
+        z.null()
+    ])),
+    role_id: z.optional(z.union([
+        z.int(),
+        z.null()
+    ])),
+    role_name: z.optional(z.union([
+        z.string(),
         z.null()
     ]))
 });
@@ -423,6 +539,85 @@ export const zGetAuditLogsHandlerData = z.object({
  * Audit logs retrieved successfully
  */
 export const zGetAuditLogsHandlerResponse = zPaginatedResponseAuditLogResponse;
+
+export const zCheckPermissionHandlerData = z.object({
+    body: zPermissionCheckRequest,
+    path: z.optional(z.never()),
+    query: z.optional(z.never())
+});
+
+/**
+ * Permission check completed
+ */
+export const zCheckPermissionHandlerResponse = zPermissionCheckResponse;
+
+export const zGetRolesHandlerData = z.object({
+    body: z.optional(z.never()),
+    path: z.optional(z.never()),
+    query: z.object({
+        page: z.coerce.bigint().gte(BigInt(0)),
+        limit: z.coerce.bigint().gte(BigInt(0)),
+        search: z.optional(z.union([
+            z.string(),
+            z.null()
+        ]))
+    })
+});
+
+/**
+ * Roles retrieved successfully
+ */
+export const zGetRolesHandlerResponse = zPaginatedResponseRoleResponse;
+
+export const zCreateRoleHandlerData = z.object({
+    body: zCreateRoleRequest,
+    path: z.optional(z.never()),
+    query: z.optional(z.never())
+});
+
+/**
+ * Role created successfully
+ */
+export const zCreateRoleHandlerResponse = zRoleResponse;
+
+export const zDeleteRoleHandlerData = z.object({
+    body: z.optional(z.never()),
+    path: z.object({
+        id: z.int()
+    }),
+    query: z.optional(z.never())
+});
+
+/**
+ * Role deleted successfully
+ */
+export const zDeleteRoleHandlerResponse = zMessageResponse;
+
+export const zGetRoleHandlerData = z.object({
+    body: z.optional(z.never()),
+    path: z.object({
+        id: z.int()
+    }),
+    query: z.optional(z.never())
+});
+
+/**
+ * Role retrieved successfully
+ */
+export const zGetRoleHandlerResponse = zRoleResponse;
+
+export const zUpdateRoleHandlerData = z.object({
+    body: zUpdateRoleRequest,
+    path: z.object({
+        id: z.int()
+    }),
+    query: z.optional(z.never())
+});
+
+/**
+ * Role updated successfully
+ */
+export const zUpdateRoleHandlerResponse = zRoleResponse;
 
 export const zGetUsersHandlerData = z.object({
     body: z.optional(z.never()),

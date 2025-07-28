@@ -1,6 +1,10 @@
-use sea_orm::DatabaseConnection;
+use axum::http::StatusCode;
+use sea_orm::ActiveValue::Set;
+use sea_orm::{ActiveModelTrait, DatabaseConnection};
 use std::env;
 
+use crate::entity::models::roles;
+use crate::infrastructure::app_error::AppError;
 use crate::infrastructure::{
     database::DatabaseManager, job_queue::JobQueueManager, scheduler::SchedulerManager,
     server::ServerManager,
@@ -41,6 +45,9 @@ impl StartupService {
 
         // Seed admin user if enabled
         Self::seed_admin_user(&db).await?;
+
+        // Seed default roles if enabled
+        Self::seed_default_roles(&db).await?;
 
         Ok(db)
     }
@@ -87,6 +94,61 @@ impl StartupService {
                 Err(Box::new(e))
             }
         }
+    }
+
+    async fn seed_default_roles(db: &DatabaseConnection) -> Result<(), Box<dyn std::error::Error>> {
+        // Check if default roles creation is enabled
+        let create_default_roles = env::var("CREATE_DEFAULT_ROLES")
+            .unwrap_or_else(|_| "true".to_string())
+            .parse::<bool>()
+            .unwrap_or(true);
+
+        if !create_default_roles {
+            println!("Default roles creation is disabled");
+            return Ok(());
+        }
+
+        // Get default roles from environment variables
+        let default_roles = env::var("DEFAULT_ROLES").unwrap_or_else(|_| "admin,user".to_string());
+        let default_roles = default_roles.split(',').map(|r| r.trim().to_string()).collect::<Vec<String>>();
+
+        // Define default role configurations
+        let role_configs = vec![
+            ("admin", "Full system access", vec!["*"]),
+            ("user", "Basic user access", vec!["profile:read", "profile:write"]),
+        ];
+
+        // Create default roles (admin, user, only if found in .env)
+        for role_name in default_roles {
+            if let Some((_, description, permissions)) = role_configs.iter()
+                .find(|(name, _, _)| name == &role_name) {
+                
+                let permissions_json = serde_json::to_string(permissions)
+                    .map_err(|e| AppError {
+                        message: format!("Failed to serialize permissions: {}", e),
+                        status_code: StatusCode::INTERNAL_SERVER_ERROR,
+                    })?;
+
+                let role_model = roles::ActiveModel {
+                    name: Set(role_name.clone()),
+                    description: Set(Some(description.to_string())),
+                    permissions: Set(permissions_json),
+                    ..Default::default()
+                };
+
+                let role = role_model
+                    .insert(db)
+                    .await
+                    .map_err(|e| AppError {
+                        message: format!("Database error: {}", e),
+                        status_code: StatusCode::INTERNAL_SERVER_ERROR,
+                    })?;
+
+                println!("✅ Role created successfully: {}", role.name);
+            }
+        }
+
+        Ok(())
     }
 
     /// Runs the server task

@@ -126,11 +126,18 @@ declare global {
   const zAdminLogoutHandlerResponse: typeof import('./src/bridge/client/zod.gen')['zAdminLogoutHandlerResponse']
   const zAuditLogResponse: typeof import('./src/bridge/client/zod.gen')['zAuditLogResponse']
   const zAuthUser: typeof import('./src/bridge/client/zod.gen')['zAuthUser']
+  const zCheckPermissionHandlerData: typeof import('./src/bridge/client/zod.gen')['zCheckPermissionHandlerData']
+  const zCheckPermissionHandlerResponse: typeof import('./src/bridge/client/zod.gen')['zCheckPermissionHandlerResponse']
+  const zCreateRoleHandlerData: typeof import('./src/bridge/client/zod.gen')['zCreateRoleHandlerData']
+  const zCreateRoleHandlerResponse: typeof import('./src/bridge/client/zod.gen')['zCreateRoleHandlerResponse']
+  const zCreateRoleRequest: typeof import('./src/bridge/client/zod.gen')['zCreateRoleRequest']
   const zCreateUserHandlerData: typeof import('./src/bridge/client/zod.gen')['zCreateUserHandlerData']
   const zCreateUserHandlerResponse: typeof import('./src/bridge/client/zod.gen')['zCreateUserHandlerResponse']
   const zCreateUserRequest: typeof import('./src/bridge/client/zod.gen')['zCreateUserRequest']
   const zDatabasePerformanceResponse: typeof import('./src/bridge/client/zod.gen')['zDatabasePerformanceResponse']
   const zDatabaseTableResponse: typeof import('./src/bridge/client/zod.gen')['zDatabaseTableResponse']
+  const zDeleteRoleHandlerData: typeof import('./src/bridge/client/zod.gen')['zDeleteRoleHandlerData']
+  const zDeleteRoleHandlerResponse: typeof import('./src/bridge/client/zod.gen')['zDeleteRoleHandlerResponse']
   const zDeleteUserHandlerData: typeof import('./src/bridge/client/zod.gen')['zDeleteUserHandlerData']
   const zDeleteUserHandlerResponse: typeof import('./src/bridge/client/zod.gen')['zDeleteUserHandlerResponse']
   const zErrorResponse: typeof import('./src/bridge/client/zod.gen')['zErrorResponse']
@@ -138,6 +145,10 @@ declare global {
   const zGetAuditLogsHandlerResponse: typeof import('./src/bridge/client/zod.gen')['zGetAuditLogsHandlerResponse']
   const zGetDatabaseTablesHandlerData: typeof import('./src/bridge/client/zod.gen')['zGetDatabaseTablesHandlerData']
   const zGetDatabaseTablesHandlerResponse: typeof import('./src/bridge/client/zod.gen')['zGetDatabaseTablesHandlerResponse']
+  const zGetRoleHandlerData: typeof import('./src/bridge/client/zod.gen')['zGetRoleHandlerData']
+  const zGetRoleHandlerResponse: typeof import('./src/bridge/client/zod.gen')['zGetRoleHandlerResponse']
+  const zGetRolesHandlerData: typeof import('./src/bridge/client/zod.gen')['zGetRolesHandlerData']
+  const zGetRolesHandlerResponse: typeof import('./src/bridge/client/zod.gen')['zGetRolesHandlerResponse']
   const zGetTableRecordsHandlerData: typeof import('./src/bridge/client/zod.gen')['zGetTableRecordsHandlerData']
   const zGetTableRecordsHandlerResponse: typeof import('./src/bridge/client/zod.gen')['zGetTableRecordsHandlerResponse']
   const zGetUserHandlerData: typeof import('./src/bridge/client/zod.gen')['zGetUserHandlerData']
@@ -156,8 +167,11 @@ declare global {
   const zLogsQueryParams: typeof import('./src/bridge/client/zod.gen')['zLogsQueryParams']
   const zMessageResponse: typeof import('./src/bridge/client/zod.gen')['zMessageResponse']
   const zPaginatedResponseAuditLogResponse: typeof import('./src/bridge/client/zod.gen')['zPaginatedResponseAuditLogResponse']
+  const zPaginatedResponseRoleResponse: typeof import('./src/bridge/client/zod.gen')['zPaginatedResponseRoleResponse']
   const zPaginatedResponseUserResponse: typeof import('./src/bridge/client/zod.gen')['zPaginatedResponseUserResponse']
   const zPaginationMeta: typeof import('./src/bridge/client/zod.gen')['zPaginationMeta']
+  const zPermissionCheckRequest: typeof import('./src/bridge/client/zod.gen')['zPermissionCheckRequest']
+  const zPermissionCheckResponse: typeof import('./src/bridge/client/zod.gen')['zPermissionCheckResponse']
   const zProfileHandlerData: typeof import('./src/bridge/client/zod.gen')['zProfileHandlerData']
   const zProfileHandlerResponse: typeof import('./src/bridge/client/zod.gen')['zProfileHandlerResponse']
   const zProfileResponse: typeof import('./src/bridge/client/zod.gen')['zProfileResponse']
@@ -165,8 +179,12 @@ declare global {
   const zRegisterHandlerResponse: typeof import('./src/bridge/client/zod.gen')['zRegisterHandlerResponse']
   const zRegisterRequest: typeof import('./src/bridge/client/zod.gen')['zRegisterRequest']
   const zRegisterResponse: typeof import('./src/bridge/client/zod.gen')['zRegisterResponse']
+  const zRoleResponse: typeof import('./src/bridge/client/zod.gen')['zRoleResponse']
   const zTableRecordResponse: typeof import('./src/bridge/client/zod.gen')['zTableRecordResponse']
   const zTableRecordsQueryParams: typeof import('./src/bridge/client/zod.gen')['zTableRecordsQueryParams']
+  const zUpdateRoleHandlerData: typeof import('./src/bridge/client/zod.gen')['zUpdateRoleHandlerData']
+  const zUpdateRoleHandlerResponse: typeof import('./src/bridge/client/zod.gen')['zUpdateRoleHandlerResponse']
+  const zUpdateRoleRequest: typeof import('./src/bridge/client/zod.gen')['zUpdateRoleRequest']
   const zUpdateUserHandlerData: typeof import('./src/bridge/client/zod.gen')['zUpdateUserHandlerData']
   const zUpdateUserHandlerResponse: typeof import('./src/bridge/client/zod.gen')['zUpdateUserHandlerResponse']
   const zUpdateUserRequest: typeof import('./src/bridge/client/zod.gen')['zUpdateUserRequest']
@@ -178,12 +196,6 @@ declare global {
   // @ts-ignore
   export type { Component, Slot, Slots, ComponentPublicInstance, ComputedRef, DirectiveBinding, ExtractDefaultPropTypes, ExtractPropTypes, ExtractPublicPropTypes, InjectionKey, PropType, Ref, MaybeRef, MaybeRefOrGetter, VNode, WritableComputedRef } from 'vue'
   import('vue')
-  // @ts-ignore
-  export type { AdminLoginRequest, AdminLoginResponse, AuditLogResponse, AuthUser, CreateUserRequest, DatabasePerformanceResponse, DatabaseTableResponse, ErrorResponse, HealthResponse, LoginRequest, LoginResponse, LogsQueryParams, MessageResponse, PaginatedResponseAuditLogResponse, PaginatedResponseUserResponse, PaginationMeta, ProfileResponse, RegisterRequest, RegisterResponse, TableRecordResponse, TableRecordsQueryParams, UpdateUserRequest, UserResponse, UsersQueryParams, GetDatabaseTablesHandlerData, GetDatabaseTablesHandlerErrors, GetDatabaseTablesHandlerError, GetDatabaseTablesHandlerResponses, GetDatabaseTablesHandlerResponse, GetTableRecordsHandlerData, GetTableRecordsHandlerErrors, GetTableRecordsHandlerError, GetTableRecordsHandlerResponses, GetTableRecordsHandlerResponse, HealthHandlerData, HealthHandlerErrors, HealthHandlerError, HealthHandlerResponses, HealthHandlerResponse, AdminLoginHandlerData, AdminLoginHandlerErrors, AdminLoginHandlerError, AdminLoginHandlerResponses, AdminLoginHandlerResponse, AdminLogoutHandlerData, AdminLogoutHandlerResponses, AdminLogoutHandlerResponse, GetAuditLogsHandlerData, GetAuditLogsHandlerErrors, GetAuditLogsHandlerError, GetAuditLogsHandlerResponses, GetAuditLogsHandlerResponse, GetUsersHandlerData, GetUsersHandlerErrors, GetUsersHandlerError, GetUsersHandlerResponses, GetUsersHandlerResponse, CreateUserHandlerData, CreateUserHandlerErrors, CreateUserHandlerError, CreateUserHandlerResponses, CreateUserHandlerResponse, DeleteUserHandlerData, DeleteUserHandlerErrors, DeleteUserHandlerError, DeleteUserHandlerResponses, DeleteUserHandlerResponse, GetUserHandlerData, GetUserHandlerErrors, GetUserHandlerError, GetUserHandlerResponses, GetUserHandlerResponse, UpdateUserHandlerData, UpdateUserHandlerErrors, UpdateUserHandlerError, UpdateUserHandlerResponses, UpdateUserHandlerResponse, LoginHandlerData, LoginHandlerErrors, LoginHandlerError, LoginHandlerResponses, LoginHandlerResponse, LogoutHandlerData, LogoutHandlerResponses, LogoutHandlerResponse, ProfileHandlerData, ProfileHandlerErrors, ProfileHandlerError, ProfileHandlerResponses, ProfileHandlerResponse, RegisterHandlerData, RegisterHandlerErrors, RegisterHandlerError, RegisterHandlerResponses, RegisterHandlerResponse, ClientOptions } from './src/bridge/client/types.gen'
-  import('./src/bridge/client/types.gen')
-  // @ts-ignore
-  export type { Options } from './src/bridge/client/sdk.gen'
-  import('./src/bridge/client/sdk.gen')
 }
 
 // for vue template auto import
@@ -193,35 +205,23 @@ declare module 'vue' {
   interface ComponentCustomProperties {
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
     readonly acceptHMRUpdate: UnwrapRef<typeof import('pinia')['acceptHMRUpdate']>
-    readonly adminLoginHandler: UnwrapRef<typeof import('./src/bridge/client/sdk.gen')['adminLoginHandler']>
-    readonly adminLogoutHandler: UnwrapRef<typeof import('./src/bridge/client/sdk.gen')['adminLogoutHandler']>
     readonly computed: UnwrapRef<typeof import('vue')['computed']>
     readonly createApp: UnwrapRef<typeof import('vue')['createApp']>
     readonly createPinia: UnwrapRef<typeof import('pinia')['createPinia']>
-    readonly createUserHandler: UnwrapRef<typeof import('./src/bridge/client/sdk.gen')['createUserHandler']>
     readonly customRef: UnwrapRef<typeof import('vue')['customRef']>
     readonly defineAsyncComponent: UnwrapRef<typeof import('vue')['defineAsyncComponent']>
     readonly defineComponent: UnwrapRef<typeof import('vue')['defineComponent']>
     readonly defineStore: UnwrapRef<typeof import('pinia')['defineStore']>
-    readonly deleteUserHandler: UnwrapRef<typeof import('./src/bridge/client/sdk.gen')['deleteUserHandler']>
     readonly effectScope: UnwrapRef<typeof import('vue')['effectScope']>
     readonly getActivePinia: UnwrapRef<typeof import('pinia')['getActivePinia']>
-    readonly getAuditLogsHandler: UnwrapRef<typeof import('./src/bridge/client/sdk.gen')['getAuditLogsHandler']>
     readonly getCurrentInstance: UnwrapRef<typeof import('vue')['getCurrentInstance']>
     readonly getCurrentScope: UnwrapRef<typeof import('vue')['getCurrentScope']>
-    readonly getDatabaseTablesHandler: UnwrapRef<typeof import('./src/bridge/client/sdk.gen')['getDatabaseTablesHandler']>
-    readonly getTableRecordsHandler: UnwrapRef<typeof import('./src/bridge/client/sdk.gen')['getTableRecordsHandler']>
-    readonly getUserHandler: UnwrapRef<typeof import('./src/bridge/client/sdk.gen')['getUserHandler']>
-    readonly getUsersHandler: UnwrapRef<typeof import('./src/bridge/client/sdk.gen')['getUsersHandler']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
-    readonly healthHandler: UnwrapRef<typeof import('./src/bridge/client/sdk.gen')['healthHandler']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
     readonly isProxy: UnwrapRef<typeof import('vue')['isProxy']>
     readonly isReactive: UnwrapRef<typeof import('vue')['isReactive']>
     readonly isReadonly: UnwrapRef<typeof import('vue')['isReadonly']>
     readonly isRef: UnwrapRef<typeof import('vue')['isRef']>
-    readonly loginHandler: UnwrapRef<typeof import('./src/bridge/client/sdk.gen')['loginHandler']>
-    readonly logoutHandler: UnwrapRef<typeof import('./src/bridge/client/sdk.gen')['logoutHandler']>
     readonly mapActions: UnwrapRef<typeof import('pinia')['mapActions']>
     readonly mapGetters: UnwrapRef<typeof import('pinia')['mapGetters']>
     readonly mapState: UnwrapRef<typeof import('pinia')['mapState']>
@@ -245,12 +245,10 @@ declare module 'vue' {
     readonly onUnmounted: UnwrapRef<typeof import('vue')['onUnmounted']>
     readonly onUpdated: UnwrapRef<typeof import('vue')['onUpdated']>
     readonly onWatcherCleanup: UnwrapRef<typeof import('vue')['onWatcherCleanup']>
-    readonly profileHandler: UnwrapRef<typeof import('./src/bridge/client/sdk.gen')['profileHandler']>
     readonly provide: UnwrapRef<typeof import('vue')['provide']>
     readonly reactive: UnwrapRef<typeof import('vue')['reactive']>
     readonly readonly: UnwrapRef<typeof import('vue')['readonly']>
     readonly ref: UnwrapRef<typeof import('vue')['ref']>
-    readonly registerHandler: UnwrapRef<typeof import('./src/bridge/client/sdk.gen')['registerHandler']>
     readonly resolveComponent: UnwrapRef<typeof import('vue')['resolveComponent']>
     readonly setActivePinia: UnwrapRef<typeof import('pinia')['setActivePinia']>
     readonly setMapStoreSuffix: UnwrapRef<typeof import('pinia')['setMapStoreSuffix']>
@@ -264,7 +262,6 @@ declare module 'vue' {
     readonly toValue: UnwrapRef<typeof import('vue')['toValue']>
     readonly triggerRef: UnwrapRef<typeof import('vue')['triggerRef']>
     readonly unref: UnwrapRef<typeof import('vue')['unref']>
-    readonly updateUserHandler: UnwrapRef<typeof import('./src/bridge/client/sdk.gen')['updateUserHandler']>
     readonly useAttrs: UnwrapRef<typeof import('vue')['useAttrs']>
     readonly useAuth: UnwrapRef<typeof import('./src/appearance/composables/useAuth')['useAuth']>
     readonly useCssModule: UnwrapRef<typeof import('vue')['useCssModule']>
@@ -288,11 +285,18 @@ declare module 'vue' {
     readonly zAdminLogoutHandlerResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zAdminLogoutHandlerResponse']>
     readonly zAuditLogResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zAuditLogResponse']>
     readonly zAuthUser: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zAuthUser']>
+    readonly zCheckPermissionHandlerData: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zCheckPermissionHandlerData']>
+    readonly zCheckPermissionHandlerResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zCheckPermissionHandlerResponse']>
+    readonly zCreateRoleHandlerData: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zCreateRoleHandlerData']>
+    readonly zCreateRoleHandlerResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zCreateRoleHandlerResponse']>
+    readonly zCreateRoleRequest: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zCreateRoleRequest']>
     readonly zCreateUserHandlerData: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zCreateUserHandlerData']>
     readonly zCreateUserHandlerResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zCreateUserHandlerResponse']>
     readonly zCreateUserRequest: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zCreateUserRequest']>
     readonly zDatabasePerformanceResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zDatabasePerformanceResponse']>
     readonly zDatabaseTableResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zDatabaseTableResponse']>
+    readonly zDeleteRoleHandlerData: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zDeleteRoleHandlerData']>
+    readonly zDeleteRoleHandlerResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zDeleteRoleHandlerResponse']>
     readonly zDeleteUserHandlerData: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zDeleteUserHandlerData']>
     readonly zDeleteUserHandlerResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zDeleteUserHandlerResponse']>
     readonly zErrorResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zErrorResponse']>
@@ -300,6 +304,10 @@ declare module 'vue' {
     readonly zGetAuditLogsHandlerResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zGetAuditLogsHandlerResponse']>
     readonly zGetDatabaseTablesHandlerData: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zGetDatabaseTablesHandlerData']>
     readonly zGetDatabaseTablesHandlerResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zGetDatabaseTablesHandlerResponse']>
+    readonly zGetRoleHandlerData: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zGetRoleHandlerData']>
+    readonly zGetRoleHandlerResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zGetRoleHandlerResponse']>
+    readonly zGetRolesHandlerData: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zGetRolesHandlerData']>
+    readonly zGetRolesHandlerResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zGetRolesHandlerResponse']>
     readonly zGetTableRecordsHandlerData: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zGetTableRecordsHandlerData']>
     readonly zGetTableRecordsHandlerResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zGetTableRecordsHandlerResponse']>
     readonly zGetUserHandlerData: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zGetUserHandlerData']>
@@ -318,8 +326,11 @@ declare module 'vue' {
     readonly zLogsQueryParams: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zLogsQueryParams']>
     readonly zMessageResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zMessageResponse']>
     readonly zPaginatedResponseAuditLogResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zPaginatedResponseAuditLogResponse']>
+    readonly zPaginatedResponseRoleResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zPaginatedResponseRoleResponse']>
     readonly zPaginatedResponseUserResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zPaginatedResponseUserResponse']>
     readonly zPaginationMeta: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zPaginationMeta']>
+    readonly zPermissionCheckRequest: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zPermissionCheckRequest']>
+    readonly zPermissionCheckResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zPermissionCheckResponse']>
     readonly zProfileHandlerData: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zProfileHandlerData']>
     readonly zProfileHandlerResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zProfileHandlerResponse']>
     readonly zProfileResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zProfileResponse']>
@@ -327,8 +338,12 @@ declare module 'vue' {
     readonly zRegisterHandlerResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zRegisterHandlerResponse']>
     readonly zRegisterRequest: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zRegisterRequest']>
     readonly zRegisterResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zRegisterResponse']>
+    readonly zRoleResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zRoleResponse']>
     readonly zTableRecordResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zTableRecordResponse']>
     readonly zTableRecordsQueryParams: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zTableRecordsQueryParams']>
+    readonly zUpdateRoleHandlerData: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zUpdateRoleHandlerData']>
+    readonly zUpdateRoleHandlerResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zUpdateRoleHandlerResponse']>
+    readonly zUpdateRoleRequest: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zUpdateRoleRequest']>
     readonly zUpdateUserHandlerData: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zUpdateUserHandlerData']>
     readonly zUpdateUserHandlerResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zUpdateUserHandlerResponse']>
     readonly zUpdateUserRequest: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zUpdateUserRequest']>

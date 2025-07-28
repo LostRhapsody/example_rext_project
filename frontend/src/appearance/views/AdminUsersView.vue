@@ -236,10 +236,8 @@
               <span>{{ formatTimestamp(selectedUser.created_at || '') }}</span>
             </div>
             <div class="detail-item">
-              <label>Admin Status:</label>
-              <span :class="selectedUser.is_admin ? 'admin-badge' : 'user-badge'">
-                {{ selectedUser.is_admin ? 'Admin' : 'Regular User' }}
-              </span>
+              <label>Role:</label>
+              <span>{{ selectedUser.role_name || 'No Role' }}</span>
             </div>
           </div>
           <div class="detail-actions">
@@ -253,15 +251,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
 import { AgGridVue } from 'ag-grid-vue3'
 import {
   getUsersHandler,
   createUserHandler,
   updateUserHandler,
   deleteUserHandler,
-  getUserHandler
+  getUserHandler,
+  getRolesHandler
 } from '@/bridge/client'
+import type { GetUsersHandlerData } from '@/bridge/client/types.gen'
 
 interface User {
   id: string
@@ -357,11 +356,11 @@ const columnDefs = ref([
     filter: true
   },
   {
-    headerName: 'Admin',
-    field: 'is_admin',
-    width: 100,
+    headerName: 'Roles',
+    field: 'role_name',
+    flex: 1,
     cellRenderer: (params: any) => {
-      return params.value ? '✅' : '❌'
+      return params.value ? params.value : 'No Role'
     },
     sortable: true,
     filter: true
@@ -369,14 +368,14 @@ const columnDefs = ref([
   {
     headerName: 'Created',
     field: 'created_at',
-    width: 150,
+    flex: 1,
     valueFormatter: (params: any) => formatTimestamp(params.value),
     sortable: true,
     filter: true
   },
   {
     headerName: 'Actions',
-    width: 200,
+    flex: 1,
     cellRenderer: (params: any) => {
       return `
         <div style="display: flex; gap: 8px;">
@@ -497,6 +496,10 @@ const updateUser = async () => {
 
     if (editForm.password) {
       updateData.password = editForm.password
+    }
+
+    if (editForm.role_id) {
+      updateData.role_id = editForm.role_id
     }
 
     const response = await updateUserHandler({
@@ -720,15 +723,20 @@ const fetchRoles = async () => {
     if (!token) return
 
     // For now, we'll use a simple fetch until the API client is generated
-    const response = await fetch('http://localhost:3000/api/v1/admin/roles', {
+    const response = await getRolesHandler({
+      query: {
+        page: 1,
+        limit: 9999
+      },
       headers: {
         'Authorization': `Bearer ${token}`
       }
     })
 
-    if (response.ok) {
-      const data = await response.json()
-      roles.value = data.data || []
+    if (response.data) {
+      roles.value = response.data.data || []
+    } else if (response.error) {
+      console.error('Error fetching roles:', response.error)
     }
   } catch (error) {
     console.error('Error fetching roles:', error)

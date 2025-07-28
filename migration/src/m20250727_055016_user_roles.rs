@@ -1,5 +1,4 @@
 use sea_orm_migration::{prelude::*, schema::*};
-use backend::roles;
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -42,41 +41,6 @@ impl MigrationTrait for Migration {
                     .to_owned(),
             )
             .await?;
-
-        // Add foreign key constraint
-        manager
-            .create_foreign_key(
-                ForeignKey::create()
-                    .name("fk_users_role_id")
-                    .from(Users::Table, Users::RoleId)
-                    .to(Roles::Table, Roles::Id)
-                    .on_delete(ForeignKeyAction::SetNull)
-                    .to_owned(),
-            )
-            .await?;
-
-        // Insert default roles
-        let default_roles = vec![
-            Roles::ActiveModel {
-                name: Set("admin"),
-                description: Set("Full system access"),
-                permissions: Set("[\"*\"]"),
-            },
-            Roles::ActiveModel {
-                name: Set("moderator"),
-                description: Set("User management and content moderation"),
-                permissions: Set("[\"users:read\", \"users:write\", \"logs:read\"]"),
-            },
-            Roles::ActiveModel {
-                name: Set("user"),
-                description: Set("Basic user access"),
-                permissions: Set("[\"profile:read\", \"profile:write\"]"),
-            },
-        ];
-
-        default_roles.iter().for_each(|role| {
-            Roles::Entity::insert(role).exec(manager.get_connection()).await.unwrap();
-        });
 
         Ok(())
     }

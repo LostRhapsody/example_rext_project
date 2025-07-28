@@ -130,10 +130,21 @@ This project implements a comprehensive admin panel with request logging, user m
 
 #### 4.5 Role-Based Access Control (RBAC)
 - [ ] **Enhanced Permission System**
-  - Create roles table with permissions
-  - Assign multiple roles to users
+  - Create roles table with permissions ✅
+  - Assign multiple roles to users ✅
   - Granular permission controls (read/write/admin)
   - Permission-based UI rendering
+
+### Break Time!
+
+We've got the roles table, and the updated user table. Now, we need to:
+- Fix the existing Admin Users screen. It doesn't update roles correctly. This is mostly tied to the backend.
+- Add a role management screen. Currently, no way to CRUD roles.
+- Fix (or remove) the action buttons on the User Role table, can't click them anyways
+- The auto-import system seems to be having trouble... had to import lots of things in the Admin Users view
+- Remove the is_admin field from the users table entirely- should not have 2 permissions systems. Too confusing.
+- Update the 'don't delete yourself' safeguard so admin-roles cannot delete themselves instead of is_admin.
+- Use a better font on the frontend UI. Giest or something.
 
 #### 4.6 Advanced Admin Features
 - [ ] **Admin User Management**
