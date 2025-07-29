@@ -243,7 +243,7 @@
             </div>
             <div class="detail-item">
               <label>Role:</label>
-              <span>{{ selectedUser.role_name || 'No Role' }}</span>
+              <span>{{ selectedUser.role_id || 'No Role' }}</span>
             </div>
           </div>
           <div class="detail-actions">
@@ -273,7 +273,6 @@ interface User {
   email: string
   created_at?: string | null
   role_id?: number | null
-  role_name?: string | null
 }
 
 interface Role {
@@ -358,7 +357,7 @@ const columnDefs = ref([
   },
   {
     headerName: 'Roles',
-    field: 'role_name',
+    field: 'role_id',
     flex: 1,
     cellRenderer: (params: any) => {
       return params.value ? params.value : 'No Role'
@@ -421,9 +420,6 @@ const fetchUsers = async () => {
     }
 
     if (filters.search) query.search = filters.search
-    if (filters.role_id) {
-      query.role_id = parseInt(filters.role_id)
-    }
 
     const response = await getUsersHandler({
       query,
@@ -433,6 +429,7 @@ const fetchUsers = async () => {
     })
 
     if (response.data) {
+      console.log(response.data)
       users.value = response.data.data || []
       const pagination = response.data.pagination
       paginationInfo.value = {
