@@ -5,11 +5,9 @@ use axum::{
     response::IntoResponse,
 };
 use sea_orm::DatabaseConnection;
-use serde_json::from_str;
 
 use crate::{
     bridge::types::admin::*,
-    bridge::types::auth::AuthUser,
     control::services::admin_service::AdminService,
     infrastructure::app_error::{AppError, ErrorResponse, MessageResponse},
 };

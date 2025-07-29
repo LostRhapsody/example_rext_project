@@ -15,8 +15,8 @@ use uuid::Uuid;
 use crate::{
     bridge::types::auth::AuthUser,
     control::services::permission_service::PermissionService,
-    domain::permissions::{Permission, PermissionSet},
-    infrastructure::app_error::{AppError, ErrorResponse, MessageResponse},
+    domain::permissions::Permission,
+    infrastructure::app_error::{AppError, ErrorResponse},
     bridge::types::admin::ADMIN_TAG,
 };
 
@@ -42,6 +42,7 @@ use crate::{
         ("jwt_token" = [])
     )
 )]
+#[allow(dead_code)]
 pub async fn get_user_permissions_handler(
     State(db): State<DatabaseConnection>,
     Path(user_id): Path<String>,
@@ -86,6 +87,7 @@ pub async fn get_user_permissions_handler(
         ("jwt_token" = [])
     )
 )]
+#[allow(dead_code)]
 pub async fn check_specific_permission_handler(
     State(db): State<DatabaseConnection>,
     Path(user_id): Path<String>,
@@ -127,6 +129,7 @@ pub async fn check_specific_permission_handler(
         ("jwt_token" = [])
     )
 )]
+#[allow(dead_code)]
 pub async fn get_available_permissions_handler(
     _auth_user: AuthUser, // This ensures the user is authenticated
 ) -> Result<impl IntoResponse, AppError> {
@@ -159,6 +162,7 @@ pub struct UserPermissionsResponse {
 
 #[derive(Deserialize, ToSchema)]
 pub struct CheckPermissionRequest {
+    #[allow(dead_code)]
     pub permission: String,
 }
 

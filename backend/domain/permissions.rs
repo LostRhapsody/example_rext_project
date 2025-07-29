@@ -92,6 +92,7 @@ impl Permission {
     }
     
     /// Get permission category
+    #[allow(dead_code)]
     pub fn category(&self) -> &'static str {
         match self {
             Permission::All => "super",
@@ -107,6 +108,7 @@ impl Permission {
     }
     
     /// Get permission description
+    #[allow(dead_code)]
     pub fn description(&self) -> &'static str {
         match self {
             Permission::All => "Full system access",
@@ -133,6 +135,7 @@ impl Permission {
     }
     
     /// Check if this permission includes another permission
+    #[allow(dead_code)]
     pub fn includes(&self, other: &Permission) -> bool {
         match self {
             Permission::All => true,
@@ -163,6 +166,7 @@ impl PermissionSet {
     }
     
     /// Create from vector of strings
+    #[allow(dead_code)]
     pub fn from_strings(permissions: Vec<String>) -> Self {
         Self {
             permissions: permissions
@@ -173,32 +177,38 @@ impl PermissionSet {
     }
     
     /// Add a permission
+    #[allow(dead_code)]
     pub fn add(&mut self, permission: Permission) {
         self.permissions.insert(permission);
     }
     
     /// Remove a permission
+    #[allow(dead_code)]
     pub fn remove(&mut self, permission: &Permission) {
         self.permissions.remove(permission);
     }
     
     /// Check if set contains a permission
+    #[allow(dead_code)]
     pub fn contains(&self, permission: &Permission) -> bool {
         self.permissions.contains(&Permission::All) || 
         self.permissions.contains(permission)
     }
     
     /// Check if set contains any of the given permissions
+    #[allow(dead_code)]
     pub fn contains_any(&self, permissions: &[Permission]) -> bool {
         permissions.iter().any(|p| self.contains(p))
     }
     
     /// Check if set contains all of the given permissions
+    #[allow(dead_code)]
     pub fn contains_all(&self, permissions: &[Permission]) -> bool {
         permissions.iter().all(|p| self.contains(p))
     }
     
     /// Get all permissions as vector
+    #[allow(dead_code)]
     pub fn to_vec(&self) -> Vec<Permission> {
         self.permissions.iter().cloned().collect()
     }
@@ -209,6 +219,7 @@ impl PermissionSet {
     }
     
     /// Merge with another permission set
+    #[allow(dead_code)]
     pub fn merge(&mut self, other: &PermissionSet) {
         for permission in &other.permissions {
             self.permissions.insert(permission.clone());
@@ -227,6 +238,7 @@ pub struct DefaultPermissions;
 
 impl DefaultPermissions {
     /// Super admin permissions (all permissions)
+    #[allow(dead_code)]
     pub fn super_admin() -> PermissionSet {
         PermissionSet::from_vec(vec![Permission::All])
     }
@@ -258,6 +270,7 @@ impl DefaultPermissions {
     }
     
     /// Read-only admin permissions
+    #[allow(dead_code)]
     pub fn admin_readonly() -> PermissionSet {
         PermissionSet::from_vec(vec![
             Permission::AdminRead,

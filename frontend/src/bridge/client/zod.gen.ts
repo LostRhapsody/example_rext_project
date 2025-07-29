@@ -73,10 +73,6 @@ export const zCreateRoleRequest = z.object({
 
 export const zCreateUserRequest = z.object({
     email: z.string(),
-    is_admin: z.optional(z.union([
-        z.boolean(),
-        z.null()
-    ])),
     password: z.string(),
     role_id: z.optional(z.union([
         z.int(),
@@ -284,10 +280,6 @@ export const zPaginatedResponseUserResponse = z.object({
         ])),
         email: z.string(),
         id: z.string(),
-        is_admin: z.optional(z.union([
-            z.boolean(),
-            z.null()
-        ])),
         role_id: z.optional(z.union([
             z.int(),
             z.null()
@@ -398,10 +390,6 @@ export const zUpdateUserRequest = z.object({
         z.string(),
         z.null()
     ])),
-    is_admin: z.optional(z.union([
-        z.boolean(),
-        z.null()
-    ])),
     password: z.optional(z.union([
         z.string(),
         z.null()
@@ -419,10 +407,6 @@ export const zUserResponse = z.object({
     ])),
     email: z.string(),
     id: z.string(),
-    is_admin: z.optional(z.union([
-        z.boolean(),
-        z.null()
-    ])),
     role_id: z.optional(z.union([
         z.int(),
         z.null()
@@ -434,10 +418,6 @@ export const zUserResponse = z.object({
 });
 
 export const zUsersQueryParams = z.object({
-    is_admin: z.optional(z.union([
-        z.boolean(),
-        z.null()
-    ])),
     limit: z.optional(z.coerce.bigint().gte(BigInt(0))),
     page: z.optional(z.coerce.bigint().gte(BigInt(0))),
     search: z.optional(z.union([
@@ -627,10 +607,6 @@ export const zGetUsersHandlerData = z.object({
         limit: z.optional(z.coerce.bigint().gte(BigInt(0))),
         search: z.optional(z.union([
             z.string(),
-            z.null()
-        ])),
-        is_admin: z.optional(z.union([
-            z.boolean(),
             z.null()
         ]))
     }))

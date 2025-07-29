@@ -830,7 +830,7 @@ impl AdminService {
         role_id: i32,
     ) -> Result<(), AppError> {
         // Check if role exists
-        let role = roles::Entity::find_by_id(role_id)
+        let _role = roles::Entity::find_by_id(role_id)
             .one(db)
             .await
             .map_err(|e| AppError {
@@ -922,6 +922,7 @@ impl AdminService {
     }
 
     /// Helper function to check if a user can perform an action
+    #[allow(dead_code)]
     pub async fn user_can_perform_action(
         db: &DatabaseConnection,
         user_id: Uuid,

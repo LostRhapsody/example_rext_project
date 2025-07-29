@@ -17,10 +17,12 @@ use crate::{
 use axum::http::StatusCode;
 
 /// Service for permission-related business operations
+#[allow(dead_code)]
 pub struct PermissionService;
 
 impl PermissionService {
     /// Check if a user has a specific permission
+    #[allow(dead_code)]
     pub async fn has_permission(
         db: &DatabaseConnection,
         user_id: Uuid,
@@ -66,10 +68,11 @@ impl PermissionService {
     }
 
     /// Check if a user has any of the given permissions
+    #[allow(dead_code)]
     pub async fn has_any_permission(
         db: &DatabaseConnection,
         user_id: Uuid,
-        permissions: &[Permission],
+        _permissions: &[Permission],
     ) -> Result<bool, AppError> {
         let user = DatabaseService::find_one_with_tracking(
             db,
@@ -111,10 +114,11 @@ impl PermissionService {
     }
 
     /// Check if a user has all of the given permissions
+    #[allow(dead_code)]
     pub async fn has_all_permissions(
         db: &DatabaseConnection,
         user_id: Uuid,
-        permissions: &[Permission],
+        _permissions: &[Permission],
     ) -> Result<bool, AppError> {
         let user = DatabaseService::find_one_with_tracking(
             db,
@@ -156,6 +160,7 @@ impl PermissionService {
     }
 
     /// Get all permissions for a user
+    #[allow(dead_code)]
     pub async fn get_user_permissions(
         db: &DatabaseConnection,
         user_id: Uuid,
@@ -198,6 +203,7 @@ impl PermissionService {
     }
 
     /// Get all available permissions in the system
+    #[allow(dead_code)]
     pub fn get_all_permissions() -> Vec<Permission> {
         vec![
             Permission::All,
@@ -223,6 +229,7 @@ impl PermissionService {
     }
 
     /// Get permissions by category
+    #[allow(dead_code)]
     pub fn get_permissions_by_category() -> std::collections::HashMap<String, Vec<Permission>> {
         let mut categories = std::collections::HashMap::new();
         
@@ -238,6 +245,7 @@ impl PermissionService {
     }
 
     /// Validate permission strings
+    #[allow(dead_code)]
     pub fn validate_permission_strings(permissions: &[String]) -> Result<Vec<String>, AppError> {
         let mut valid_permissions = Vec::new();
         
@@ -251,6 +259,7 @@ impl PermissionService {
     }
 
     /// Check if a permission string is valid
+    #[allow(dead_code)]
     pub fn is_valid_permission(permission_str: &str) -> bool {
         match permission_str {
             "*" | "admin:read" | "admin:write" | "admin:delete" | "admin:users" |

@@ -41,7 +41,6 @@ export type CreateRoleRequest = {
 
 export type CreateUserRequest = {
     email: string;
-    is_admin?: boolean | null;
     password: string;
     role_id?: number | null;
 };
@@ -170,7 +169,6 @@ export type PaginatedResponseUserResponse = {
         created_at?: string | null;
         email: string;
         id: string;
-        is_admin?: boolean | null;
         role_id?: number | null;
         role_name?: string | null;
     }>;
@@ -270,7 +268,6 @@ export type UpdateRoleRequest = {
 
 export type UpdateUserRequest = {
     email?: string | null;
-    is_admin?: boolean | null;
     password?: string | null;
     role_id?: number | null;
 };
@@ -279,13 +276,11 @@ export type UserResponse = {
     created_at?: string | null;
     email: string;
     id: string;
-    is_admin?: boolean | null;
     role_id?: number | null;
     role_name?: string | null;
 };
 
 export type UsersQueryParams = {
-    is_admin?: boolean | null;
     limit?: number;
     page?: number;
     search?: string | null;
@@ -748,7 +743,6 @@ export type GetUsersHandlerData = {
         page?: number;
         limit?: number;
         search?: string | null;
-        is_admin?: boolean | null;
     };
     url: '/api/v1/admin/users';
 };

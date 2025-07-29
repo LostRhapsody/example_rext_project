@@ -145,6 +145,7 @@ We've got the roles table, and the updated user table. Now, we need to:
 - Remove the is_admin field from the users table entirely- should not have 2 permissions systems. Too confusing.
 - Update the 'don't delete yourself' safeguard so admin-roles cannot delete themselves instead of is_admin.
 - Use a better font on the frontend UI. Giest or something.
+- Clean up dead code attributes
 
 #### 4.6 Advanced Admin Features
 - [ ] **Admin User Management**
