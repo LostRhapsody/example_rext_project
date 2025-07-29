@@ -8,6 +8,7 @@ import AdminLayout from '@/components/AdminLayout.vue'
 import AdminDashboardView from '@/views/AdminDashboardView.vue'
 import AdminLogsView from '@/views/AdminLogsView.vue'
 import AdminUsersView from '@/views/AdminUsersView.vue'
+import AdminRolesView from '@/views/AdminRolesView.vue'
 import AdminDatabaseView from '@/views/AdminDatabaseView.vue'
 import AdminHealthView from '@/views/AdminHealthView.vue'
 import AdminRealtimeMonitorView from '@/views/AdminRealtimeMonitorView.vue'
@@ -61,6 +62,11 @@ const router = createRouter({
           path: 'users',
           name: 'admin-users',
           component: AdminUsersView,
+        },
+        {
+          path: 'roles',
+          name: 'admin-roles',
+          component: AdminRolesView,
         },
         {
           path: 'database',

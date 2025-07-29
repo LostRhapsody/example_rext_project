@@ -64,6 +64,11 @@ const navItems = ref([
     icon: '👥'
   },
   {
+    path: '/admin/roles',
+    label: 'Role Management',
+    icon: '🔑'
+  },
+  {
     path: '/admin/database',
     label: 'Database',
     icon: '🗄️'
