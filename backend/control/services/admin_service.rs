@@ -231,8 +231,7 @@ impl AdminService {
         })?;
 
         // Get paginated results
-        let users = query
-            .order_by_desc(users::Column::CreatedAt)
+        let users = query.order_by_desc(users::Column::CreatedAt)
             .offset(offset as u64)
             .limit(params.limit as u64)
             .all(db)
@@ -242,6 +241,11 @@ impl AdminService {
                 status_code: StatusCode::INTERNAL_SERVER_ERROR,
             })?;
 
+        let roles = roles::Entity::find().all(db).await.map_err(|e| AppError {
+            message: format!("Database error: {}", e),
+            status_code: StatusCode::INTERNAL_SERVER_ERROR,
+        })?;
+
         let data = users
             .into_iter()
             .map(|user| UserResponse {
@@ -249,7 +253,7 @@ impl AdminService {
                 email: user.email,
                 created_at: user.created_at.map(|t| t.to_rfc3339()),
                 role_id: user.role_id,
-                role_name: None, // Will be populated in a separate query if needed
+                role_name: roles.iter().find(|role| role.id == user.role_id.unwrap_or_default() ).map(|role| role.name.clone())
             })
             .collect();
 

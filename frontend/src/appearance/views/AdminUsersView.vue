@@ -243,7 +243,7 @@
             </div>
             <div class="detail-item">
               <label>Role:</label>
-              <span>{{ selectedUser.role_id || 'No Role' }}</span>
+              <span>{{ selectedUser.role_name || 'No Role' }}</span>
             </div>
           </div>
           <div class="detail-actions">
@@ -273,6 +273,7 @@ interface User {
   email: string
   created_at?: string | null
   role_id?: number | null
+  role_name?: string | null
 }
 
 interface Role {
@@ -357,7 +358,7 @@ const columnDefs = ref([
   },
   {
     headerName: 'Roles',
-    field: 'role_id',
+    field: 'role_name',
     flex: 1,
     cellRenderer: (params: any) => {
       return params.value ? params.value : 'No Role'
