@@ -407,6 +407,9 @@ const columnDefs = ref([
     cellRenderer: (params: any) => {
       return `${params.value?.length || 0} permissions`
     },
+    valueFormatter: (params: any) => {
+      return params.data.description || 'No description'
+    },
     sortable: true
   },
   {
@@ -416,19 +419,6 @@ const columnDefs = ref([
     valueFormatter: (params: any) => formatTimestamp(params.value),
     sortable: true,
     filter: true
-  },
-  {
-    headerName: 'Actions',
-    flex: 1,
-    cellRenderer: (params: any) => {
-      return `
-        <div style="display: flex; gap: 8px;">
-          <button onclick="window.viewRole('${params.data.id}')" style="background: #007bff; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;">View</button>
-          <button onclick="window.editRole('${params.data.id}')" style="background: #ffc107; color: black; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;">Edit</button>
-          <button onclick="window.deleteRole('${params.data.id}')" style="background: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;">Delete</button>
-        </div>
-      `
-    }
   }
 ])
 
