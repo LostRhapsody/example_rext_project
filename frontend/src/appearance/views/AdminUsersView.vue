@@ -373,19 +373,6 @@ const columnDefs = ref([
     valueFormatter: (params: any) => formatTimestamp(params.value),
     sortable: true,
     filter: true
-  },
-  {
-    headerName: 'Actions',
-    flex: 1,
-    cellRenderer: (params: any) => {
-      return `
-        <div style="display: flex; gap: 8px;">
-          <button onclick="window.viewUser('${params.data.id}')" style="background: #007bff; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;">View</button>
-          <button onclick="window.editUser('${params.data.id}')" style="background: #ffc107; color: black; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;">Edit</button>
-          <button onclick="window.deleteUser('${params.data.id}')" style="background: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;">Delete</button>
-        </div>
-      `
-    }
   }
 ])
 
@@ -555,21 +542,6 @@ const refreshUsers = () => {
   fetchUsers()
 }
 
-const previousPage = () => {
-  if (filters.page > 1) {
-    filters.page--
-    fetchUsers()
-  }
-}
-
-const nextPage = () => {
-  if (filters.page < paginationInfo.value.totalPages) {
-    filters.page++
-    fetchUsers()
-  }
-}
-
-
 const onRowClicked = (params: any) => {
   selectedUser.value = params.data
   showDetailModal.value = true
@@ -641,15 +613,6 @@ const viewUser = async (userId: string) => {
   }
 }
 
-const editUser = async (userId: string) => {
-  await viewUser(userId)
-}
-
-const deleteUser = (userId: string) => {
-  selectedUser.value = users.value.find(u => u.id === userId) || null
-  showDeleteModal.value = true
-}
-
 const populateEditForm = (user: User) => {
   editForm.email = user.email
   editForm.password = ''
@@ -672,20 +635,6 @@ const resetEditForm = () => {
 const applyFilters = () => {
   filters.page = 1
   fetchUsers()
-}
-
-const clearFilters = () => {
-  filters.search = ''
-  filters.role_id = ''
-  filters.page = 1
-  fetchUsers()
-}
-
-const changePage = (newPage: number) => {
-  if (newPage >= 1 && newPage <= paginationInfo.value.totalPages) {
-    filters.page = newPage
-    fetchUsers()
-  }
 }
 
 const onGridReady = (params: any) => {
