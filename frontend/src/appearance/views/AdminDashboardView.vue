@@ -179,7 +179,7 @@ const fetchDashboardData = async () => {
 
     if (logsResponse.data) {
       recentLogs.value = logsResponse.data.data || []
-      stats.value.totalLogs = recentLogs.value.length
+      stats.value.totalLogs = logsResponse.data.pagination?.total || 0
     }
 
     // Fetch user count
