@@ -37,10 +37,9 @@ use crate::{
 )]
 pub async fn admin_login_handler(
     State(db): State<DatabaseConnection>,
-    Extension(admin_user): Extension<crate::bridge::middleware::admin::AdminUser>,
     Json(payload): Json<AdminLoginRequest>,
 ) -> Result<impl IntoResponse, AppError> {
-    check_single_permission!(&admin_user.email, &AdminRead, &db);
+    check_single_permission!(&payload.email, &AdminRead, &db);
     let response = AdminService::authenticate_admin(&db, payload).await?;
     Ok((StatusCode::OK, Json(response)))
 }
