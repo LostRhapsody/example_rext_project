@@ -72,7 +72,7 @@ export const healthHandler = <ThrowOnError extends boolean = false>(options?: Op
 
 /**
  * Admin login
- * Authenticates an admin user and returns a JWT token
+ * Authenticates an admin user and returns a JWT token. Requires admin:read permission.
  */
 export const adminLoginHandler = <ThrowOnError extends boolean = false>(options: Options<AdminLoginHandlerData, ThrowOnError>) => {
     return (options.client ?? _heyApiClient).post<AdminLoginHandlerResponses, AdminLoginHandlerErrors, ThrowOnError>({
@@ -110,7 +110,7 @@ export const adminLogoutHandler = <ThrowOnError extends boolean = false>(options
 
 /**
  * Get audit logs
- * Retrieves paginated audit logs with optional filtering
+ * Retrieves paginated audit logs with optional filtering. Requires admin:read permission.
  */
 export const getAuditLogsHandler = <ThrowOnError extends boolean = false>(options?: Options<GetAuditLogsHandlerData, ThrowOnError>) => {
     return (options?.client ?? _heyApiClient).get<GetAuditLogsHandlerResponses, GetAuditLogsHandlerErrors, ThrowOnError>({

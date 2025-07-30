@@ -5,8 +5,7 @@ use uuid::Uuid;
 use crate::{
     bridge::types::admin::*,
     control::services::{
-        database_service::{DatabaseMonitorService},
-        system_monitor::SystemMonitorService,
+        database_service::DatabaseMonitorService, system_monitor::SystemMonitorService,
         user_service::UserService,
     },
     domain::validation::*,

@@ -1,6 +1,6 @@
 use axum::{
     Json,
-    extract::{Path, Query, State},
+    extract::{Extension, Path, Query, State},
     http::StatusCode,
     response::IntoResponse,
 };
@@ -11,7 +11,11 @@ use crate::{
     bridge::types::{admin::*, auth::AuthUser},
     check_single_permission,
     control::services::admin_service::AdminService,
-    domain::permissions::Permission::AdminRead,
+    domain::permissions::Permission::{
+        AdminRead,
+        AdminWrite,
+        AdminDelete,
+    },
     infrastructure::app_error::{AppError, ErrorResponse, MessageResponse},
 };
 
@@ -33,9 +37,10 @@ use crate::{
 )]
 pub async fn admin_login_handler(
     State(db): State<DatabaseConnection>,
+    Extension(admin_user): Extension<crate::bridge::middleware::admin::AdminUser>,
     Json(payload): Json<AdminLoginRequest>,
 ) -> Result<impl IntoResponse, AppError> {
-    check_single_permission!(&payload.email, &AdminRead, &db);
+    check_single_permission!(&admin_user.email, &AdminRead, &db);
     let response = AdminService::authenticate_admin(&db, payload).await?;
     Ok((StatusCode::OK, Json(response)))
 }
@@ -77,7 +82,7 @@ pub async fn admin_logout_handler() -> impl IntoResponse {
         (status = 500, description = "Internal server error", body = ErrorResponse)
     ),
     summary = "Get audit logs",
-    description = "Retrieves paginated audit logs with optional filtering",
+    description = "Retrieves paginated audit logs with optional filtering. Requires admin:read permission.",
     tag = ADMIN_TAG,
     security(
         ("jwt_token" = [])
@@ -85,8 +90,10 @@ pub async fn admin_logout_handler() -> impl IntoResponse {
 )]
 pub async fn get_audit_logs_handler(
     State(db): State<DatabaseConnection>,
+    Extension(admin_user): Extension<crate::bridge::middleware::admin::AdminUser>,
     Query(params): Query<LogsQueryParams>,
 ) -> Result<impl IntoResponse, AppError> {
+    check_single_permission!(&admin_user.email, &AdminRead, &db);
     let response = AdminService::get_audit_logs(&db, params).await?;
     Ok((StatusCode::OK, Json(response)))
 }
@@ -111,8 +118,10 @@ pub async fn get_audit_logs_handler(
 )]
 pub async fn get_users_handler(
     State(db): State<DatabaseConnection>,
+    Extension(admin_user): Extension<crate::bridge::middleware::admin::AdminUser>,
     Query(params): Query<UsersQueryParams>,
 ) -> Result<impl IntoResponse, AppError> {
+    check_single_permission!(&admin_user.email, &AdminRead, &db);
     let response = AdminService::get_users(&db, params).await?;
     Ok((StatusCode::OK, Json(response)))
 }
@@ -140,8 +149,10 @@ pub async fn get_users_handler(
 )]
 pub async fn get_user_handler(
     State(db): State<DatabaseConnection>,
+    Extension(admin_user): Extension<crate::bridge::middleware::admin::AdminUser>,
     Path(user_id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
+    check_single_permission!(&admin_user.email, &AdminRead, &db);
     let user_id = Uuid::parse_str(&user_id).map_err(|_| AppError {
         message: "Invalid user ID format".to_string(),
         status_code: StatusCode::BAD_REQUEST,
@@ -173,8 +184,10 @@ pub async fn get_user_handler(
 )]
 pub async fn create_user_handler(
     State(db): State<DatabaseConnection>,
+    Extension(admin_user): Extension<crate::bridge::middleware::admin::AdminUser>,
     Json(payload): Json<CreateUserRequest>,
 ) -> Result<impl IntoResponse, AppError> {
+    check_single_permission!(&admin_user.email, &AdminWrite, &db);
     let response = AdminService::create_user(&db, payload).await?;
     Ok((StatusCode::CREATED, Json(response)))
 }
@@ -205,9 +218,11 @@ pub async fn create_user_handler(
 )]
 pub async fn update_user_handler(
     State(db): State<DatabaseConnection>,
+    Extension(admin_user): Extension<crate::bridge::middleware::admin::AdminUser>,
     Path(user_id): Path<String>,
     Json(payload): Json<UpdateUserRequest>,
 ) -> Result<impl IntoResponse, AppError> {
+    check_single_permission!(&admin_user.email, &AdminWrite, &db);
     let user_id = Uuid::parse_str(&user_id).map_err(|_| AppError {
         message: "Invalid user ID format".to_string(),
         status_code: StatusCode::BAD_REQUEST,
@@ -241,9 +256,11 @@ pub async fn update_user_handler(
 )]
 pub async fn delete_user_handler(
     State(db): State<DatabaseConnection>,
+    Extension(admin_user): Extension<crate::bridge::middleware::admin::AdminUser>,
     Path(user_id): Path<String>,
     request: axum::extract::Request,
 ) -> Result<impl IntoResponse, AppError> {
+    check_single_permission!(&admin_user.email, &AdminDelete, &db);
     let user_id = Uuid::parse_str(&user_id).map_err(|_| AppError {
         message: "Invalid user ID format".to_string(),
         status_code: StatusCode::BAD_REQUEST,
@@ -283,6 +300,7 @@ pub async fn delete_user_handler(
 )]
 pub async fn get_database_tables_handler(
     State(db): State<DatabaseConnection>,
+    Extension(admin_user): Extension<crate::bridge::middleware::admin::AdminUser>,
 ) -> Result<impl IntoResponse, AppError> {
     let response = AdminService::get_database_tables(&db).await?;
     Ok((StatusCode::OK, Json(response)))
@@ -311,9 +329,11 @@ pub async fn get_database_tables_handler(
 )]
 pub async fn get_table_records_handler(
     State(db): State<DatabaseConnection>,
+    Extension(admin_user): Extension<crate::bridge::middleware::admin::AdminUser>,
     Path(table_name): Path<String>,
     Query(params): Query<TableRecordsQueryParams>,
 ) -> Result<impl IntoResponse, AppError> {
+    check_single_permission!(&admin_user.email, &AdminRead, &db);
     let response = AdminService::get_table_records(&db, table_name, params).await?;
     Ok((StatusCode::OK, Json(response)))
 }
@@ -334,7 +354,11 @@ pub async fn get_table_records_handler(
         ("jwt_token" = [])
     )
 )]
-pub async fn health_handler(State(db): State<DatabaseConnection>) -> impl IntoResponse {
+pub async fn health_handler(
+    State(db): State<DatabaseConnection>,
+    Extension(admin_user): Extension<crate::bridge::middleware::admin::AdminUser>,
+) -> Result<impl IntoResponse, AppError> {
+    check_single_permission!(&admin_user.email, &AdminRead, &db);
     let response = AdminService::get_health_status(&db).await;
-    (StatusCode::OK, Json(response))
+    Ok((StatusCode::OK, Json(response)))
 }

@@ -1,20 +1,19 @@
 use axum::{
     extract::{Request, State},
+    http::StatusCode,
     middleware::Next,
     response::Response,
 };
-use sea_orm::{DatabaseConnection, EntityTrait};
-use tracing::{error, info, warn};
+use sea_orm::DatabaseConnection;
+use tracing::{info, warn};
 
 use crate::{
     bridge::types::auth::AuthUser,
-    control::services::database_service::DatabaseService,
-    control::services::token_service::TokenService,
-    entity::models::{roles, users},
+    control::services::{token_service::TokenService, user_service::UserService},
     infrastructure::{app_error::AppError, logging::LoggingManager},
 };
 
-/// Admin middleware that handles JWT extraction and admin verification
+/// Admin middleware that handles JWT extraction and validation; no permission checking here, all done at the handler
 pub async fn admin_middleware(
     State(db): State<DatabaseConnection>,
     mut request: Request,
@@ -25,55 +24,12 @@ pub async fn admin_middleware(
     // Extract and validate token using TokenService
     let user_id = TokenService::extract_and_validate_token(&request)?;
 
-    // Check if user has admin privileges by checking their role
-    let user = DatabaseService::find_one_with_tracking(
-        &db,
-        "users",
-        users::Entity::find_by_id(user_id),
-    )
-    .await
-    .map_err(|e| {
-        error!(request_id = %request_id, error = ?e, "Database error checking admin status");
-        AppError {
-            message: "Failed to verify admin status".to_string(),
-            status_code: axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-        }
-    })?
-    .ok_or(AppError {
-        message: "Failed to verify admin status".to_string(),
-        status_code: axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-    })?;
-
-    // Check if user has admin role
-    let has_admin_permissions = if let Some(role_id) = user.role_id {
-        let role = roles::Entity::find_by_id(role_id)
-            .one(&db)
-            .await
-            .map_err(|e| {
-                error!(request_id = %request_id, error = ?e, "Database error checking role");
-                AppError {
-                    message: "Failed to verify role".to_string(),
-                    status_code: axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                }
-            })?;
-
-        if let Some(role_model) = role {
-            let permissions: Vec<String> =
-                serde_json::from_str(&role_model.permissions).unwrap_or_else(|_| vec![]);
-            permissions.contains(&"*".to_string())
-        } else {
-            false
-        }
-    } else {
-        false
-    };
-
-    if !has_admin_permissions {
-        return Err(AppError {
-            message: "Access denied: Admin privileges required".to_string(),
-            status_code: axum::http::StatusCode::FORBIDDEN,
-        });
-    }
+    let user = UserService::find_user_by_id(&db, user_id)
+        .await?
+        .ok_or(AppError {
+            message: "User not found".to_string(),
+            status_code: StatusCode::NOT_FOUND,
+        })?;
 
     info!(
         request_id = %request_id,
