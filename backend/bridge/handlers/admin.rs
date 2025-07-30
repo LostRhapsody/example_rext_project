@@ -301,6 +301,7 @@ pub async fn get_database_tables_handler(
     State(db): State<DatabaseConnection>,
     Extension(admin_user): Extension<crate::bridge::middleware::admin::AdminUser>,
 ) -> Result<impl IntoResponse, AppError> {
+    check_single_permission!(&admin_user.email, &AdminRead, &db);
     let response = AdminService::get_database_tables(&db).await?;
     Ok((StatusCode::OK, Json(response)))
 }
