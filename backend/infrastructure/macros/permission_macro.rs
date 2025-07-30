@@ -16,7 +16,7 @@ macro_rules! check_single_permission {
             .await?;
         if !has_permission {
             return Err($crate::infrastructure::app_error::AppError {
-                message: "Invalid credentials".to_string(),
+                message: "Invalid Permissions".to_string(),
                 status_code: axum::http::StatusCode::FORBIDDEN,
             });
         }
