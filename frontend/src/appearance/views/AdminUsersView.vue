@@ -258,15 +258,6 @@
 
 <script setup lang="ts">
 import { AgGridVue } from 'ag-grid-vue3'
-import {
-  getUsersHandler,
-  createUserHandler,
-  updateUserHandler,
-  deleteUserHandler,
-  getUserHandler,
-  getRolesHandler
-} from '@/bridge/client'
-import type { GetUsersHandlerData } from '@/bridge/client/types.gen'
 
 interface User {
   id: string
@@ -417,7 +408,6 @@ const fetchUsers = async () => {
     })
 
     if (response.data) {
-      console.log(response.data)
       users.value = response.data.data || []
       const pagination = response.data.pagination
       paginationInfo.value = {
