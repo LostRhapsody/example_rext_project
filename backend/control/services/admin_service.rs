@@ -1,13 +1,17 @@
+use base64::Engine;
 use sea_orm::*;
 use uuid::Uuid;
-use base64::Engine;
 
 use crate::{
     bridge::types::admin::*,
-    domain::{validation::*},
-    entity::models::{audit_logs, users, roles},
+    control::services::{
+        database_service::{DatabaseMonitorService},
+        system_monitor::SystemMonitorService,
+        user_service::UserService,
+    },
+    domain::validation::*,
+    entity::models::{audit_logs, roles, users},
     infrastructure::{app_error::AppError, jwt_claims::Claims},
-    control::services::{user_service::UserService, system_monitor::SystemMonitorService, database_service::DatabaseMonitorService, database_service::DatabaseService},
 };
 use axum::http::StatusCode;
 use jsonwebtoken::{EncodingKey, Header, encode};
@@ -20,7 +24,7 @@ impl AdminService {
     /// Authenticates an admin user and returns a JWT token
     /// Specifically for "super admin" privileges, defined with the "*" permission
     /// Other "admin" permissions like "admin:read" are handled by the user_can_perform_action function
-    /// 
+    ///
     /// Example:
     /// ```rust,no_run
     /// // Super admin auth
@@ -35,7 +39,7 @@ impl AdminService {
         // Validate input
         validate_login_input(&login.email, &login.password)?;
 
-        // Find user by email using UserService
+        // Find user by email
         let user = UserService::find_user_by_email(db, &login.email)
             .await?
             .ok_or(AppError {
@@ -43,57 +47,7 @@ impl AdminService {
                 status_code: StatusCode::UNAUTHORIZED,
             })?;
 
-        // Check if user has admin role by querying the database directly
-        let user_model = DatabaseService::find_one_with_tracking(
-            db,
-            "users",
-            users::Entity::find().filter(users::Column::Email.eq(&login.email))
-        )
-        .await
-        .map_err(|e| AppError {
-            message: format!("Database error: {}", e),
-            status_code: StatusCode::INTERNAL_SERVER_ERROR,
-        })?;
-
-        let user_model = user_model.ok_or(AppError {
-            message: "Invalid credentials".to_string(),
-            status_code: StatusCode::UNAUTHORIZED,
-        })?;
-
-        // Check if user has admin role
-        if let Some(role_id) = user_model.role_id {
-            let role = roles::Entity::find_by_id(role_id)
-                .one(db)
-                .await
-                .map_err(|e| AppError {
-                    message: format!("Database error: {}", e),
-                    status_code: StatusCode::INTERNAL_SERVER_ERROR,
-                })?;
-
-            if let Some(role_model) = role {
-                let permissions: Vec<String> = serde_json::from_str(&role_model.permissions)
-                    .unwrap_or_else(|_| vec![]);
-
-                if !permissions.contains(&"*".to_string()) {
-                    return Err(AppError {
-                        message: "Access denied: Admin privileges required".to_string(),
-                        status_code: StatusCode::FORBIDDEN,
-                    });
-                }
-            } else {
-                return Err(AppError {
-                    message: "Access denied: Admin privileges required".to_string(),
-                    status_code: StatusCode::FORBIDDEN,
-                });
-            }
-        } else {
-            return Err(AppError {
-                message: "Access denied: Admin privileges required".to_string(),
-                status_code: StatusCode::FORBIDDEN,
-            });
-        }
-
-        // Verify password using UserService
+        // Verify password
         let is_valid = UserService::verify_password(&user, &login.password)?;
         if !is_valid {
             return Err(AppError {
@@ -111,11 +65,10 @@ impl AdminService {
             exp: (chrono::Utc::now() + chrono::Duration::hours(24)).timestamp() as usize,
         };
 
-        let token = encode(&Header::default(), &claims, &encoding_key)
-            .map_err(|_| AppError {
-                message: "Failed to generate token".to_string(),
-                status_code: StatusCode::INTERNAL_SERVER_ERROR,
-            })?;
+        let token = encode(&Header::default(), &claims, &encoding_key).map_err(|_| AppError {
+            message: "Failed to generate token".to_string(),
+            status_code: StatusCode::INTERNAL_SERVER_ERROR,
+        })?;
 
         Ok(AdminLoginResponse {
             token,
@@ -223,7 +176,6 @@ impl AdminService {
             query = query.filter(users::Column::Email.contains(&search));
         }
 
-
         // Get total count
         let total = query.clone().count(db).await.map_err(|e| AppError {
             message: format!("Database error: {}", e),
@@ -231,7 +183,8 @@ impl AdminService {
         })?;
 
         // Get paginated results
-        let users = query.order_by_desc(users::Column::CreatedAt)
+        let users = query
+            .order_by_desc(users::Column::CreatedAt)
             .offset(offset as u64)
             .limit(params.limit as u64)
             .all(db)
@@ -253,7 +206,10 @@ impl AdminService {
                 email: user.email,
                 created_at: user.created_at.map(|t| t.to_rfc3339()),
                 role_id: user.role_id,
-                role_name: roles.iter().find(|role| role.id == user.role_id.unwrap_or_default() ).map(|role| role.name.clone())
+                role_name: roles
+                    .iter()
+                    .find(|role| role.id == user.role_id.unwrap_or_default())
+                    .map(|role| role.name.clone()),
             })
             .collect();
 
@@ -379,7 +335,10 @@ impl AdminService {
             })?;
 
             // Skip system tables
-            if table_name.starts_with("sqlite_") || table_name.starts_with("_sqlx_") || table_name.starts_with("seaql_") {
+            if table_name.starts_with("sqlite_")
+                || table_name.starts_with("_sqlx_")
+                || table_name.starts_with("seaql_")
+            {
                 continue;
             }
 
@@ -399,7 +358,8 @@ impl AdminService {
             let record_count: u64 = count_result
                 .and_then(|row| {
                     // Try different ways to access the count column
-                    let result = row.try_get::<i64>("", "count")
+                    let result = row
+                        .try_get::<i64>("", "count")
                         .map(|v| v as u64)
                         .or_else(|e| {
                             println!("Failed to get as i64: {:?}", e);
@@ -508,18 +468,22 @@ impl AdminService {
         let system_metrics = SystemMonitorService::get_system_metrics(db).await;
 
         // Get user analytics
-        let user_analytics = SystemMonitorService::get_user_analytics(db).await.unwrap_or_else(|_| {
-            crate::control::services::system_monitor::UserAnalytics {
-                total_users: 0,
-                active_users_7_days: 0,
-                new_users_24_hours: 0,
-                new_users_7_days: 0,
-                new_users_30_days: 0,
-            }
-        });
+        let user_analytics = SystemMonitorService::get_user_analytics(db)
+            .await
+            .unwrap_or_else(
+                |_| crate::control::services::system_monitor::UserAnalytics {
+                    total_users: 0,
+                    active_users_7_days: 0,
+                    new_users_24_hours: 0,
+                    new_users_7_days: 0,
+                    new_users_30_days: 0,
+                },
+            );
 
         // Get database performance metrics
-        let database_performance = DatabaseMonitorService::get_performance_metrics(db).await.ok()
+        let database_performance = DatabaseMonitorService::get_performance_metrics(db)
+            .await
+            .ok()
             .map(|metrics| DatabasePerformanceResponse {
                 total_queries: metrics.total_queries,
                 avg_execution_time_ms: metrics.avg_execution_time_ms,
@@ -547,7 +511,8 @@ impl AdminService {
         let (project_name, project_version) = SystemMonitorService::get_project_info();
 
         // Get server information
-        let (server_host, server_port, server_protocol, environment) = SystemMonitorService::get_server_info();
+        let (server_host, server_port, server_protocol, environment) =
+            SystemMonitorService::get_server_info();
 
         HealthResponse {
             status,
@@ -562,8 +527,12 @@ impl AdminService {
             disk_total: SystemMonitorService::format_bytes(system_metrics.disk_total),
             disk_used: SystemMonitorService::format_bytes(system_metrics.disk_used),
             disk_available: SystemMonitorService::format_bytes(system_metrics.disk_available),
-            network_bytes_sent: SystemMonitorService::format_bytes(system_metrics.network_bytes_sent),
-            network_bytes_received: SystemMonitorService::format_bytes(system_metrics.network_bytes_received),
+            network_bytes_sent: SystemMonitorService::format_bytes(
+                system_metrics.network_bytes_sent,
+            ),
+            network_bytes_received: SystemMonitorService::format_bytes(
+                system_metrics.network_bytes_received,
+            ),
             process_count: system_metrics.process_count,
             database_connections: system_metrics.database_connections,
             database_status,
@@ -604,8 +573,9 @@ impl AdminService {
         if let Some(search) = params.search {
             if !search.is_empty() {
                 query = query.filter(
-                    roles::Column::Name.contains(&search)
-                        .or(roles::Column::Description.contains(&search))
+                    roles::Column::Name
+                        .contains(&search)
+                        .or(roles::Column::Description.contains(&search)),
                 );
             }
         }
@@ -631,8 +601,8 @@ impl AdminService {
         let role_responses: Vec<RoleResponse> = roles
             .into_iter()
             .map(|role| {
-                let permissions: Vec<String> = serde_json::from_str(&role.permissions)
-                    .unwrap_or_else(|_| vec![]);
+                let permissions: Vec<String> =
+                    serde_json::from_str(&role.permissions).unwrap_or_else(|_| vec![]);
 
                 RoleResponse {
                     id: role.id,
@@ -659,10 +629,7 @@ impl AdminService {
     }
 
     /// Get role by ID
-    pub async fn get_role(
-        db: &DatabaseConnection,
-        role_id: i32,
-    ) -> Result<RoleResponse, AppError> {
+    pub async fn get_role(db: &DatabaseConnection, role_id: i32) -> Result<RoleResponse, AppError> {
         let role = roles::Entity::find_by_id(role_id)
             .one(db)
             .await
@@ -675,8 +642,8 @@ impl AdminService {
                 status_code: StatusCode::NOT_FOUND,
             })?;
 
-        let permissions: Vec<String> = serde_json::from_str(&role.permissions)
-            .unwrap_or_else(|_| vec![]);
+        let permissions: Vec<String> =
+            serde_json::from_str(&role.permissions).unwrap_or_else(|_| vec![]);
 
         Ok(RoleResponse {
             id: role.id,
@@ -711,8 +678,8 @@ impl AdminService {
         }
 
         // Convert permissions to JSON string
-        let permissions_json = serde_json::to_string(&request.permissions)
-            .map_err(|_| AppError {
+        let permissions_json =
+            serde_json::to_string(&request.permissions).map_err(|_| AppError {
                 message: "Invalid permissions format".to_string(),
                 status_code: StatusCode::BAD_REQUEST,
             })?;
@@ -725,13 +692,10 @@ impl AdminService {
             ..Default::default()
         };
 
-        let role = role_model
-            .insert(db)
-            .await
-            .map_err(|e| AppError {
-                message: format!("Database error: {}", e),
-                status_code: StatusCode::INTERNAL_SERVER_ERROR,
-            })?;
+        let role = role_model.insert(db).await.map_err(|e| AppError {
+            message: format!("Database error: {}", e),
+            status_code: StatusCode::INTERNAL_SERVER_ERROR,
+        })?;
 
         Ok(RoleResponse {
             id: role.id,
@@ -794,11 +758,10 @@ impl AdminService {
         }
 
         if let Some(permissions) = request.permissions {
-            let permissions_json = serde_json::to_string(&permissions)
-                .map_err(|_| AppError {
-                    message: "Invalid permissions format".to_string(),
-                    status_code: StatusCode::BAD_REQUEST,
-                })?;
+            let permissions_json = serde_json::to_string(&permissions).map_err(|_| AppError {
+                message: "Invalid permissions format".to_string(),
+                status_code: StatusCode::BAD_REQUEST,
+            })?;
             role_model.permissions = Set(permissions_json);
         }
 
@@ -806,17 +769,14 @@ impl AdminService {
         role_model.updated_at = Set(Some(chrono::Utc::now().fixed_offset()));
 
         // Save updated role
-        let updated_role = role_model
-            .update(db)
-            .await
-            .map_err(|e| AppError {
-                message: format!("Database error: {}", e),
-                status_code: StatusCode::INTERNAL_SERVER_ERROR,
-            })?;
+        let updated_role = role_model.update(db).await.map_err(|e| AppError {
+            message: format!("Database error: {}", e),
+            status_code: StatusCode::INTERNAL_SERVER_ERROR,
+        })?;
 
         // Get permissions for response
-        let permissions: Vec<String> = serde_json::from_str(&updated_role.permissions)
-            .unwrap_or_else(|_| vec![]);
+        let permissions: Vec<String> =
+            serde_json::from_str(&updated_role.permissions).unwrap_or_else(|_| vec![]);
 
         Ok(RoleResponse {
             id: updated_role.id,
@@ -829,10 +789,7 @@ impl AdminService {
     }
 
     /// Delete a role
-    pub async fn delete_role(
-        db: &DatabaseConnection,
-        role_id: i32,
-    ) -> Result<(), AppError> {
+    pub async fn delete_role(db: &DatabaseConnection, role_id: i32) -> Result<(), AppError> {
         // Check if role exists
         let _role = roles::Entity::find_by_id(role_id)
             .one(db)
@@ -880,11 +837,10 @@ impl AdminService {
         db: &DatabaseConnection,
         request: PermissionCheckRequest,
     ) -> Result<PermissionCheckResponse, AppError> {
-        let user_id = Uuid::parse_str(&request.user_id)
-            .map_err(|_| AppError {
-                message: "Invalid user ID".to_string(),
-                status_code: StatusCode::BAD_REQUEST,
-            })?;
+        let user_id = Uuid::parse_str(&request.user_id).map_err(|_| AppError {
+            message: "Invalid user ID".to_string(),
+            status_code: StatusCode::BAD_REQUEST,
+        })?;
 
         // Get user with role information
         let user = users::Entity::find_by_id(user_id)
@@ -904,11 +860,11 @@ impl AdminService {
 
         // Check role-based permissions
         if let Some(role) = role_model {
-            let permissions: Vec<String> = serde_json::from_str(&role.permissions)
-                .unwrap_or_else(|_| vec![]);
+            let permissions: Vec<String> =
+                serde_json::from_str(&role.permissions).unwrap_or_else(|_| vec![]);
 
-            let has_permission = permissions.contains(&"*".to_string()) ||
-                                permissions.contains(&request.permission);
+            let has_permission =
+                permissions.contains(&"*".to_string()) || permissions.contains(&request.permission);
 
             return Ok(PermissionCheckResponse {
                 has_permission,

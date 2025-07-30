@@ -1,16 +1,17 @@
 use axum::{
+    Json,
     extract::{Path, Query, State},
     http::StatusCode,
-    Json,
     response::IntoResponse,
 };
 use sea_orm::DatabaseConnection;
 use uuid::Uuid;
 
 use crate::{
-    bridge::types::admin::*,
-    bridge::types::auth::AuthUser,
+    bridge::types::{admin::*, auth::AuthUser},
+    check_single_permission,
     control::services::admin_service::AdminService,
+    domain::permissions::Permission::AdminRead,
     infrastructure::app_error::{AppError, ErrorResponse, MessageResponse},
 };
 
@@ -27,13 +28,14 @@ use crate::{
         (status = 500, description = "Internal server error", body = ErrorResponse)
     ),
     summary = "Admin login",
-    description = "Authenticates an admin user and returns a JWT token",
+    description = "Authenticates an admin user and returns a JWT token. Requires admin:read permission.",
     tag = ADMIN_TAG
 )]
 pub async fn admin_login_handler(
     State(db): State<DatabaseConnection>,
     Json(payload): Json<AdminLoginRequest>,
 ) -> Result<impl IntoResponse, AppError> {
+    check_single_permission!(&payload.email, &AdminRead, &db);
     let response = AdminService::authenticate_admin(&db, payload).await?;
     Ok((StatusCode::OK, Json(response)))
 }
@@ -332,9 +334,7 @@ pub async fn get_table_records_handler(
         ("jwt_token" = [])
     )
 )]
-pub async fn health_handler(
-    State(db): State<DatabaseConnection>,
-) -> impl IntoResponse {
+pub async fn health_handler(State(db): State<DatabaseConnection>) -> impl IntoResponse {
     let response = AdminService::get_health_status(&db).await;
     (StatusCode::OK, Json(response))
 }
