@@ -1,8 +1,8 @@
-use sea_orm::DatabaseConnection;
-use std::time::Instant;
 use crate::control::services::database_service::DatabaseMonitorService;
+use sea_orm::DatabaseConnection;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
+use std::time::Instant;
 
 /// Helper function to record a database query metric
 /// This should be called from within request handlers when database queries are executed
@@ -28,7 +28,8 @@ pub async fn record_database_query(
         execution_time_ms,
         rows_affected,
         error_message.map(|s| s.to_string()),
-    ).await;
+    )
+    .await;
 }
 
 /// Wrapper for database operations that automatically tracks performance
@@ -57,7 +58,8 @@ where
         execution_time.as_millis() as i64,
         None,
         error_message.as_deref(),
-    ).await;
+    )
+    .await;
 
     result
 }

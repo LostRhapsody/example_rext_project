@@ -1,8 +1,14 @@
-use axum::{body::Body, extract::{Request, State}, http::StatusCode, middleware::Next, response::Response};
+use axum::{
+    body::Body,
+    extract::{Request, State},
+    http::StatusCode,
+    middleware::Next,
+    response::Response,
+};
 use sea_orm::{ActiveModelTrait, DatabaseConnection, Set};
+use serde_json::Value;
 use std::time::Instant;
 use tracing::{error, info};
-use serde_json::Value;
 
 use crate::{
     bridge::types::auth::AuthUser,
@@ -14,8 +20,19 @@ const MAX_BODY_LOG_BYTES: usize = 4096; // 4KB
 
 /// Sensitive fields that should be redacted from logs
 const SENSITIVE_FIELDS: &[&str] = &[
-    "password", "passwd", "pwd", "secret", "token", "key", "auth", "authorization",
-    "jwt", "api_key", "api_secret", "private_key", "private_secret"
+    "password",
+    "passwd",
+    "pwd",
+    "secret",
+    "token",
+    "key",
+    "auth",
+    "authorization",
+    "jwt",
+    "api_key",
+    "api_secret",
+    "private_key",
+    "private_secret",
 ];
 
 /// Sanitize JSON content by redacting sensitive fields
@@ -42,7 +59,8 @@ fn sanitize_json_content(content: &str) -> String {
             for pattern in patterns {
                 if sanitized.contains(&pattern) {
                     // This is a simplified redaction - in production you might want more sophisticated parsing
-                    sanitized = sanitized.replace(&format!("{}", pattern), &format!("{}[REDACTED]", pattern));
+                    sanitized = sanitized
+                        .replace(&format!("{}", pattern), &format!("{}[REDACTED]", pattern));
                 }
             }
         }
@@ -64,14 +82,18 @@ pub async fn extract_request_response(
     req: Request<Body>,
     next: Next,
 ) -> Result<(Response, Option<String>, Option<String>), (StatusCode, String)> {
-
     // extract parts of the request so we can reconstruct it later
     let (req_parts, req_body) = req.into_parts();
 
     // read the entire request body
     let req_bytes = match axum::body::to_bytes(req_body, usize::MAX).await {
         Ok(bytes) => bytes,
-        Err(err) => return Err((StatusCode::BAD_REQUEST, format!("failed to read request body: {}", err))),
+        Err(err) => {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                format!("failed to read request body: {}", err),
+            ));
+        }
     };
 
     // clonse the request body and truncate the clone to MAX_BODY_LOG_BYTES
@@ -96,7 +118,12 @@ pub async fn extract_request_response(
     let (res_parts, res_body) = response.into_parts();
     let res_bytes = match axum::body::to_bytes(res_body, usize::MAX).await {
         Ok(bytes) => bytes,
-        Err(err) => return Err((StatusCode::BAD_REQUEST, format!("failed to read response body: {}", err))),
+        Err(err) => {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                format!("failed to read response body: {}", err),
+            ));
+        }
     };
 
     // clone the response body and truncate the clone to MAX_BODY_LOG_BYTES
@@ -160,7 +187,12 @@ pub async fn request_logging_middleware(
         .get("x-forwarded-for")
         .and_then(|v| v.to_str().ok())
         .map(|s| s.to_string())
-        .or_else(|| request.extensions().get::<std::net::SocketAddr>().map(|addr| addr.ip().to_string()));
+        .or_else(|| {
+            request
+                .extensions()
+                .get::<std::net::SocketAddr>()
+                .map(|addr| addr.ip().to_string())
+        });
     let user_agent = request
         .headers()
         .get("user-agent")
@@ -168,10 +200,7 @@ pub async fn request_logging_middleware(
         .map(|s| s.to_string());
 
     // Try to get user_id from extensions (set by auth middleware)
-    let user_id = request
-        .extensions()
-        .get::<AuthUser>()
-        .map(|u| u.user_id);
+    let user_id = request.extensions().get::<AuthUser>().map(|u| u.user_id);
 
     // Capture request and response bodies (runs the next handler so we get the response)
     let (response, request_body, response_body) = extract_request_response(request, next).await.map_err(|(status, message)| {
@@ -240,7 +269,8 @@ pub async fn request_logging_middleware(
                 "error".to_string(),
                 format!("Failed to insert audit log: {}", e),
                 "audit_logging".to_string(),
-            ).await;
+            )
+            .await;
         } else {
             info!(request_id = %request_id_clone, "Audit log inserted");
 
@@ -256,29 +286,42 @@ pub async fn request_logging_middleware(
                 ip_address_for_ws,
                 user_agent_for_ws,
                 error_message_for_ws,
-            ).await;
+            )
+            .await;
 
             // Broadcast info log for successful requests (but not too frequently)
             if status_code >= 200 && status_code < 300 {
                 crate::infrastructure::websocket::broadcast_system_log(
                     "info".to_string(),
-                    format!("Request completed: {} {} ({}ms)", method_for_logs, path_for_logs, response_time_ms),
+                    format!(
+                        "Request completed: {} {} ({}ms)",
+                        method_for_logs, path_for_logs, response_time_ms
+                    ),
                     "request_logging".to_string(),
-                ).await;
+                )
+                .await;
             } else if status_code >= 400 {
                 // Broadcast warning for client errors
                 crate::infrastructure::websocket::broadcast_system_log(
                     "warn".to_string(),
-                    format!("Client error: {} {} - {}", method_for_logs, path_for_logs, status_code),
+                    format!(
+                        "Client error: {} {} - {}",
+                        method_for_logs, path_for_logs, status_code
+                    ),
                     "request_logging".to_string(),
-                ).await;
+                )
+                .await;
             } else if status_code >= 500 {
                 // Broadcast error for server errors
                 crate::infrastructure::websocket::broadcast_system_log(
                     "error".to_string(),
-                    format!("Server error: {} {} - {}", method_for_logs, path_for_logs, status_code),
+                    format!(
+                        "Server error: {} {} - {}",
+                        method_for_logs, path_for_logs, status_code
+                    ),
                     "request_logging".to_string(),
-                ).await;
+                )
+                .await;
             }
         }
     });

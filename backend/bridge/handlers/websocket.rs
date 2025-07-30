@@ -1,14 +1,17 @@
 use axum::{
-    extract::{ws::{Message, WebSocket, WebSocketUpgrade}, State},
+    extract::{
+        State,
+        ws::{Message, WebSocket, WebSocketUpgrade},
+    },
     response::IntoResponse,
 };
-use sea_orm::DatabaseConnection;
-use uuid::Uuid;
-use serde_json;
 use futures_util::{SinkExt, StreamExt};
+use sea_orm::DatabaseConnection;
+use serde_json;
 use tokio::sync::mpsc;
+use uuid::Uuid;
 
-use crate::infrastructure::websocket::{WebSocketMessage, WEBSOCKET_MANAGER};
+use crate::infrastructure::websocket::{WEBSOCKET_MANAGER, WebSocketMessage};
 
 /// WebSocket handler for real-time monitoring
 pub async fn websocket_handler(
@@ -27,7 +30,8 @@ async fn handle_socket(socket: WebSocket) {
         "info".to_string(),
         format!("WebSocket connection established: {}", connection_id),
         "websocket".to_string(),
-    ).await;
+    )
+    .await;
 
     // Send connection status
     let status_message = WebSocketMessage::ConnectionStatus {
@@ -59,7 +63,11 @@ async fn handle_socket(socket: WebSocket) {
         while let Ok(message) = broadcast_rx.recv().await {
             if let Ok(message_json) = serde_json::to_string(&message) {
                 if let Err(e) = tx_broadcast.send(message_json).await {
-                    tracing::warn!("Failed to send message to client {}: {}", connection_id_broadcast, e);
+                    tracing::warn!(
+                        "Failed to send message to client {}: {}",
+                        connection_id_broadcast,
+                        e
+                    );
                     break;
                 }
             }
@@ -83,7 +91,10 @@ async fn handle_socket(socket: WebSocket) {
                     }
                 }
                 Message::Close(_) => {
-                    tracing::info!("WebSocket connection {} closed by client", connection_id_ping);
+                    tracing::info!(
+                        "WebSocket connection {} closed by client",
+                        connection_id_ping
+                    );
                     break;
                 }
                 _ => {
@@ -124,7 +135,8 @@ async fn handle_socket(socket: WebSocket) {
         "info".to_string(),
         format!("WebSocket connection closed: {}", connection_id),
         "websocket".to_string(),
-    ).await;
+    )
+    .await;
 
     tracing::info!("WebSocket connection {} cleaned up", connection_id);
 }

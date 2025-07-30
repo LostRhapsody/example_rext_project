@@ -239,5 +239,9 @@ pub struct PermissionCheckResponse {
 }
 
 // Helper functions for defaults
-fn default_page() -> u64 { 1 }
-fn default_limit() -> u64 { 25 }
+fn default_page() -> u64 {
+    1
+}
+fn default_limit() -> u64 {
+    25
+}

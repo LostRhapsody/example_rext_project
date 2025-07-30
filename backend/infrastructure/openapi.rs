@@ -1,11 +1,14 @@
 use utoipa::OpenApi;
 
-use crate::bridge::types::auth::{AUTH_TAG, RegisterRequest, RegisterResponse, LoginRequest, LoginResponse, ProfileResponse, AuthUser};
 use crate::bridge::types::admin::{
-    ADMIN_TAG, AdminLoginRequest, AdminLoginResponse, AuditLogResponse,
-    LogsQueryParams, UsersQueryParams, CreateUserRequest, UpdateUserRequest, UserResponse,
-    DatabaseTableResponse, TableRecordsQueryParams, TableRecordResponse, HealthResponse,
-    PaginatedResponse, PaginationMeta
+    ADMIN_TAG, AdminLoginRequest, AdminLoginResponse, AuditLogResponse, CreateUserRequest,
+    DatabaseTableResponse, HealthResponse, LogsQueryParams, PaginatedResponse, PaginationMeta,
+    TableRecordResponse, TableRecordsQueryParams, UpdateUserRequest, UserResponse,
+    UsersQueryParams,
+};
+use crate::bridge::types::auth::{
+    AUTH_TAG, AuthUser, LoginRequest, LoginResponse, ProfileResponse, RegisterRequest,
+    RegisterResponse,
 };
 use crate::infrastructure::app_error::{ErrorResponse, MessageResponse};
 

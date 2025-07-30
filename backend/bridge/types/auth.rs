@@ -43,10 +43,7 @@ pub struct RegisterResponse {
     pub email: String,
 
     /// Timestamp when the user was created (ISO 8601 format)
-    #[schema(
-        example = "2024-01-20T15:30:00Z",
-        nullable = true,
-    )]
+    #[schema(example = "2024-01-20T15:30:00Z", nullable = true)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
 }

@@ -8,9 +8,9 @@ use tracing::{error, info, warn};
 
 use crate::{
     bridge::types::auth::AuthUser,
-    control::services::token_service::TokenService,
     control::services::database_service::DatabaseService,
-    entity::models::{users, roles},
+    control::services::token_service::TokenService,
+    entity::models::{roles, users},
     infrastructure::{app_error::AppError, logging::LoggingManager},
 };
 
@@ -29,7 +29,7 @@ pub async fn admin_middleware(
     let user = DatabaseService::find_one_with_tracking(
         &db,
         "users",
-        users::Entity::find_by_id(user_id)
+        users::Entity::find_by_id(user_id),
     )
     .await
     .map_err(|e| {
@@ -58,8 +58,8 @@ pub async fn admin_middleware(
             })?;
 
         if let Some(role_model) = role {
-            let permissions: Vec<String> = serde_json::from_str(&role_model.permissions)
-                .unwrap_or_else(|_| vec![]);
+            let permissions: Vec<String> =
+                serde_json::from_str(&role_model.permissions).unwrap_or_else(|_| vec![]);
             permissions.contains(&"*".to_string())
         } else {
             false
@@ -67,8 +67,6 @@ pub async fn admin_middleware(
     } else {
         false
     };
-
-
 
     if !has_admin_permissions {
         return Err(AppError {
@@ -85,9 +83,7 @@ pub async fn admin_middleware(
     );
 
     // Add both AuthUser and AdminUser to request extensions for downstream handlers
-    request.extensions_mut().insert(AuthUser {
-        user_id,
-    });
+    request.extensions_mut().insert(AuthUser { user_id });
 
     request.extensions_mut().insert(AdminUser {
         user_id,
@@ -96,8 +92,6 @@ pub async fn admin_middleware(
 
     Ok(next.run(request).await)
 }
-
-
 
 /// Admin user information for downstream handlers
 #[allow(dead_code)]

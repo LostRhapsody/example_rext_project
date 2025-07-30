@@ -1,11 +1,11 @@
-use sysinfo::{System, Disks, Networks, Components};
-use sea_orm::DatabaseConnection;
-use chrono::{Utc, Duration};
-use std::fs;
 use crate::control::services::{
     database_service::{DatabaseMonitorService, DatabasePerformanceMetrics},
     server_config::ServerConfigService,
 };
+use chrono::{Duration, Utc};
+use sea_orm::DatabaseConnection;
+use std::fs;
+use sysinfo::{Components, Disks, Networks, System};
 
 /// System monitoring service for collecting system metrics
 pub struct SystemMonitorService;
@@ -98,7 +98,8 @@ impl SystemMonitorService {
         // Get temperature information if available
         let components = Components::new_with_refreshed_list();
         println!("components: {:?}", components);
-        let temperature = components.iter()
+        let temperature = components
+            .iter()
             .find(|component| component.label().to_lowercase().contains("cpu"))
             .and_then(|component| component.temperature());
 
@@ -107,7 +108,9 @@ impl SystemMonitorService {
         let database_connections = Self::get_database_connections(db).await;
 
         // Get database performance metrics
-        let database_performance = DatabaseMonitorService::get_performance_metrics(db).await.ok();
+        let database_performance = DatabaseMonitorService::get_performance_metrics(db)
+            .await
+            .ok();
 
         SystemMetrics {
             cpu_usage,
@@ -133,7 +136,9 @@ impl SystemMonitorService {
     }
 
     /// Get user analytics
-    pub async fn get_user_analytics(db: &DatabaseConnection) -> Result<UserAnalytics, sea_orm::DbErr> {
+    pub async fn get_user_analytics(
+        db: &DatabaseConnection,
+    ) -> Result<UserAnalytics, sea_orm::DbErr> {
         use crate::entity::models::{prelude::*, *};
         use sea_orm::*;
 
@@ -260,7 +265,7 @@ impl SystemMonitorService {
         }
     }
 
-        /// Get project information from Cargo.toml
+    /// Get project information from Cargo.toml
     pub fn get_project_info() -> (String, String) {
         // Try to read Cargo.toml from the project root
         let cargo_toml_path = "Cargo.toml";
@@ -270,11 +275,13 @@ impl SystemMonitorService {
                 match toml::from_str::<toml::Value>(&content) {
                     Ok(toml_value) => {
                         if let Some(package) = toml_value.get("package") {
-                            let name = package.get("name")
+                            let name = package
+                                .get("name")
                                 .and_then(|v| v.as_str())
                                 .unwrap_or("unknown")
                                 .to_string();
-                            let version = package.get("version")
+                            let version = package
+                                .get("version")
                                 .and_then(|v| v.as_str())
                                 .unwrap_or("unknown")
                                 .to_string();
@@ -351,7 +358,10 @@ mod tests {
             temperature: None,
         };
 
-        assert_eq!(SystemMonitorService::get_memory_usage_percentage(&metrics), 50.0);
+        assert_eq!(
+            SystemMonitorService::get_memory_usage_percentage(&metrics),
+            50.0
+        );
     }
 
     #[test]
@@ -378,6 +388,9 @@ mod tests {
             temperature: None,
         };
 
-        assert_eq!(SystemMonitorService::get_health_status(&healthy_metrics), "Healthy");
+        assert_eq!(
+            SystemMonitorService::get_health_status(&healthy_metrics),
+            "Healthy"
+        );
     }
 }

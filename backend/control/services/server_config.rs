@@ -22,11 +22,9 @@ impl ServerConfigService {
             .parse::<u16>()
             .unwrap_or(3000);
 
-        let host = env::var("SERVER_HOST")
-            .unwrap_or_else(|_| "localhost".to_string());
+        let host = env::var("SERVER_HOST").unwrap_or_else(|_| "localhost".to_string());
 
-        let environment = env::var("ENVIRONMENT")
-            .unwrap_or_else(|_| "development".to_string());
+        let environment = env::var("ENVIRONMENT").unwrap_or_else(|_| "development".to_string());
 
         // Determine protocol based on environment and TLS configuration
         let protocol = if environment == "production" {
@@ -44,7 +42,9 @@ impl ServerConfigService {
             environment,
         };
 
-        SERVER_CONFIG.set(config).expect("Failed to set server config");
+        SERVER_CONFIG
+            .set(config)
+            .expect("Failed to set server config");
     }
 
     /// Get server configuration
@@ -54,9 +54,7 @@ impl ServerConfigService {
 
     /// Get server port
     pub fn get_port() -> u16 {
-        Self::get_config()
-            .map(|config| config.port)
-            .unwrap_or(3000)
+        Self::get_config().map(|config| config.port).unwrap_or(3000)
     }
 
     /// Get server host

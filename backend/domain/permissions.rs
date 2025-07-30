@@ -1,5 +1,5 @@
 //! Permission domain
-//! 
+//!
 //! Represents all the shared types for permissions, with helper functions for using them.
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
@@ -9,7 +9,7 @@ use std::collections::HashSet;
 pub enum Permission {
     // Super admin permission (wildcard)
     All,
-    
+
     // Admin permissions
     AdminRead,
     AdminWrite,
@@ -20,20 +20,20 @@ pub enum Permission {
     AdminDatabase,
     AdminHealth,
     AdminMetrics,
-    
+
     // User permissions
     UserRead,
     UserWrite,
     UserDelete,
     UserProfile,
     UserCreate,
-    
+
     // System permissions
     SystemHealth,
     SystemMetrics,
     SystemLogs,
     SystemDatabase,
-    
+
     // Custom permissions (for dynamic roles)
     Custom(String),
 }
@@ -64,7 +64,7 @@ impl Permission {
             Permission::Custom(s) => s.clone(),
         }
     }
-    
+
     /// Create permission from string
     pub fn from_string(s: &str) -> Self {
         match s {
@@ -90,23 +90,34 @@ impl Permission {
             _ => Permission::Custom(s.to_string()),
         }
     }
-    
+
     /// Get permission category
     #[allow(dead_code)]
     pub fn category(&self) -> &'static str {
         match self {
             Permission::All => "super",
-            Permission::AdminRead | Permission::AdminWrite | Permission::AdminDelete |
-            Permission::AdminUsers | Permission::AdminRoles | Permission::AdminLogs |
-            Permission::AdminDatabase | Permission::AdminHealth | Permission::AdminMetrics => "admin",
-            Permission::UserRead | Permission::UserWrite | Permission::UserDelete |
-            Permission::UserProfile | Permission::UserCreate => "user",
-            Permission::SystemHealth | Permission::SystemMetrics | Permission::SystemLogs |
-            Permission::SystemDatabase => "system",
+            Permission::AdminRead
+            | Permission::AdminWrite
+            | Permission::AdminDelete
+            | Permission::AdminUsers
+            | Permission::AdminRoles
+            | Permission::AdminLogs
+            | Permission::AdminDatabase
+            | Permission::AdminHealth
+            | Permission::AdminMetrics => "admin",
+            Permission::UserRead
+            | Permission::UserWrite
+            | Permission::UserDelete
+            | Permission::UserProfile
+            | Permission::UserCreate => "user",
+            Permission::SystemHealth
+            | Permission::SystemMetrics
+            | Permission::SystemLogs
+            | Permission::SystemDatabase => "system",
             Permission::Custom(_) => "custom",
         }
     }
-    
+
     /// Get permission description
     #[allow(dead_code)]
     pub fn description(&self) -> &'static str {
@@ -133,7 +144,7 @@ impl Permission {
             Permission::Custom(_) => "Custom permission",
         }
     }
-    
+
     /// Check if this permission includes another permission
     #[allow(dead_code)]
     pub fn includes(&self, other: &Permission) -> bool {
@@ -157,14 +168,14 @@ impl PermissionSet {
             permissions: HashSet::new(),
         }
     }
-    
+
     /// Create from vector of permissions
     pub fn from_vec(permissions: Vec<Permission>) -> Self {
         Self {
             permissions: permissions.into_iter().collect(),
         }
     }
-    
+
     /// Create from vector of strings
     #[allow(dead_code)]
     pub fn from_strings(permissions: Vec<String>) -> Self {
@@ -175,49 +186,48 @@ impl PermissionSet {
                 .collect(),
         }
     }
-    
+
     /// Add a permission
     #[allow(dead_code)]
     pub fn add(&mut self, permission: Permission) {
         self.permissions.insert(permission);
     }
-    
+
     /// Remove a permission
     #[allow(dead_code)]
     pub fn remove(&mut self, permission: &Permission) {
         self.permissions.remove(permission);
     }
-    
+
     /// Check if set contains a permission
     #[allow(dead_code)]
     pub fn contains(&self, permission: &Permission) -> bool {
-        self.permissions.contains(&Permission::All) || 
-        self.permissions.contains(permission)
+        self.permissions.contains(&Permission::All) || self.permissions.contains(permission)
     }
-    
+
     /// Check if set contains any of the given permissions
     #[allow(dead_code)]
     pub fn contains_any(&self, permissions: &[Permission]) -> bool {
         permissions.iter().any(|p| self.contains(p))
     }
-    
+
     /// Check if set contains all of the given permissions
     #[allow(dead_code)]
     pub fn contains_all(&self, permissions: &[Permission]) -> bool {
         permissions.iter().all(|p| self.contains(p))
     }
-    
+
     /// Get all permissions as vector
     #[allow(dead_code)]
     pub fn to_vec(&self) -> Vec<Permission> {
         self.permissions.iter().cloned().collect()
     }
-    
+
     /// Get all permissions as strings
     pub fn to_strings(&self) -> Vec<String> {
         self.permissions.iter().map(|p| p.to_string()).collect()
     }
-    
+
     /// Merge with another permission set
     #[allow(dead_code)]
     pub fn merge(&mut self, other: &PermissionSet) {
@@ -242,7 +252,7 @@ impl DefaultPermissions {
     pub fn super_admin() -> PermissionSet {
         PermissionSet::from_vec(vec![Permission::All])
     }
-    
+
     /// Admin permissions (most admin functions)
     pub fn admin() -> PermissionSet {
         PermissionSet::from_vec(vec![
@@ -260,15 +270,12 @@ impl DefaultPermissions {
             Permission::UserCreate,
         ])
     }
-    
+
     /// User permissions (basic user functions)
     pub fn user() -> PermissionSet {
-        PermissionSet::from_vec(vec![
-            Permission::UserProfile,
-            Permission::UserRead,
-        ])
+        PermissionSet::from_vec(vec![Permission::UserProfile, Permission::UserRead])
     }
-    
+
     /// Read-only admin permissions
     #[allow(dead_code)]
     pub fn admin_readonly() -> PermissionSet {
@@ -280,4 +287,4 @@ impl DefaultPermissions {
             Permission::UserRead,
         ])
     }
-} 
+}

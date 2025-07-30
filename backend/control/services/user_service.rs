@@ -2,14 +2,14 @@ use argon2::{
     Argon2,
     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
 };
-use sea_orm::*;
 use sea_orm::prelude::Expr;
+use sea_orm::*;
 use uuid::Uuid;
 
+use crate::control::services::database_service::DatabaseService;
 use crate::domain::{user::*, validation::*};
 use crate::entity::models::{prelude::*, *};
 use crate::infrastructure::app_error::AppError;
-use crate::control::services::database_service::DatabaseService;
 use axum::http::StatusCode;
 
 /// Service for user-related business operations
@@ -28,7 +28,7 @@ impl UserService {
         let existing_user: Option<users::Model> = DatabaseService::find_one_with_tracking(
             db,
             "users",
-            Users::find().filter(users::Column::Email.eq(registration.email.clone()))
+            Users::find().filter(users::Column::Email.eq(registration.email.clone())),
         )
         .await
         .map_err(|_| AppError {
@@ -84,7 +84,7 @@ impl UserService {
         let existing_user: Option<users::Model> = DatabaseService::find_one_with_tracking(
             db,
             "users",
-            Users::find().filter(users::Column::Email.eq(&email))
+            Users::find().filter(users::Column::Email.eq(&email)),
         )
         .await
         .map_err(|_| AppError {
@@ -127,10 +127,7 @@ impl UserService {
     }
 
     /// Updates a user's last login timestamp (non-blocking)
-    pub async fn update_last_login(
-        db: &DatabaseConnection,
-        user_id: Uuid,
-    ) -> Result<(), AppError> {
+    pub async fn update_last_login(db: &DatabaseConnection, user_id: Uuid) -> Result<(), AppError> {
         let now = chrono::Utc::now();
 
         // Use a non-blocking update operation
@@ -157,7 +154,7 @@ impl UserService {
         let user_model: Option<users::Model> = DatabaseService::find_one_with_tracking(
             db,
             "users",
-            Users::find().filter(users::Column::Email.eq(email))
+            Users::find().filter(users::Column::Email.eq(email)),
         )
         .await
         .map_err(|_| AppError {
@@ -182,16 +179,13 @@ impl UserService {
         db: &DatabaseConnection,
         user_id: uuid::Uuid,
     ) -> Result<Option<User>, AppError> {
-        let user_model: Option<users::Model> = DatabaseService::find_one_with_tracking(
-            db,
-            "users",
-            Users::find_by_id(user_id)
-        )
-        .await
-        .map_err(|_| AppError {
-            message: "Database error".to_string(),
-            status_code: StatusCode::INTERNAL_SERVER_ERROR,
-        })?;
+        let user_model: Option<users::Model> =
+            DatabaseService::find_one_with_tracking(db, "users", Users::find_by_id(user_id))
+                .await
+                .map_err(|_| AppError {
+                    message: "Database error".to_string(),
+                    status_code: StatusCode::INTERNAL_SERVER_ERROR,
+                })?;
 
         Ok(user_model.map(|model| {
             User::new(
@@ -213,20 +207,17 @@ impl UserService {
         password: Option<String>,
         role_id: Option<i32>,
     ) -> Result<User, AppError> {
-        let user_model = DatabaseService::find_one_with_tracking(
-            db,
-            "users",
-            Users::find_by_id(user_id)
-        )
-        .await
-        .map_err(|_| AppError {
-            message: "Database error".to_string(),
-            status_code: StatusCode::INTERNAL_SERVER_ERROR,
-        })?
-        .ok_or(AppError {
-            message: "User not found".to_string(),
-            status_code: StatusCode::NOT_FOUND,
-        })?;
+        let user_model =
+            DatabaseService::find_one_with_tracking(db, "users", Users::find_by_id(user_id))
+                .await
+                .map_err(|_| AppError {
+                    message: "Database error".to_string(),
+                    status_code: StatusCode::INTERNAL_SERVER_ERROR,
+                })?
+                .ok_or(AppError {
+                    message: "User not found".to_string(),
+                    status_code: StatusCode::NOT_FOUND,
+                })?;
 
         let mut user_active_model: users::ActiveModel = user_model.clone().into();
 
@@ -240,7 +231,7 @@ impl UserService {
                 "users",
                 Users::find()
                     .filter(users::Column::Email.eq(&new_email))
-                    .filter(users::Column::Id.ne(user_id))
+                    .filter(users::Column::Id.ne(user_id)),
             )
             .await
             .map_err(|_| AppError {
@@ -286,24 +277,18 @@ impl UserService {
     }
 
     /// Deletes a user
-    pub async fn delete_user(
-        db: &DatabaseConnection,
-        user_id: Uuid,
-    ) -> Result<(), AppError> {
-        let user_model = DatabaseService::find_one_with_tracking(
-            db,
-            "users",
-            Users::find_by_id(user_id)
-        )
-        .await
-        .map_err(|_| AppError {
-            message: "Database error".to_string(),
-            status_code: StatusCode::INTERNAL_SERVER_ERROR,
-        })?
-        .ok_or(AppError {
-            message: "User not found".to_string(),
-            status_code: StatusCode::NOT_FOUND,
-        })?;
+    pub async fn delete_user(db: &DatabaseConnection, user_id: Uuid) -> Result<(), AppError> {
+        let user_model =
+            DatabaseService::find_one_with_tracking(db, "users", Users::find_by_id(user_id))
+                .await
+                .map_err(|_| AppError {
+                    message: "Database error".to_string(),
+                    status_code: StatusCode::INTERNAL_SERVER_ERROR,
+                })?
+                .ok_or(AppError {
+                    message: "User not found".to_string(),
+                    status_code: StatusCode::NOT_FOUND,
+                })?;
 
         let user_active_model: users::ActiveModel = user_model.into();
         user_active_model.delete(db).await.map_err(|_| AppError {

@@ -7,7 +7,7 @@ use std::time::Duration;
 pub struct DatabaseManager;
 
 impl DatabaseManager {
-        /// Creates and configures the database connection
+    /// Creates and configures the database connection
     pub async fn create_connection() -> Result<DatabaseConnection, Box<dyn std::error::Error>> {
         let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set in .env file");
 

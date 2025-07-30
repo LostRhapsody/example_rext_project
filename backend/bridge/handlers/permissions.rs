@@ -1,23 +1,23 @@
 //! Permission handlers
 //! client connection functions to manage permissions through an API.
-//! 
+//!
 //! TOOD implement this on the router.
 
 use axum::{
+    Json,
     extract::{Path, State},
     http::StatusCode,
-    Json,
     response::IntoResponse,
 };
 use sea_orm::DatabaseConnection;
 use uuid::Uuid;
 
 use crate::{
+    bridge::types::admin::ADMIN_TAG,
     bridge::types::auth::AuthUser,
     control::services::permission_service::PermissionService,
     domain::permissions::Permission,
     infrastructure::app_error::{AppError, ErrorResponse},
-    bridge::types::admin::ADMIN_TAG,
 };
 
 /// Get user permissions endpoint
@@ -54,7 +54,7 @@ pub async fn get_user_permissions_handler(
     })?;
 
     let permissions = PermissionService::get_user_permissions(&db, user_id).await?;
-    
+
     let response = UserPermissionsResponse {
         user_id: user_id.to_string(),
         permissions: permissions.to_strings(),
@@ -101,7 +101,7 @@ pub async fn check_specific_permission_handler(
 
     let permission = Permission::from_string(&payload.permission);
     let has_permission = PermissionService::has_permission(&db, user_id, &permission).await?;
-    
+
     let response = CheckPermissionResponse {
         user_id: user_id.to_string(),
         permission: payload.permission,
@@ -135,13 +135,16 @@ pub async fn get_available_permissions_handler(
 ) -> Result<impl IntoResponse, AppError> {
     let permissions = PermissionService::get_all_permissions();
     let categories = PermissionService::get_permissions_by_category();
-    
+
     let response = AvailablePermissionsResponse {
-        permissions: permissions.iter().map(|p| PermissionInfo {
-            name: p.to_string(),
-            description: p.description().to_string(),
-            category: p.category().to_string(),
-        }).collect(),
+        permissions: permissions
+            .iter()
+            .map(|p| PermissionInfo {
+                name: p.to_string(),
+                description: p.description().to_string(),
+                category: p.category().to_string(),
+            })
+            .collect(),
         categories: categories.keys().cloned().collect(),
         total_count: permissions.len(),
     };
@@ -186,4 +189,4 @@ pub struct PermissionInfo {
     pub name: String,
     pub description: String,
     pub category: String,
-} 
+}

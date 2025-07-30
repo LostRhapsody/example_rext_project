@@ -1,7 +1,7 @@
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::{broadcast, RwLock};
-use serde::{Deserialize, Serialize};
+use tokio::sync::{RwLock, broadcast};
 
 /// WebSocket message types for real-time monitoring
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -84,7 +84,10 @@ impl WebSocketManager {
 
     /// Add a new connection
     #[allow(dead_code)]
-    pub async fn add_connection(&self, connection_id: String) -> broadcast::Receiver<WebSocketMessage> {
+    pub async fn add_connection(
+        &self,
+        connection_id: String,
+    ) -> broadcast::Receiver<WebSocketMessage> {
         let (tx, _rx) = broadcast::channel(100);
         self.connections.write().await.insert(connection_id, tx);
         self.subscribe()
@@ -201,9 +204,13 @@ pub async fn start_metrics_broadcaster() {
             // Broadcast a heartbeat log
             broadcast_system_log(
                 "debug".to_string(),
-                format!("Metrics broadcast - Active connections: {}", active_connections),
+                format!(
+                    "Metrics broadcast - Active connections: {}",
+                    active_connections
+                ),
                 "metrics_broadcaster".to_string(),
-            ).await;
+            )
+            .await;
         }
     });
 }

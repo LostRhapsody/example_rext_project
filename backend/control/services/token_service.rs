@@ -1,5 +1,5 @@
 //! Token service for extracting, decoding, and validating JWT tokens
-use axum::http::{header, StatusCode};
+use axum::http::{StatusCode, header};
 use jsonwebtoken::{DecodingKey, Validation, decode};
 use std::env;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -13,7 +13,9 @@ pub struct TokenService;
 impl TokenService {
     /// Extracts and validates a JWT token from the Authorization header
     /// Returns the user ID if the token is valid
-    pub fn extract_and_validate_token(request: &axum::http::Request<axum::body::Body>) -> Result<Uuid, AppError> {
+    pub fn extract_and_validate_token(
+        request: &axum::http::Request<axum::body::Body>,
+    ) -> Result<Uuid, AppError> {
         // Extract token from Authorization header
         let token = Self::extract_token_from_header(request)?;
 
@@ -25,7 +27,9 @@ impl TokenService {
 
     /// Extracts JWT token from Authorization header
     /// Returns the token (no validation is performed)
-    pub fn extract_token_from_header(request: &axum::http::Request<axum::body::Body>) -> Result<String, AppError> {
+    pub fn extract_token_from_header(
+        request: &axum::http::Request<axum::body::Body>,
+    ) -> Result<String, AppError> {
         let auth_header = request
             .headers()
             .get(header::AUTHORIZATION)
@@ -35,12 +39,10 @@ impl TokenService {
                 status_code: StatusCode::UNAUTHORIZED,
             })?;
 
-        let token = auth_header
-            .strip_prefix("Bearer ")
-            .ok_or(AppError {
-                message: "Invalid Authorization header format".to_string(),
-                status_code: StatusCode::UNAUTHORIZED,
-            })?;
+        let token = auth_header.strip_prefix("Bearer ").ok_or(AppError {
+            message: "Invalid Authorization header format".to_string(),
+            status_code: StatusCode::UNAUTHORIZED,
+        })?;
 
         Ok(token.to_string())
     }
@@ -52,10 +54,12 @@ impl TokenService {
         let decoding_key = DecodingKey::from_secret(jwt_secret.as_ref());
 
         // Decode and validate the token
-        let token_data = decode::<Claims>(token, &decoding_key, &Validation::default())
-            .map_err(|_| AppError {
-                message: "Invalid token".to_string(),
-                status_code: StatusCode::UNAUTHORIZED,
+        let token_data =
+            decode::<Claims>(token, &decoding_key, &Validation::default()).map_err(|_| {
+                AppError {
+                    message: "Invalid token".to_string(),
+                    status_code: StatusCode::UNAUTHORIZED,
+                }
             })?;
 
         // Check if token is expired
@@ -72,11 +76,10 @@ impl TokenService {
         }
 
         // Parse user ID from token
-        let user_id = Uuid::parse_str(&token_data.claims.sub)
-            .map_err(|_| AppError {
-                message: "Invalid user ID in token".to_string(),
-                status_code: StatusCode::UNAUTHORIZED,
-            })?;
+        let user_id = Uuid::parse_str(&token_data.claims.sub).map_err(|_| AppError {
+            message: "Invalid user ID in token".to_string(),
+            status_code: StatusCode::UNAUTHORIZED,
+        })?;
 
         Ok(user_id)
     }
@@ -88,10 +91,12 @@ impl TokenService {
         let decoding_key = DecodingKey::from_secret(jwt_secret.as_ref());
 
         // Decode and validate the token
-        let token_data = decode::<Claims>(token, &decoding_key, &Validation::default())
-            .map_err(|_| AppError {
-                message: "Invalid token".to_string(),
-                status_code: StatusCode::UNAUTHORIZED,
+        let token_data =
+            decode::<Claims>(token, &decoding_key, &Validation::default()).map_err(|_| {
+                AppError {
+                    message: "Invalid token".to_string(),
+                    status_code: StatusCode::UNAUTHORIZED,
+                }
             })?;
 
         // Check if token is expired
@@ -125,7 +130,8 @@ mod tests {
         let expiration = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
-            .as_secs() as i64 + expires_in;
+            .as_secs() as i64
+            + expires_in;
 
         let claims = Claims {
             sub: user_id.to_string(),
@@ -182,10 +188,12 @@ mod tests {
         assert_eq!(result.unwrap_err().status_code, StatusCode::UNAUTHORIZED);
     }
 
-        #[test]
+    #[test]
     fn test_validate_token_valid() {
         // Set the JWT_SECRET environment variable for testing
-        unsafe { std::env::set_var("JWT_SECRET", "test-secret"); }
+        unsafe {
+            std::env::set_var("JWT_SECRET", "test-secret");
+        }
 
         let user_id = "123e4567-e89b-12d3-a456-426614174000";
         let token = create_test_token(user_id, 3600); // 1 hour from now
@@ -195,10 +203,12 @@ mod tests {
         assert_eq!(result.unwrap().to_string(), user_id);
     }
 
-        #[test]
+    #[test]
     fn test_validate_token_expired() {
         // Set the JWT_SECRET environment variable for testing
-        unsafe { std::env::set_var("JWT_SECRET", "test-secret"); }
+        unsafe {
+            std::env::set_var("JWT_SECRET", "test-secret");
+        }
 
         let user_id = "123e4567-e89b-12d3-a456-426614174000";
         let token = create_test_token(user_id, -3600); // Expired 1 hour ago
@@ -218,7 +228,9 @@ mod tests {
     #[test]
     fn test_extract_and_validate_token_valid() {
         // Set the JWT_SECRET environment variable for testing
-        unsafe { std::env::set_var("JWT_SECRET", "test-secret"); }
+        unsafe {
+            std::env::set_var("JWT_SECRET", "test-secret");
+        }
 
         let user_id = "123e4567-e89b-12d3-a456-426614174000";
         let token = create_test_token(user_id, 3600); // 1 hour from now
@@ -232,7 +244,9 @@ mod tests {
     #[test]
     fn test_validate_token_claims_valid() {
         // Set the JWT_SECRET environment variable for testing
-        unsafe { std::env::set_var("JWT_SECRET", "test-secret"); }
+        unsafe {
+            std::env::set_var("JWT_SECRET", "test-secret");
+        }
 
         let user_id = "123e4567-e89b-12d3-a456-426614174000";
         let token = create_test_token(user_id, 3600); // 1 hour from now

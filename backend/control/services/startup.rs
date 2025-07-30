@@ -1,16 +1,16 @@
 use axum::http::StatusCode;
 use sea_orm::ActiveValue::Set;
-use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, ColumnTrait, QueryFilter};
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 use std::env;
 
+use crate::control::services::{server_config::ServerConfigService, user_service::UserService};
+use crate::domain::permissions::DefaultPermissions;
 use crate::entity::models::roles;
 use crate::infrastructure::app_error::AppError;
-use crate::domain::permissions::DefaultPermissions;
 use crate::infrastructure::{
     database::DatabaseManager, job_queue::JobQueueManager, scheduler::SchedulerManager,
     server::ServerManager,
 };
-use crate::control::services::{user_service::UserService, server_config::ServerConfigService};
 
 /// Application startup orchestrator
 pub struct StartupService;
@@ -46,10 +46,9 @@ impl StartupService {
 
         // Seed default roles if enabled
         Self::seed_default_roles(&db).await?;
-        
+
         // Seed admin user if enabled
         Self::seed_admin_user(&db).await?;
-
 
         Ok(db)
     }
@@ -91,9 +90,19 @@ impl StartupService {
                 let admin_role_id = admin_role.map(|role| role.id);
 
                 // Create admin user with admin role
-                match UserService::create_user_with_role(db, admin_email.clone(), admin_password, admin_role_id).await {
+                match UserService::create_user_with_role(
+                    db,
+                    admin_email.clone(),
+                    admin_password,
+                    admin_role_id,
+                )
+                .await
+                {
                     Ok(user) => {
-                        println!("✅ Admin user created successfully: {} (ID: {})", admin_email, user.id);
+                        println!(
+                            "✅ Admin user created successfully: {} (ID: {})",
+                            admin_email, user.id
+                        );
                         println!("⚠️  IMPORTANT: Change the default admin password immediately!");
                         Ok(())
                     }
@@ -124,7 +133,10 @@ impl StartupService {
 
         // Get default roles from environment variables
         let default_roles = env::var("DEFAULT_ROLES").unwrap_or_else(|_| "admin,user".to_string());
-        let default_roles = default_roles.split(',').map(|r| r.trim().to_string()).collect::<Vec<String>>();
+        let default_roles = default_roles
+            .split(',')
+            .map(|r| r.trim().to_string())
+            .collect::<Vec<String>>();
 
         // Define default role configurations using the new permission system
         let role_configs = vec![
@@ -134,9 +146,9 @@ impl StartupService {
 
         // Create default roles (admin, user, only if found in .env)
         for role_name in default_roles {
-            if let Some((_, description, permission_set)) = role_configs.iter()
-                .find(|(name, _, _)| name == &role_name) {
-                
+            if let Some((_, description, permission_set)) =
+                role_configs.iter().find(|(name, _, _)| name == &role_name)
+            {
                 // Check if role already exists
                 let existing_role = roles::Entity::find()
                     .filter(roles::Column::Name.eq(&role_name))
@@ -151,7 +163,7 @@ impl StartupService {
                     println!("Role already exists: {}", role_name);
                     continue;
                 }
-                
+
                 // Convert permission set to JSON string
                 let permissions_json = serde_json::to_string(&permission_set.to_strings())
                     .map_err(|e| AppError {
@@ -166,13 +178,10 @@ impl StartupService {
                     ..Default::default()
                 };
 
-                let role = role_model
-                    .insert(db)
-                    .await
-                    .map_err(|e| AppError {
-                        message: format!("Database error: {}", e),
-                        status_code: StatusCode::INTERNAL_SERVER_ERROR,
-                    })?;
+                let role = role_model.insert(db).await.map_err(|e| AppError {
+                    message: format!("Database error: {}", e),
+                    status_code: StatusCode::INTERNAL_SERVER_ERROR,
+                })?;
 
                 println!("✅ Role created successfully: {}", role.name);
             }

@@ -1,18 +1,18 @@
 //! Permission service
-//! 
+//!
 //! Business logic to manage permissions.
 //! Doesn't go in infrastructure, since it's used in the bridge layer with a handler as well. I guess.
 //! TODO implement these services at handler level for granular control.
 
 use sea_orm::*;
-use uuid::Uuid;
 use serde_json;
+use uuid::Uuid;
 
 use crate::{
-    domain::permissions::{Permission, PermissionSet},
-    entity::models::{users, roles},
-    infrastructure::{app_error::AppError},
     control::services::database_service::DatabaseService,
+    domain::permissions::{Permission, PermissionSet},
+    entity::models::{roles, users},
+    infrastructure::app_error::AppError,
 };
 use axum::http::StatusCode;
 
@@ -31,7 +31,7 @@ impl PermissionService {
         let user = DatabaseService::find_one_with_tracking(
             db,
             "users",
-            users::Entity::find_by_id(user_id)
+            users::Entity::find_by_id(user_id),
         )
         .await
         .map_err(|e| AppError {
@@ -54,9 +54,9 @@ impl PermissionService {
                 })?;
 
             if let Some(role_model) = role {
-                let permissions: Vec<String> = serde_json::from_str(&role_model.permissions)
-                    .unwrap_or_else(|_| vec![]);
-                
+                let permissions: Vec<String> =
+                    serde_json::from_str(&role_model.permissions).unwrap_or_else(|_| vec![]);
+
                 let permission_set = PermissionSet::from_strings(permissions);
                 Ok(permission_set.contains(permission))
             } else {
@@ -77,7 +77,7 @@ impl PermissionService {
         let user = DatabaseService::find_one_with_tracking(
             db,
             "users",
-            users::Entity::find_by_id(user_id)
+            users::Entity::find_by_id(user_id),
         )
         .await
         .map_err(|e| AppError {
@@ -99,11 +99,14 @@ impl PermissionService {
                 })?;
 
             if let Some(role_model) = role {
-                let permissions: Vec<String> = serde_json::from_str(&role_model.permissions)
-                    .unwrap_or_else(|_| vec![]);
-                
+                let permissions: Vec<String> =
+                    serde_json::from_str(&role_model.permissions).unwrap_or_else(|_| vec![]);
+
                 let permission_set = PermissionSet::from_strings(permissions.clone());
-                let permission_vec: Vec<Permission> = permissions.iter().map(|p| Permission::from_string(p)).collect();
+                let permission_vec: Vec<Permission> = permissions
+                    .iter()
+                    .map(|p| Permission::from_string(p))
+                    .collect();
                 Ok(permission_set.contains_any(&permission_vec))
             } else {
                 Ok(false)
@@ -123,7 +126,7 @@ impl PermissionService {
         let user = DatabaseService::find_one_with_tracking(
             db,
             "users",
-            users::Entity::find_by_id(user_id)
+            users::Entity::find_by_id(user_id),
         )
         .await
         .map_err(|e| AppError {
@@ -145,11 +148,14 @@ impl PermissionService {
                 })?;
 
             if let Some(role_model) = role {
-                let permissions: Vec<String> = serde_json::from_str(&role_model.permissions)
-                    .unwrap_or_else(|_| vec![]);
-                
+                let permissions: Vec<String> =
+                    serde_json::from_str(&role_model.permissions).unwrap_or_else(|_| vec![]);
+
                 let permission_set = PermissionSet::from_strings(permissions.clone());
-                let permission_vec: Vec<Permission> = permissions.iter().map(|p| Permission::from_string(p)).collect();
+                let permission_vec: Vec<Permission> = permissions
+                    .iter()
+                    .map(|p| Permission::from_string(p))
+                    .collect();
                 Ok(permission_set.contains_all(&permission_vec))
             } else {
                 Ok(false)
@@ -168,7 +174,7 @@ impl PermissionService {
         let user = DatabaseService::find_one_with_tracking(
             db,
             "users",
-            users::Entity::find_by_id(user_id)
+            users::Entity::find_by_id(user_id),
         )
         .await
         .map_err(|e| AppError {
@@ -190,9 +196,9 @@ impl PermissionService {
                 })?;
 
             if let Some(role_model) = role {
-                let permissions: Vec<String> = serde_json::from_str(&role_model.permissions)
-                    .unwrap_or_else(|_| vec![]);
-                
+                let permissions: Vec<String> =
+                    serde_json::from_str(&role_model.permissions).unwrap_or_else(|_| vec![]);
+
                 Ok(PermissionSet::from_strings(permissions))
             } else {
                 Ok(PermissionSet::new())
@@ -232,7 +238,7 @@ impl PermissionService {
     #[allow(dead_code)]
     pub fn get_permissions_by_category() -> std::collections::HashMap<String, Vec<Permission>> {
         let mut categories = std::collections::HashMap::new();
-        
+
         for permission in Self::get_all_permissions() {
             let category = permission.category().to_string();
             categories
@@ -240,7 +246,7 @@ impl PermissionService {
                 .or_insert_with(Vec::new)
                 .push(permission);
         }
-        
+
         categories
     }
 
@@ -248,13 +254,13 @@ impl PermissionService {
     #[allow(dead_code)]
     pub fn validate_permission_strings(permissions: &[String]) -> Result<Vec<String>, AppError> {
         let mut valid_permissions = Vec::new();
-        
+
         for permission_str in permissions {
             // Convert to Permission enum to validate
             let permission = Permission::from_string(permission_str);
             valid_permissions.push(permission.to_string());
         }
-        
+
         Ok(valid_permissions)
     }
 
@@ -262,12 +268,11 @@ impl PermissionService {
     #[allow(dead_code)]
     pub fn is_valid_permission(permission_str: &str) -> bool {
         match permission_str {
-            "*" | "admin:read" | "admin:write" | "admin:delete" | "admin:users" |
-            "admin:roles" | "admin:logs" | "admin:database" | "admin:health" |
-            "admin:metrics" | "user:read" | "user:write" | "user:delete" |
-            "user:profile" | "user:create" | "system:health" | "system:metrics" |
-            "system:logs" | "system:database" => true,
+            "*" | "admin:read" | "admin:write" | "admin:delete" | "admin:users" | "admin:roles"
+            | "admin:logs" | "admin:database" | "admin:health" | "admin:metrics" | "user:read"
+            | "user:write" | "user:delete" | "user:profile" | "user:create" | "system:health"
+            | "system:metrics" | "system:logs" | "system:database" => true,
             _ => permission_str.contains(':'), // Custom permissions must contain ':'
         }
     }
-} 
+}

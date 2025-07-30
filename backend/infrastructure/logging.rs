@@ -1,7 +1,7 @@
 use std::env;
 use tracing_subscriber::{
-    fmt::{format::FmtSpan, time::UtcTime},
     EnvFilter,
+    fmt::{format::FmtSpan, time::UtcTime},
 };
 
 use crate::infrastructure::websocket::broadcast_system_log;
@@ -22,13 +22,12 @@ impl LoggingManager {
         });
 
         // Create environment filter with specific crate filters to reduce noise
-        let env_filter = EnvFilter::try_from_default_env()
-            .unwrap_or_else(|_| {
-                EnvFilter::new(log_level)
-                    .add_directive("sqlx=warn".parse().unwrap())
-                    .add_directive("apalis=warn".parse().unwrap())
-                    .add_directive("tower_http=warn".parse().unwrap())
-            });
+        let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| {
+            EnvFilter::new(log_level)
+                .add_directive("sqlx=warn".parse().unwrap())
+                .add_directive("apalis=warn".parse().unwrap())
+                .add_directive("tower_http=warn".parse().unwrap())
+        });
 
         // Configure tracing subscriber with custom layer for WebSocket broadcasting
         let subscriber = tracing_subscriber::fmt()
@@ -55,9 +54,13 @@ impl LoggingManager {
         tokio::spawn(async move {
             broadcast_system_log(
                 "info".to_string(),
-                format!("Logging system initialized for environment: {}", environment_clone),
+                format!(
+                    "Logging system initialized for environment: {}",
+                    environment_clone
+                ),
                 "logging".to_string(),
-            ).await;
+            )
+            .await;
         });
     }
 

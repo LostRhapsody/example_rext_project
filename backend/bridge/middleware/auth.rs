@@ -1,12 +1,7 @@
-use axum::{
-    extract::Request,
-    middleware::Next,
-    response::Response,
-};
+use axum::{extract::Request, middleware::Next, response::Response};
 
 use crate::{
-    bridge::types::auth::AuthUser,
-    control::services::token_service::TokenService,
+    bridge::types::auth::AuthUser, control::services::token_service::TokenService,
     infrastructure::app_error::AppError,
 };
 
@@ -16,9 +11,7 @@ pub async fn auth_middleware(mut request: Request, next: Next) -> Result<Respons
     let user_id = TokenService::extract_and_validate_token(&request)?;
 
     // Add user to request extensions
-    request.extensions_mut().insert(AuthUser {
-        user_id,
-    });
+    request.extensions_mut().insert(AuthUser { user_id });
 
     Ok(next.run(request).await)
 }

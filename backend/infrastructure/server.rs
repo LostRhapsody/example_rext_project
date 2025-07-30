@@ -1,4 +1,4 @@
-use axum::{Router, routing::get, middleware};
+use axum::{Router, middleware, routing::get};
 use sea_orm::DatabaseConnection;
 use std::{
     env,
@@ -14,9 +14,9 @@ use utoipa_redoc::{Redoc, Servable};
 use utoipa_scalar::{Scalar, Servable as ScalarServable};
 use utoipa_swagger_ui::SwaggerUi;
 
-use crate::bridge::routes::auth::auth_router;
-use crate::bridge::routes::admin::admin_router;
 use crate::bridge::middleware::logging::request_logging_middleware;
+use crate::bridge::routes::admin::admin_router;
+use crate::bridge::routes::auth::auth_router;
 use crate::infrastructure::cors::CorsManager;
 use crate::infrastructure::openapi::ApiDoc;
 
@@ -41,7 +41,10 @@ impl ServerManager {
 
         // Create WebSocket router with database state
         let websocket_router = Router::new()
-            .route("/api/v1/admin/ws", get(crate::bridge::handlers::websocket::websocket_handler))
+            .route(
+                "/api/v1/admin/ws",
+                get(crate::bridge::handlers::websocket::websocket_handler),
+            )
             .with_state(db.clone());
 
         let mut router = router
@@ -51,7 +54,10 @@ impl ServerManager {
             .merge(Scalar::with_url("/scalar", api))
             .route("/", get(Self::root_handler))
             .merge(websocket_router)
-            .route_layer(middleware::from_fn_with_state(db.clone(),request_logging_middleware));
+            .route_layer(middleware::from_fn_with_state(
+                db.clone(),
+                request_logging_middleware,
+            ));
 
         // Add CORS layer for development
         if environment == "development" {
