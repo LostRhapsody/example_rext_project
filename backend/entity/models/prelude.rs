@@ -2,4 +2,6 @@
 
 pub use super::audit_logs::Entity as AuditLogs;
 pub use super::database_metrics::Entity as DatabaseMetrics;
+pub use super::roles::Entity as Roles;
+pub use super::user_sessions::Entity as UserSessions;
 pub use super::users::Entity as Users;

@@ -230,7 +230,79 @@
           </div>
           <div class="detail-actions">
             <button @click="openEditModal" class="edit-btn">Edit User</button>
+            <button @click="openSessionModal(selectedUser)" class="session-btn">Manage Sessions</button>
             <button @click="openDeleteModal" class="delete-btn">Delete User</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Session Management Modal -->
+    <div v-if="showSessionModal && selectedUser" class="modal-overlay" @click="closeSessionModal">
+      <div class="modal-content session-modal" @click.stop>
+        <div class="modal-header">
+          <h3>Manage Sessions for {{ selectedUser.email }}</h3>
+          <button @click="closeSessionModal" class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="session-actions">
+            <button 
+              @click="invalidateAllUserSessions(selectedUser.id)" 
+              class="logout-all-btn"
+            >
+              🚪 Log Out All Sessions
+            </button>
+            <button 
+              @click="fetchUserSessions(selectedUser.id)"
+              class="refresh-btn"
+              :disabled="sessionsLoading"
+            >
+              🔄 Refresh
+            </button>
+          </div>
+
+          <div v-if="sessionsLoading" class="sessions-loading">
+            Loading sessions...
+          </div>
+
+          <div v-else-if="userSessions.length === 0" class="no-sessions">
+            No active sessions found
+          </div>
+
+          <div v-else class="sessions-list">
+            <div 
+              v-for="session in userSessions" 
+              :key="session.id"
+              class="session-item"
+            >
+              <div class="session-info">
+                <div class="session-device">
+                  <span class="device-icon">
+                    {{ parseUserAgent(session.device_info).includes('Mobile') ? '📱' : '💻' }}
+                  </span>
+                  <span class="device-name">{{ parseUserAgent(session.device_info) }}</span>
+                </div>
+                <div class="session-details">
+                  <div class="session-ip" v-if="session.ip_address">
+                    📍 {{ session.ip_address }}
+                  </div>
+                  <div class="session-time">
+                    🕐 Last active: {{ formatTimeSince(session.last_activity) }}
+                  </div>
+                  <div class="session-created">
+                    📅 Created: {{ formatTimestamp(session.created_at) }}
+                  </div>
+                </div>
+              </div>
+              <div class="session-actions-item">
+                <button 
+                  @click="invalidateSession(session.id)"
+                  class="logout-session-btn"
+                >
+                  🚪 Log Out
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -240,6 +312,7 @@
 
 <script setup lang="ts">
 import { AgGridVue } from 'ag-grid-vue3'
+import { apiRequest, withSessionHandling } from '@/bridge/utils/sessionHandler'
 
 interface User {
   id: string
@@ -266,6 +339,17 @@ interface UpdateUserForm {
   email: string
   password: string
   role_id?: number | null
+}
+
+interface UserSession {
+  id: string
+  user_id: string
+  device_info: string
+  ip_address?: string | null
+  created_at: string
+  last_activity: string
+  expires_at: string
+  is_current: boolean
 }
 
 interface PaginationInfo {
@@ -298,6 +382,9 @@ const filters = reactive({
 })
 
 const showCreateModal = ref(false)
+const showSessionModal = ref(false)
+const userSessions = ref<UserSession[]>([])
+const sessionsLoading = ref(false)
 const showEditModal = ref(false)
 const showDeleteModal = ref(false)
 const selectedUser = ref<User | null>(null)
@@ -668,6 +755,100 @@ const fetchRoles = async () => {
   } catch (error) {
     console.error('Error fetching roles:', error)
   }
+}
+
+// Session Management Functions
+const fetchUserSessions = async (userId: string) => {
+  if (!userId) return
+  
+  sessionsLoading.value = true
+  try {
+    const sessions = await withSessionHandling(
+      () => apiRequest(`http://localhost:3000/api/v1/admin/users/${userId}/sessions`, {}, true),
+      true
+    )
+    userSessions.value = sessions || []
+  } catch (error) {
+    console.error('Error fetching user sessions:', error)
+    userSessions.value = []
+  } finally {
+    sessionsLoading.value = false
+  }
+}
+
+const invalidateSession = async (sessionId: string) => {
+  try {
+    await withSessionHandling(
+      () => apiRequest(`http://localhost:3000/api/v1/admin/sessions/${sessionId}`, { method: 'DELETE' }, true),
+      true
+    )
+    
+    // Refresh sessions list
+    if (selectedUser.value) {
+      await fetchUserSessions(selectedUser.value.id)
+    }
+  } catch (error) {
+    console.error('Error invalidating session:', error)
+  }
+}
+
+const invalidateAllUserSessions = async (userId: string) => {
+  try {
+    await withSessionHandling(
+      () => apiRequest(`http://localhost:3000/api/v1/admin/users/${userId}/sessions`, { method: 'DELETE' }, true),
+      true
+    )
+    
+    // Refresh sessions list
+    await fetchUserSessions(userId)
+  } catch (error) {
+    console.error('Error invalidating all user sessions:', error)
+  }
+}
+
+const openSessionModal = async (user: User) => {
+  selectedUser.value = user
+  showSessionModal.value = true
+  await fetchUserSessions(user.id)
+}
+
+const closeSessionModal = () => {
+  showSessionModal.value = false
+  userSessions.value = []
+  selectedUser.value = null
+}
+
+const parseUserAgent = (userAgent: string): string => {
+  if (!userAgent) return 'Unknown Device'
+  
+  // Simple user agent parsing
+  if (userAgent.includes('Mobile') || userAgent.includes('Android') || userAgent.includes('iPhone')) {
+    if (userAgent.includes('Chrome')) return 'Mobile Chrome'
+    if (userAgent.includes('Safari')) return 'Mobile Safari'
+    if (userAgent.includes('Firefox')) return 'Mobile Firefox'
+    return 'Mobile Browser'
+  }
+  
+  if (userAgent.includes('Chrome')) return 'Chrome Browser'
+  if (userAgent.includes('Firefox')) return 'Firefox Browser'
+  if (userAgent.includes('Safari')) return 'Safari Browser'
+  if (userAgent.includes('Edge')) return 'Edge Browser'
+  
+  return 'Desktop Browser'
+}
+
+const formatTimeSince = (timestamp: string): string => {
+  const now = new Date()
+  const time = new Date(timestamp)
+  const diffMs = now.getTime() - time.getTime()
+  const diffMins = Math.floor(diffMs / (1000 * 60))
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+  if (diffMins < 1) return 'Just now'
+  if (diffMins < 60) return `${diffMins} min ago`
+  if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`
+  return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`
 }
 
 onMounted(() => {
@@ -1148,6 +1329,166 @@ onMounted(() => {
   }
 
   .detail-actions {
+    flex-direction: column;
+  }
+}
+
+/* Session Management Styles */
+.session-modal {
+  max-width: 700px;
+}
+
+.session-btn {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.session-btn:hover {
+  background: #0056b3;
+}
+
+.session-actions {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.logout-all-btn {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.logout-all-btn:hover {
+  background: #c82333;
+}
+
+.refresh-btn {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.refresh-btn:hover:not(:disabled) {
+  background: #545b62;
+}
+
+.refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sessions-loading,
+.no-sessions {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.sessions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.session-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: #f8f9fa;
+  transition: background 0.2s;
+}
+
+.session-item:hover {
+  background: #e9ecef;
+}
+
+.session-info {
+  flex: 1;
+}
+
+.session-device {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.device-icon {
+  font-size: 1.2rem;
+}
+
+.device-name {
+  color: #333;
+}
+
+.session-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.session-ip,
+.session-time,
+.session-created {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.session-actions-item {
+  margin-left: 1rem;
+}
+
+.logout-session-btn {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+}
+
+.logout-session-btn:hover {
+  background: #c82333;
+}
+
+@media (max-width: 768px) {
+  .session-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .session-actions-item {
+    margin-left: 0;
+  }
+
+  .session-actions {
     flex-direction: column;
   }
 }

@@ -11,7 +11,7 @@ use std::time::Instant;
 use tracing::{error, info};
 
 use crate::{
-    bridge::types::auth::AuthUser,
+    bridge::types::{auth::AuthUser, logging::LoggingInfo},
     entity::models::audit_logs,
     infrastructure::{logging::LoggingManager, websocket::broadcast_audit_log},
 };
@@ -147,7 +147,7 @@ pub async fn extract_request_response(
 /// Request logging middleware for auditing all API requests
 pub async fn request_logging_middleware(
     State(db): State<DatabaseConnection>,
-    request: Request,
+    mut request: Request,
     next: Next,
 ) -> Result<Response, StatusCode> {
     let start = Instant::now();
@@ -201,6 +201,26 @@ pub async fn request_logging_middleware(
 
     // Try to get user_id from extensions (set by auth middleware)
     let user_id = request.extensions().get::<AuthUser>().map(|u| u.user_id);
+
+    // Clone values for logging info
+    let method_for_logging_info = method.clone();
+    let path_for_logging_info = path.clone();
+    let ip_address_for_logging_info = ip_address.clone();
+    let user_agent_for_logging_info = user_agent.clone();
+
+    // Insert into logging info for downstream handlers
+    let logging_info = LoggingInfo {
+        method: method_for_logging_info,
+        path: path_for_logging_info,
+        user_id: user_id.unwrap_or_default().to_string(),
+        ip_address: ip_address_for_logging_info,
+        user_agent: user_agent_for_logging_info,
+    };
+
+    // Insert into request extensions for downstream handlers, must be done
+    // before we extract the request and response bodies, otherwise the
+    // request will have finished already.
+    request.extensions_mut().insert(logging_info);
 
     // Capture request and response bodies (runs the next handler so we get the response)
     let (response, request_body, response_body) = extract_request_response(request, next).await.map_err(|(status, message)| {

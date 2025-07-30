@@ -1,14 +1,14 @@
 use axum::{
-    Json,
-    extract::{Request, State},
-    http::StatusCode,
-    response::IntoResponse,
+    extract::{Request, State}, http::StatusCode, response::IntoResponse, Extension, Json
 };
 use sea_orm::DatabaseConnection;
 
-use crate::bridge::types::auth::{
-    AUTH_TAG, AuthUser, LoginRequest, LoginResponse, ProfileResponse, RegisterRequest,
-    RegisterResponse,
+use crate::bridge::types::{
+    auth::{
+        AUTH_TAG, AuthUser, LoginRequest, LoginResponse, ProfileResponse, RegisterRequest,
+        RegisterResponse,
+    },
+    logging::LoggingInfo,
 };
 use crate::control::services::{auth_service::AuthService, user_service::UserService};
 use crate::domain::user::*;
@@ -81,13 +81,15 @@ pub async fn register_handler(
 )]
 pub async fn login_handler(
     State(db): State<DatabaseConnection>,
+    Extension(logging_info): Extension<LoggingInfo>,
     Json(payload): Json<LoginRequest>,
 ) -> Result<impl IntoResponse, AppError> {
+
     // Convert request to user domain model
     let login = UserLogin::new(payload.email, payload.password);
 
-    // Delegate to user service, errors bubble up correctly
-    let auth_token = AuthService::authenticate_user(&db, login).await?;
+    // Delegate to user service with session tracking
+    let auth_token = AuthService::authenticate_user(&db, login, logging_info.user_agent, logging_info.ip_address).await?;
 
     Ok(Json(LoginResponse {
         token: auth_token.token,

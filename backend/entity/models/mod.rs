@@ -4,4 +4,5 @@ pub mod audit_logs;
 pub mod database_metrics;
 pub mod prelude;
 pub mod roles;
+pub mod user_sessions;
 pub mod users;

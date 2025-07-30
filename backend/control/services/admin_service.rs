@@ -5,8 +5,8 @@ use uuid::Uuid;
 use crate::{
     bridge::types::admin::*,
     control::services::{
-        database_service::DatabaseMonitorService, system_monitor::SystemMonitorService,
-        user_service::UserService,
+        database_service::DatabaseMonitorService, session_service::SessionService,
+        system_monitor::SystemMonitorService, user_service::UserService,
     },
     domain::validation::*,
     entity::models::{audit_logs, roles, users},
@@ -34,6 +34,8 @@ impl AdminService {
     pub async fn authenticate_admin(
         db: &DatabaseConnection,
         login: AdminLoginRequest,
+        user_agent: Option<String>,
+        ip_address: Option<String>,
     ) -> Result<AdminLoginResponse, AppError> {
         // Validate input
         validate_login_input(&login.email, &login.password)?;
@@ -55,19 +57,30 @@ impl AdminService {
             });
         }
 
-        // Generate JWT token
+        // Generate session ID and JWT token
+        let session_id = Uuid::new_v4();
         let jwt_secret = env::var("JWT_SECRET").unwrap_or_else(|_| "default-secret".to_string());
         let encoding_key = EncodingKey::from_secret(jwt_secret.as_ref());
 
         let claims = Claims {
             sub: user.id.to_string(),
             exp: (chrono::Utc::now() + chrono::Duration::hours(24)).timestamp() as usize,
+            session_id: session_id.to_string(),
         };
 
         let token = encode(&Header::default(), &claims, &encoding_key).map_err(|_| AppError {
             message: "Failed to generate token".to_string(),
             status_code: StatusCode::INTERNAL_SERVER_ERROR,
         })?;
+
+        // Create session record
+        SessionService::create_session(
+            db,
+            user.id,
+            user_agent,
+            ip_address,
+            &session_id.to_string(),
+        ).await?;
 
         Ok(AdminLoginResponse {
             token,
@@ -897,5 +910,47 @@ impl AdminService {
         .await?;
 
         Ok(response.has_permission)
+    }
+
+    /// Get sessions for a specific user
+    pub async fn get_user_sessions(
+        db: &DatabaseConnection,
+        user_id: Uuid,
+    ) -> Result<Vec<SessionResponse>, AppError> {
+        // Get sessions from SessionService
+        let sessions = SessionService::get_user_sessions(db, user_id).await?;
+
+        // Convert to response format
+        let session_responses: Vec<SessionResponse> = sessions
+            .into_iter()
+            .map(|session| SessionResponse {
+                id: session.id.to_string(),
+                user_id: session.user_id.to_string(),
+                device_info: session.user_agent.unwrap_or_else(|| "Unknown Device".to_string()),
+                ip_address: session.ip_address,
+                created_at: session.created_at.map(|dt| dt.to_rfc3339()).unwrap_or_default(),
+                last_activity: session.last_activity.map(|dt| dt.to_rfc3339()).unwrap_or_default(),
+                expires_at: session.expires_at.to_rfc3339(),
+                is_current: false, // Will be determined on frontend based on current session
+            })
+            .collect();
+
+        Ok(session_responses)
+    }
+
+    /// Invalidate a specific session
+    pub async fn invalidate_user_session(
+        db: &DatabaseConnection,
+        session_id: Uuid,
+    ) -> Result<(), AppError> {
+        SessionService::invalidate_session(db, session_id).await
+    }
+
+    /// Invalidate all sessions for a user
+    pub async fn invalidate_all_user_sessions(
+        db: &DatabaseConnection,
+        user_id: Uuid,
+    ) -> Result<u64, AppError> {
+        SessionService::invalidate_all_user_sessions(db, user_id).await
     }
 }
