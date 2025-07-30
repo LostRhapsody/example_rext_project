@@ -58,6 +58,9 @@
           <button @click="closeCreateModal" class="close-btn">&times;</button>
         </div>
         <div class="modal-body">
+          <div v-if="createError" class="error-message">
+            {{ createError }}
+          </div>
           <form @submit.prevent="createUser" class="user-form">
             <div class="form-group">
               <label for="create-email">Email *</label>
@@ -87,19 +90,7 @@
                 v-model="createForm.role_id"
                 class="role-select"
               >
-                <option value="">No Role</option>
-                <option value="1">Admin</option>
-                <option value="2">User</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="create-role">Role</label>
-              <select
-                id="create-role"
-                v-model="createForm.role_id"
-                class="role-select"
-              >
-                <option value="">No Role</option>
+                <option :value="null">No Role</option>
                 <option
                   v-for="role in roles"
                   :key="role.id"
@@ -128,6 +119,9 @@
           <button @click="closeEditModal" class="close-btn">&times;</button>
         </div>
         <div class="modal-body">
+          <div v-if="updateError" class="error-message">
+            {{ updateError }}
+          </div>
           <form @submit.prevent="updateUser" class="user-form">
             <div class="form-group">
               <label for="edit-email">Email *</label>
@@ -157,19 +151,7 @@
                 v-model="editForm.role_id"
                 class="role-select"
               >
-                <option value="">No Role</option>
-                <option value="1">Admin</option>
-                <option value="2">User</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="edit-role">Role</label>
-              <select
-                id="edit-role"
-                v-model="editForm.role_id"
-                class="role-select"
-              >
-                <option value="">No Role</option>
+                <option :value="null">No Role</option>
                 <option
                   v-for="role in roles"
                   :key="role.id"
@@ -382,6 +364,8 @@ const creating = ref(false)
 const updating = ref(false)
 const deleting = ref(false)
 const deleteError = ref('')
+const createError = ref('')
+const updateError = ref('')
 
 // Modal states
 const showDetailModal = ref(false)
@@ -428,6 +412,7 @@ const fetchUsers = async () => {
 
 const createUser = async () => {
   creating.value = true
+  createError.value = ''
   try {
     const token = localStorage.getItem('adminToken')
     if (!token) return
@@ -447,8 +432,11 @@ const createUser = async () => {
       showCreateModal.value = false
       resetCreateForm()
       fetchUsers()
+    } else if (response.error) {
+      createError.value = response.error.message || 'Failed to create user'
     }
-  } catch (error) {
+  } catch (error: any) {
+    createError.value = error.message || 'Failed to create user'
     console.error('Error creating user:', error)
   } finally {
     creating.value = false
@@ -457,6 +445,7 @@ const createUser = async () => {
 
 const updateUser = async () => {
   updating.value = true
+  updateError.value = ''
   if (!selectedUser.value) return
 
   try {
@@ -488,8 +477,11 @@ const updateUser = async () => {
       showEditModal.value = false
       resetEditForm()
       fetchUsers()
+    } else if (response.error) {
+      updateError.value = response.error.message || 'Failed to update user'
     }
-  } catch (error) {
+  } catch (error: any) {
+    updateError.value = error.message || 'Failed to update user'
     console.error('Error updating user:', error)
   } finally {
     updating.value = false
@@ -541,11 +533,13 @@ const onRowClicked = (params: any) => {
 const closeCreateModal = () => {
   showCreateModal.value = false
   resetCreateForm()
+  createError.value = ''
 }
 
 const closeEditModal = () => {
   showEditModal.value = false
   selectedUser.value = null
+  updateError.value = ''
 }
 
 const closeDeleteModal = () => {
@@ -606,7 +600,7 @@ const viewUser = async (userId: string) => {
 const populateEditForm = (user: User) => {
   editForm.email = user.email
   editForm.password = ''
-  editForm.role_id = user.role_id || null
+  editForm.role_id = user.role_id ?? null
 }
 
 const resetCreateForm = () => {

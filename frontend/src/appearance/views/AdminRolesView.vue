@@ -470,7 +470,6 @@ const fetchRoles = async () => {
     })
 
     if (response.data) {
-      console.log(response.data)
       roles.value = response.data.data || []
       const pagination = response.data.pagination
       paginationInfo.value = {
