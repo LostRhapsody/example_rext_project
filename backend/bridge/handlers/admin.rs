@@ -8,14 +8,14 @@ use sea_orm::DatabaseConnection;
 use uuid::Uuid;
 
 use crate::{
-    bridge::types::{admin::{AdminUser, *}, auth::AuthUser, logging::LoggingInfo},
+    bridge::types::{
+        admin::{AdminUser, *},
+        auth::AuthUser,
+        logging::LoggingInfo,
+    },
     check_single_permission,
     control::services::admin_service::AdminService,
-    domain::permissions::Permission::{
-        AdminRead,
-        AdminWrite,
-        AdminDelete,
-    },
+    domain::permissions::Permission::{AdminDelete, AdminRead, AdminWrite},
     infrastructure::app_error::{AppError, ErrorResponse, MessageResponse},
 };
 
@@ -41,7 +41,13 @@ pub async fn admin_login_handler(
     Json(payload): Json<AdminLoginRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     check_single_permission!(&payload.email, &AdminRead, &db);
-    let response = AdminService::authenticate_admin(&db, payload, logging_info.user_agent, logging_info.ip_address).await?;
+    let response = AdminService::authenticate_admin(
+        &db,
+        payload,
+        logging_info.user_agent,
+        logging_info.ip_address,
+    )
+    .await?;
     Ok((StatusCode::OK, Json(response)))
 }
 
@@ -391,7 +397,7 @@ pub async fn get_user_sessions_handler(
     Extension(admin_user): Extension<AdminUser>,
 ) -> Result<impl IntoResponse, AppError> {
     check_single_permission!(&admin_user.email, &AdminRead, &db);
-    
+
     let user_uuid = Uuid::parse_str(&user_id).map_err(|_| AppError {
         message: "Invalid user ID format".to_string(),
         status_code: StatusCode::BAD_REQUEST,
@@ -428,19 +434,19 @@ pub async fn invalidate_session_handler(
     Extension(admin_user): Extension<AdminUser>,
 ) -> Result<impl IntoResponse, AppError> {
     check_single_permission!(&admin_user.email, &AdminDelete, &db);
-    
+
     let session_uuid = Uuid::parse_str(&session_id).map_err(|_| AppError {
         message: "Invalid session ID format".to_string(),
         status_code: StatusCode::BAD_REQUEST,
     })?;
 
     AdminService::invalidate_user_session(&db, session_uuid).await?;
-    
+
     let response = SessionInvalidationResponse {
         message: "Session invalidated successfully".to_string(),
         invalidated_count: Some(1),
     };
-    
+
     Ok((StatusCode::OK, Json(response)))
 }
 
@@ -471,18 +477,18 @@ pub async fn invalidate_all_user_sessions_handler(
     Extension(admin_user): Extension<AdminUser>,
 ) -> Result<impl IntoResponse, AppError> {
     check_single_permission!(&admin_user.email, &AdminDelete, &db);
-    
+
     let user_uuid = Uuid::parse_str(&user_id).map_err(|_| AppError {
         message: "Invalid user ID format".to_string(),
         status_code: StatusCode::BAD_REQUEST,
     })?;
 
     let count = AdminService::invalidate_all_user_sessions(&db, user_uuid).await?;
-    
+
     let response = SessionInvalidationResponse {
         message: format!("All user sessions invalidated successfully"),
         invalidated_count: Some(count),
     };
-    
+
     Ok((StatusCode::OK, Json(response)))
 }

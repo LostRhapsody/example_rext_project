@@ -8,7 +8,7 @@ use uuid::Uuid;
 
 use crate::{
     control::services::session_service::SessionService,
-    infrastructure::{app_error::AppError, jwt_claims::Claims}
+    infrastructure::{app_error::AppError, jwt_claims::Claims},
 };
 
 /// Service for JWT token operations
@@ -35,10 +35,9 @@ impl TokenService {
         db: &DatabaseConnection,
         token: &str,
     ) -> Result<(Uuid, Uuid), AppError> {
-        
         // Validate JWT token and extract claims
         let claims = Self::validate_token_claims(&token)?;
-        
+
         // Parse user ID
         let user_id = Uuid::parse_str(&claims.sub).map_err(|_| AppError {
             message: "Invalid user ID in token".to_string(),

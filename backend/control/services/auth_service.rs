@@ -61,7 +61,8 @@ impl AuthService {
             user_agent,
             ip_address,
             &session_id.to_string(),
-        ).await?;
+        )
+        .await?;
 
         Ok(token)
     }

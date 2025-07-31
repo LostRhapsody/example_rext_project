@@ -243,12 +243,12 @@ pub struct PermissionCheckResponse {
 pub struct SessionResponse {
     pub id: String,
     pub user_id: String,
-    pub device_info: String,      // Parsed user agent
+    pub device_info: String, // Parsed user agent
     pub ip_address: Option<String>,
     pub created_at: String,
     pub last_activity: String,
     pub expires_at: String,
-    pub is_current: bool,         // If this is the current session
+    pub is_current: bool, // If this is the current session
 }
 
 /// Request to invalidate a session

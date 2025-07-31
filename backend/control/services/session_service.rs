@@ -1,7 +1,7 @@
+use chrono::{Duration, Utc};
 use sea_orm::prelude::Expr;
 use sea_orm::*;
 use uuid::Uuid;
-use chrono::{Duration, Utc};
 
 use crate::control::services::database_service::DatabaseService;
 use crate::entity::models::{prelude::*, user_sessions};
@@ -106,10 +106,13 @@ impl SessionService {
             ..Default::default()
         };
 
-        session_active_model.update(db).await.map_err(|e| AppError {
-            message: format!("Failed to update session activity: {}", e),
-            status_code: StatusCode::INTERNAL_SERVER_ERROR,
-        })?;
+        session_active_model
+            .update(db)
+            .await
+            .map_err(|e| AppError {
+                message: format!("Failed to update session activity: {}", e),
+                status_code: StatusCode::INTERNAL_SERVER_ERROR,
+            })?;
 
         Ok(())
     }
@@ -147,10 +150,13 @@ impl SessionService {
             ..Default::default()
         };
 
-        session_active_model.update(db).await.map_err(|e| AppError {
-            message: format!("Failed to invalidate session: {}", e),
-            status_code: StatusCode::INTERNAL_SERVER_ERROR,
-        })?;
+        session_active_model
+            .update(db)
+            .await
+            .map_err(|e| AppError {
+                message: format!("Failed to invalidate session: {}", e),
+                status_code: StatusCode::INTERNAL_SERVER_ERROR,
+            })?;
 
         Ok(())
     }
@@ -189,8 +195,6 @@ impl SessionService {
 
         Ok(result.rows_affected)
     }
-
-
 
     /// Gets active session count for a user
     pub async fn get_user_active_session_count(

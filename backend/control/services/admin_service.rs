@@ -80,7 +80,8 @@ impl AdminService {
             user_agent,
             ip_address,
             &session_id.to_string(),
-        ).await?;
+        )
+        .await?;
 
         Ok(AdminLoginResponse {
             token,
@@ -926,10 +927,18 @@ impl AdminService {
             .map(|session| SessionResponse {
                 id: session.id.to_string(),
                 user_id: session.user_id.to_string(),
-                device_info: session.user_agent.unwrap_or_else(|| "Unknown Device".to_string()),
+                device_info: session
+                    .user_agent
+                    .unwrap_or_else(|| "Unknown Device".to_string()),
                 ip_address: session.ip_address,
-                created_at: session.created_at.map(|dt| dt.to_rfc3339()).unwrap_or_default(),
-                last_activity: session.last_activity.map(|dt| dt.to_rfc3339()).unwrap_or_default(),
+                created_at: session
+                    .created_at
+                    .map(|dt| dt.to_rfc3339())
+                    .unwrap_or_default(),
+                last_activity: session
+                    .last_activity
+                    .map(|dt| dt.to_rfc3339())
+                    .unwrap_or_default(),
                 expires_at: session.expires_at.to_rfc3339(),
                 is_current: false, // Will be determined on frontend based on current session
             })

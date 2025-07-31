@@ -16,7 +16,6 @@ pub fn auth_router(db: DatabaseConnection) -> OpenApiRouter {
         .routes(routes!(crate::bridge::handlers::auth::profile_handler))
         .route_layer(middleware::from_fn_with_state(db.clone(), auth_middleware));
 
-
     // Combine both route groups - retains the middleware layers
     public_routes.merge(protected_routes).with_state(db)
 }

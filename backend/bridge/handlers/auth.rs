@@ -1,5 +1,8 @@
 use axum::{
-    extract::{Request, State}, http::StatusCode, response::IntoResponse, Extension, Json
+    Extension, Json,
+    extract::{Request, State},
+    http::StatusCode,
+    response::IntoResponse,
 };
 use sea_orm::DatabaseConnection;
 
@@ -84,12 +87,17 @@ pub async fn login_handler(
     Extension(logging_info): Extension<LoggingInfo>,
     Json(payload): Json<LoginRequest>,
 ) -> Result<impl IntoResponse, AppError> {
-
     // Convert request to user domain model
     let login = UserLogin::new(payload.email, payload.password);
 
     // Delegate to user service with session tracking
-    let auth_token = AuthService::authenticate_user(&db, login, logging_info.user_agent, logging_info.ip_address).await?;
+    let auth_token = AuthService::authenticate_user(
+        &db,
+        login,
+        logging_info.user_agent,
+        logging_info.ip_address,
+    )
+    .await?;
 
     Ok(Json(LoginResponse {
         token: auth_token.token,

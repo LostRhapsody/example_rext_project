@@ -9,7 +9,9 @@ use tracing::{info, warn};
 
 use crate::{
     bridge::types::{admin::AdminUser, auth::AuthUser},
-    control::services::{session_service::SessionService, token_service::TokenService, user_service::UserService},
+    control::services::{
+        session_service::SessionService, token_service::TokenService, user_service::UserService,
+    },
     infrastructure::{app_error::AppError, logging::LoggingManager},
 };
 
@@ -25,7 +27,8 @@ pub async fn admin_middleware(
     let token = TokenService::extract_token_from_header(&request)?;
 
     // Extract and validate token with session validation
-    let (user_id, session_id) = TokenService::extract_and_validate_token_with_session(&db, &token).await?;
+    let (user_id, session_id) =
+        TokenService::extract_and_validate_token_with_session(&db, &token).await?;
 
     // Update session activity (fire and forget)
     let db_clone = db.clone();

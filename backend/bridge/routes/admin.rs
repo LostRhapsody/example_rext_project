@@ -25,9 +25,15 @@ pub fn admin_router(db: DatabaseConnection) -> OpenApiRouter {
         .routes(routes!(crate::bridge::handlers::admin::update_user_handler))
         .routes(routes!(crate::bridge::handlers::admin::delete_user_handler))
         // Session management
-        .routes(routes!(crate::bridge::handlers::admin::get_user_sessions_handler))
-        .routes(routes!(crate::bridge::handlers::admin::invalidate_session_handler))
-        .routes(routes!(crate::bridge::handlers::admin::invalidate_all_user_sessions_handler))
+        .routes(routes!(
+            crate::bridge::handlers::admin::get_user_sessions_handler
+        ))
+        .routes(routes!(
+            crate::bridge::handlers::admin::invalidate_session_handler
+        ))
+        .routes(routes!(
+            crate::bridge::handlers::admin::invalidate_all_user_sessions_handler
+        ))
         // Role management
         .routes(routes!(crate::bridge::handlers::roles::get_roles_handler))
         .routes(routes!(crate::bridge::handlers::roles::create_role_handler))
