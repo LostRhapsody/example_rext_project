@@ -16,16 +16,11 @@ impl MigrationTrait for Migration {
                             .uuid()
                             .not_null()
                     )
-                    .col(
-                        ColumnDef::new(UserSessions::SessionToken)
-                            .string_len(97)  // Argon2 hash length
-                            .not_null()
-                            .unique_key()
-                    )
+                    .col(ColumnDef::new(UserSessions::SessionToken).string().not_null().unique_key())
                     .col(ColumnDef::new(UserSessions::UserAgent).text().null())
                     .col(
                         ColumnDef::new(UserSessions::IpAddress)
-                            .string_len(45)  // Supports both IPv4 and IPv6
+                            .string()
                             .null()
                     )
                     .col(
