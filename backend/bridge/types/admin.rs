@@ -253,6 +253,7 @@ pub struct SessionResponse {
 
 /// Request to invalidate a session
 #[derive(Deserialize, ToSchema)]
+#[allow(dead_code)]
 pub struct InvalidateSessionRequest {
     pub session_id: String,
 }
@@ -274,6 +275,7 @@ fn default_limit() -> u64 {
 
 /// Admin user information for downstream handlers
 #[derive(Clone)]
+#[allow(dead_code)]
 pub struct AdminUser {
     pub user_id: uuid::Uuid,
     pub email: String,

@@ -1,5 +1,6 @@
 /// Logging information for audit logs and for downstream handlers
 #[derive(Clone)]
+#[allow(dead_code)]
 pub struct LoggingInfo {
     pub method: String,
     pub path: String,

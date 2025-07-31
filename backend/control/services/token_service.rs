@@ -17,6 +17,7 @@ pub struct TokenService;
 impl TokenService {
     /// Extracts and validates a JWT token from the Authorization header
     /// Returns the user ID if the token is valid (JWT validation only)
+    #[allow(dead_code)]
     pub fn extract_and_validate_token(
         request: &axum::http::Request<axum::body::Body>,
     ) -> Result<Uuid, AppError> {

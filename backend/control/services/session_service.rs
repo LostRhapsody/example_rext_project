@@ -181,6 +181,7 @@ impl SessionService {
     }
 
     /// Cleanup expired sessions (background task)
+    #[allow(dead_code)]
     pub async fn cleanup_expired_sessions(db: &DatabaseConnection) -> Result<u64, AppError> {
         let now = Utc::now();
 
@@ -197,6 +198,7 @@ impl SessionService {
     }
 
     /// Gets active session count for a user
+    #[allow(dead_code)]
     pub async fn get_user_active_session_count(
         db: &DatabaseConnection,
         user_id: Uuid,
