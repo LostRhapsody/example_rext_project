@@ -33,11 +33,9 @@ impl TokenService {
     /// Returns the user ID and session ID if both token and session are valid
     pub async fn extract_and_validate_token_with_session(
         db: &DatabaseConnection,
-        request: &axum::http::Request<axum::body::Body>,
+        token: &str,
     ) -> Result<(Uuid, Uuid), AppError> {
-        // Extract token from Authorization header
-        let token = Self::extract_token_from_header(request)?;
-
+        
         // Validate JWT token and extract claims
         let claims = Self::validate_token_claims(&token)?;
         
