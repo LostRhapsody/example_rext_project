@@ -357,6 +357,34 @@ export const zRoleResponse = z.object({
     ]))
 });
 
+/**
+ * Response for session invalidation operations
+ */
+export const zSessionInvalidationResponse = z.object({
+    invalidated_count: z.optional(z.union([
+        z.coerce.bigint().gte(BigInt(0)),
+        z.null()
+    ])),
+    message: z.string()
+});
+
+/**
+ * Session response for admin endpoints
+ */
+export const zSessionResponse = z.object({
+    created_at: z.string(),
+    device_info: z.string(),
+    expires_at: z.string(),
+    id: z.string(),
+    ip_address: z.optional(z.union([
+        z.string(),
+        z.null()
+    ])),
+    is_current: z.boolean(),
+    last_activity: z.string(),
+    user_id: z.string()
+});
+
 export const zTableRecordResponse = z.object({
     columns: z.array(z.string()),
     records: z.array(z.array(z.unknown()))
@@ -599,6 +627,19 @@ export const zUpdateRoleHandlerData = z.object({
  */
 export const zUpdateRoleHandlerResponse = zRoleResponse;
 
+export const zInvalidateSessionHandlerData = z.object({
+    body: z.optional(z.never()),
+    path: z.object({
+        session_id: z.string()
+    }),
+    query: z.optional(z.never())
+});
+
+/**
+ * Session invalidated successfully
+ */
+export const zInvalidateSessionHandlerResponse = zSessionInvalidationResponse;
+
 export const zGetUsersHandlerData = z.object({
     body: z.optional(z.never()),
     path: z.optional(z.never()),
@@ -666,6 +707,32 @@ export const zUpdateUserHandlerData = z.object({
  * User updated successfully
  */
 export const zUpdateUserHandlerResponse = zUserResponse;
+
+export const zInvalidateAllUserSessionsHandlerData = z.object({
+    body: z.optional(z.never()),
+    path: z.object({
+        user_id: z.string()
+    }),
+    query: z.optional(z.never())
+});
+
+/**
+ * All user sessions invalidated successfully
+ */
+export const zInvalidateAllUserSessionsHandlerResponse = zSessionInvalidationResponse;
+
+export const zGetUserSessionsHandlerData = z.object({
+    body: z.optional(z.never()),
+    path: z.object({
+        user_id: z.string()
+    }),
+    query: z.optional(z.never())
+});
+
+/**
+ * User sessions retrieved successfully
+ */
+export const zGetUserSessionsHandlerResponse = z.array(zSessionResponse);
 
 export const zLoginHandlerData = z.object({
     body: zLoginRequest,

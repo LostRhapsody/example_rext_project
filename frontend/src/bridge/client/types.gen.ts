@@ -247,6 +247,28 @@ export type RoleResponse = {
     updated_at?: string | null;
 };
 
+/**
+ * Response for session invalidation operations
+ */
+export type SessionInvalidationResponse = {
+    invalidated_count?: number | null;
+    message: string;
+};
+
+/**
+ * Session response for admin endpoints
+ */
+export type SessionResponse = {
+    created_at: string;
+    device_info: string;
+    expires_at: string;
+    id: string;
+    ip_address?: string | null;
+    is_current: boolean;
+    last_activity: string;
+    user_id: string;
+};
+
 export type TableRecordResponse = {
     columns: Array<string>;
     records: Array<Array<unknown>>;
@@ -736,6 +758,48 @@ export type UpdateRoleHandlerResponses = {
 
 export type UpdateRoleHandlerResponse = UpdateRoleHandlerResponses[keyof UpdateRoleHandlerResponses];
 
+export type InvalidateSessionHandlerData = {
+    body?: never;
+    path: {
+        /**
+         * Session ID
+         */
+        session_id: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/sessions/{session_id}';
+};
+
+export type InvalidateSessionHandlerErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden - admin privileges required
+     */
+    403: ErrorResponse;
+    /**
+     * Session not found
+     */
+    404: ErrorResponse;
+    /**
+     * Internal server error
+     */
+    500: ErrorResponse;
+};
+
+export type InvalidateSessionHandlerError = InvalidateSessionHandlerErrors[keyof InvalidateSessionHandlerErrors];
+
+export type InvalidateSessionHandlerResponses = {
+    /**
+     * Session invalidated successfully
+     */
+    200: SessionInvalidationResponse;
+};
+
+export type InvalidateSessionHandlerResponse = InvalidateSessionHandlerResponses[keyof InvalidateSessionHandlerResponses];
+
 export type GetUsersHandlerData = {
     body?: never;
     path?: never;
@@ -951,6 +1015,90 @@ export type UpdateUserHandlerResponses = {
 };
 
 export type UpdateUserHandlerResponse = UpdateUserHandlerResponses[keyof UpdateUserHandlerResponses];
+
+export type InvalidateAllUserSessionsHandlerData = {
+    body?: never;
+    path: {
+        /**
+         * User ID
+         */
+        user_id: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/users/{user_id}/sessions';
+};
+
+export type InvalidateAllUserSessionsHandlerErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden - admin privileges required
+     */
+    403: ErrorResponse;
+    /**
+     * User not found
+     */
+    404: ErrorResponse;
+    /**
+     * Internal server error
+     */
+    500: ErrorResponse;
+};
+
+export type InvalidateAllUserSessionsHandlerError = InvalidateAllUserSessionsHandlerErrors[keyof InvalidateAllUserSessionsHandlerErrors];
+
+export type InvalidateAllUserSessionsHandlerResponses = {
+    /**
+     * All user sessions invalidated successfully
+     */
+    200: SessionInvalidationResponse;
+};
+
+export type InvalidateAllUserSessionsHandlerResponse = InvalidateAllUserSessionsHandlerResponses[keyof InvalidateAllUserSessionsHandlerResponses];
+
+export type GetUserSessionsHandlerData = {
+    body?: never;
+    path: {
+        /**
+         * User ID
+         */
+        user_id: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/users/{user_id}/sessions';
+};
+
+export type GetUserSessionsHandlerErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden - admin privileges required
+     */
+    403: ErrorResponse;
+    /**
+     * User not found
+     */
+    404: ErrorResponse;
+    /**
+     * Internal server error
+     */
+    500: ErrorResponse;
+};
+
+export type GetUserSessionsHandlerError = GetUserSessionsHandlerErrors[keyof GetUserSessionsHandlerErrors];
+
+export type GetUserSessionsHandlerResponses = {
+    /**
+     * User sessions retrieved successfully
+     */
+    200: Array<SessionResponse>;
+};
+
+export type GetUserSessionsHandlerResponse = GetUserSessionsHandlerResponses[keyof GetUserSessionsHandlerResponses];
 
 export type LoginHandlerData = {
     body: LoginRequest;
