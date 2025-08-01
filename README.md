@@ -142,12 +142,6 @@ This project implements a comprehensive admin panel with request logging, user m
   - Admin activity audit trail
   - Admin session management
 
-#### 4.6 part 2 - Improve Session Management
-- After a user logs out manually, the session is still listed as active. This is not the case, they cannot access anything until they log in again, meaning that session does not exist.
-- The refresh button is grey for some reason
-- The last active update doesn't seem to work. It's supposed to be a "fire and forget" process that get's run but doesn't block the thread, because we don't need the result. But it might be broken.
-- Logging out of your own current active session redirects to login screen! This is 10/10, exactly what should happen when someone else invalidates your current active session.
-
 ### Break Time!
 - Use a better font on the frontend UI. Giest or something.
 - Clean up dead code attributes
