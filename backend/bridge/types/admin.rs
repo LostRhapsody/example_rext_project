@@ -238,10 +238,45 @@ pub struct PermissionCheckResponse {
     pub required_permission: String,
 }
 
+/// Session response for admin endpoints
+#[derive(Serialize, ToSchema)]
+pub struct SessionResponse {
+    pub id: String,
+    pub user_id: String,
+    pub device_info: String, // Parsed user agent
+    pub ip_address: Option<String>,
+    pub created_at: String,
+    pub last_activity: String,
+    pub expires_at: String,
+    pub is_current: bool, // If this is the current session
+}
+
+/// Request to invalidate a session
+#[derive(Deserialize, ToSchema)]
+#[allow(dead_code)]
+pub struct InvalidateSessionRequest {
+    pub session_id: String,
+}
+
+/// Response for session invalidation operations
+#[derive(Serialize, ToSchema)]
+pub struct SessionInvalidationResponse {
+    pub message: String,
+    pub invalidated_count: Option<u64>,
+}
+
 // Helper functions for defaults
 fn default_page() -> u64 {
     1
 }
 fn default_limit() -> u64 {
     25
+}
+
+/// Admin user information for downstream handlers
+#[derive(Clone)]
+#[allow(dead_code)]
+pub struct AdminUser {
+    pub user_id: uuid::Uuid,
+    pub email: String,
 }

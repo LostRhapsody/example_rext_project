@@ -8,8 +8,10 @@ use sea_orm::DatabaseConnection;
 use tracing::{info, warn};
 
 use crate::{
-    bridge::types::auth::AuthUser,
-    control::services::{token_service::TokenService, user_service::UserService},
+    bridge::types::{admin::AdminUser, auth::AuthUser},
+    control::services::{
+        session_service::SessionService, token_service::TokenService, user_service::UserService,
+    },
     infrastructure::{app_error::AppError, logging::LoggingManager},
 };
 
@@ -21,8 +23,18 @@ pub async fn admin_middleware(
 ) -> Result<Response, AppError> {
     let request_id = LoggingManager::generate_request_id();
 
-    // Extract and validate token using TokenService
-    let user_id = TokenService::extract_and_validate_token(&request)?;
+    // Extract token from Authorization header
+    let token = TokenService::extract_token_from_header(&request)?;
+
+    // Extract and validate token with session validation
+    let (user_id, session_id) =
+        TokenService::extract_and_validate_token_with_session(&db, &token).await?;
+
+    // Update session activity (fire and forget)
+    let db_clone = db.clone();
+    tokio::spawn(async move {
+        let _ = SessionService::update_session_activity(&db_clone, session_id).await;
+    });
 
     let user = UserService::find_user_by_id(&db, user_id)
         .await?
@@ -47,14 +59,6 @@ pub async fn admin_middleware(
     });
 
     Ok(next.run(request).await)
-}
-
-/// Admin user information for downstream handlers
-#[allow(dead_code)]
-#[derive(Clone)]
-pub struct AdminUser {
-    pub user_id: uuid::Uuid,
-    pub email: String,
 }
 
 /// Log admin access attempts (for security monitoring)

@@ -1,16 +1,19 @@
 use axum::{
-    Json,
+    Extension, Json,
     extract::{Request, State},
     http::StatusCode,
     response::IntoResponse,
 };
 use sea_orm::DatabaseConnection;
 
-use crate::bridge::types::auth::{
-    AUTH_TAG, AuthUser, LoginRequest, LoginResponse, ProfileResponse, RegisterRequest,
-    RegisterResponse,
+use crate::bridge::types::{
+    auth::{
+        AUTH_TAG, AuthUser, LoginRequest, LoginResponse, ProfileResponse, RegisterRequest,
+        RegisterResponse,
+    },
+    logging::LoggingInfo,
 };
-use crate::control::services::{auth_service::AuthService, user_service::UserService};
+use crate::control::services::{auth_service::AuthService, session_service::SessionService, token_service::TokenService, user_service::UserService};
 use crate::domain::user::*;
 use crate::infrastructure::app_error::{AppError, ErrorResponse, MessageResponse};
 
@@ -81,13 +84,20 @@ pub async fn register_handler(
 )]
 pub async fn login_handler(
     State(db): State<DatabaseConnection>,
+    Extension(logging_info): Extension<LoggingInfo>,
     Json(payload): Json<LoginRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     // Convert request to user domain model
     let login = UserLogin::new(payload.email, payload.password);
 
-    // Delegate to user service, errors bubble up correctly
-    let auth_token = AuthService::authenticate_user(&db, login).await?;
+    // Delegate to user service with session tracking
+    let auth_token = AuthService::authenticate_user(
+        &db,
+        login,
+        logging_info.user_agent,
+        logging_info.ip_address,
+    )
+    .await?;
 
     Ok(Json(LoginResponse {
         token: auth_token.token,
@@ -101,17 +111,39 @@ pub async fn login_handler(
     responses(
         (status = 200, description = "Logout successful", body = MessageResponse, examples(
             ("success" = (value = json!({"message": "Logged out successfully"})))
-        ))
+        )),
+        (status = 401, description = "Unauthorized - authentication required", body = ErrorResponse),
+        (status = 500, description = "Internal server error", body = ErrorResponse)
     ),
     summary = "Logout user",
-    description = "Logs out the current user. Since JWT is stateless, this just returns a success message.",
-    tag = AUTH_TAG
+    description = "Logs out the current user and invalidates their session in the database.",
+    tag = AUTH_TAG,
+    security(
+        ("jwt_token" = [])
+    )
 )]
-pub async fn logout_handler() -> impl IntoResponse {
-    // This is mostly done on the client, as JWT is stateless. Might add a blacklist in the future.
-    Json(MessageResponse {
+pub async fn logout_handler(
+    State(db): State<DatabaseConnection>,
+    request: Request,
+) -> Result<impl IntoResponse, AppError> {
+    // Extract token from Authorization header
+    let token = TokenService::extract_token_from_header(&request)?;
+    
+    // Validate token and extract claims to get session_id
+    let claims = TokenService::validate_token_claims(&token)?;
+    
+    // Parse session ID
+    let session_id = uuid::Uuid::parse_str(&claims.session_id).map_err(|_| AppError {
+        message: "Invalid session ID in token".to_string(),
+        status_code: StatusCode::UNAUTHORIZED,
+    })?;
+    
+    // Invalidate the session
+    SessionService::invalidate_session(&db, session_id).await?;
+    
+    Ok(Json(MessageResponse {
         message: "Logged out successfully".to_string(),
-    })
+    }))
 }
 
 /// Gets the current user's profile information

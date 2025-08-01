@@ -43,10 +43,13 @@ declare global {
   const getTableRecordsHandler: typeof import('./src/bridge/client/sdk.gen')['getTableRecordsHandler']
   const getUrl: typeof import('./src/bridge/client/client/utils')['getUrl']
   const getUserHandler: typeof import('./src/bridge/client/sdk.gen')['getUserHandler']
+  const getUserSessionsHandler: typeof import('./src/bridge/client/sdk.gen')['getUserSessionsHandler']
   const getUsersHandler: typeof import('./src/bridge/client/sdk.gen')['getUsersHandler']
   const h: typeof import('vue')['h']
   const healthHandler: typeof import('./src/bridge/client/sdk.gen')['healthHandler']
   const inject: typeof import('vue')['inject']
+  const invalidateAllUserSessionsHandler: typeof import('./src/bridge/client/sdk.gen')['invalidateAllUserSessionsHandler']
+  const invalidateSessionHandler: typeof import('./src/bridge/client/sdk.gen')['invalidateSessionHandler']
   const isProxy: typeof import('vue')['isProxy']
   const isReactive: typeof import('vue')['isReactive']
   const isReadonly: typeof import('vue')['isReadonly']
@@ -159,11 +162,17 @@ declare global {
   const zGetTableRecordsHandlerResponse: typeof import('./src/bridge/client/zod.gen')['zGetTableRecordsHandlerResponse']
   const zGetUserHandlerData: typeof import('./src/bridge/client/zod.gen')['zGetUserHandlerData']
   const zGetUserHandlerResponse: typeof import('./src/bridge/client/zod.gen')['zGetUserHandlerResponse']
+  const zGetUserSessionsHandlerData: typeof import('./src/bridge/client/zod.gen')['zGetUserSessionsHandlerData']
+  const zGetUserSessionsHandlerResponse: typeof import('./src/bridge/client/zod.gen')['zGetUserSessionsHandlerResponse']
   const zGetUsersHandlerData: typeof import('./src/bridge/client/zod.gen')['zGetUsersHandlerData']
   const zGetUsersHandlerResponse: typeof import('./src/bridge/client/zod.gen')['zGetUsersHandlerResponse']
   const zHealthHandlerData: typeof import('./src/bridge/client/zod.gen')['zHealthHandlerData']
   const zHealthHandlerResponse: typeof import('./src/bridge/client/zod.gen')['zHealthHandlerResponse']
   const zHealthResponse: typeof import('./src/bridge/client/zod.gen')['zHealthResponse']
+  const zInvalidateAllUserSessionsHandlerData: typeof import('./src/bridge/client/zod.gen')['zInvalidateAllUserSessionsHandlerData']
+  const zInvalidateAllUserSessionsHandlerResponse: typeof import('./src/bridge/client/zod.gen')['zInvalidateAllUserSessionsHandlerResponse']
+  const zInvalidateSessionHandlerData: typeof import('./src/bridge/client/zod.gen')['zInvalidateSessionHandlerData']
+  const zInvalidateSessionHandlerResponse: typeof import('./src/bridge/client/zod.gen')['zInvalidateSessionHandlerResponse']
   const zLoginHandlerData: typeof import('./src/bridge/client/zod.gen')['zLoginHandlerData']
   const zLoginHandlerResponse: typeof import('./src/bridge/client/zod.gen')['zLoginHandlerResponse']
   const zLoginRequest: typeof import('./src/bridge/client/zod.gen')['zLoginRequest']
@@ -186,6 +195,8 @@ declare global {
   const zRegisterRequest: typeof import('./src/bridge/client/zod.gen')['zRegisterRequest']
   const zRegisterResponse: typeof import('./src/bridge/client/zod.gen')['zRegisterResponse']
   const zRoleResponse: typeof import('./src/bridge/client/zod.gen')['zRoleResponse']
+  const zSessionInvalidationResponse: typeof import('./src/bridge/client/zod.gen')['zSessionInvalidationResponse']
+  const zSessionResponse: typeof import('./src/bridge/client/zod.gen')['zSessionResponse']
   const zTableRecordResponse: typeof import('./src/bridge/client/zod.gen')['zTableRecordResponse']
   const zTableRecordsQueryParams: typeof import('./src/bridge/client/zod.gen')['zTableRecordsQueryParams']
   const zUpdateRoleHandlerData: typeof import('./src/bridge/client/zod.gen')['zUpdateRoleHandlerData']
@@ -203,7 +214,7 @@ declare global {
   export type { Component, Slot, Slots, ComponentPublicInstance, ComputedRef, DirectiveBinding, ExtractDefaultPropTypes, ExtractPropTypes, ExtractPublicPropTypes, InjectionKey, PropType, Ref, MaybeRef, MaybeRefOrGetter, VNode, WritableComputedRef } from 'vue'
   import('vue')
   // @ts-ignore
-  export type { AdminLoginRequest, AdminLoginResponse, AuditLogResponse, AuthUser, CreateRoleRequest, CreateUserRequest, DatabasePerformanceResponse, DatabaseTableResponse, ErrorResponse, HealthResponse, LoginRequest, LoginResponse, LogsQueryParams, MessageResponse, PaginatedResponseAuditLogResponse, PaginatedResponseRoleResponse, PaginatedResponseUserResponse, PaginationMeta, PermissionCheckRequest, PermissionCheckResponse, ProfileResponse, RegisterRequest, RegisterResponse, RoleResponse, TableRecordResponse, TableRecordsQueryParams, UpdateRoleRequest, UpdateUserRequest, UserResponse, UsersQueryParams, GetDatabaseTablesHandlerData, GetDatabaseTablesHandlerErrors, GetDatabaseTablesHandlerError, GetDatabaseTablesHandlerResponses, GetDatabaseTablesHandlerResponse, GetTableRecordsHandlerData, GetTableRecordsHandlerErrors, GetTableRecordsHandlerError, GetTableRecordsHandlerResponses, GetTableRecordsHandlerResponse, HealthHandlerData, HealthHandlerErrors, HealthHandlerError, HealthHandlerResponses, HealthHandlerResponse, AdminLoginHandlerData, AdminLoginHandlerErrors, AdminLoginHandlerError, AdminLoginHandlerResponses, AdminLoginHandlerResponse, AdminLogoutHandlerData, AdminLogoutHandlerResponses, AdminLogoutHandlerResponse, GetAuditLogsHandlerData, GetAuditLogsHandlerErrors, GetAuditLogsHandlerError, GetAuditLogsHandlerResponses, GetAuditLogsHandlerResponse, CheckPermissionHandlerData, CheckPermissionHandlerErrors, CheckPermissionHandlerError, CheckPermissionHandlerResponses, CheckPermissionHandlerResponse, GetRolesHandlerData, GetRolesHandlerErrors, GetRolesHandlerError, GetRolesHandlerResponses, GetRolesHandlerResponse, CreateRoleHandlerData, CreateRoleHandlerErrors, CreateRoleHandlerError, CreateRoleHandlerResponses, CreateRoleHandlerResponse, DeleteRoleHandlerData, DeleteRoleHandlerErrors, DeleteRoleHandlerError, DeleteRoleHandlerResponses, DeleteRoleHandlerResponse, GetRoleHandlerData, GetRoleHandlerErrors, GetRoleHandlerError, GetRoleHandlerResponses, GetRoleHandlerResponse, UpdateRoleHandlerData, UpdateRoleHandlerErrors, UpdateRoleHandlerError, UpdateRoleHandlerResponses, UpdateRoleHandlerResponse, GetUsersHandlerData, GetUsersHandlerErrors, GetUsersHandlerError, GetUsersHandlerResponses, GetUsersHandlerResponse, CreateUserHandlerData, CreateUserHandlerErrors, CreateUserHandlerError, CreateUserHandlerResponses, CreateUserHandlerResponse, DeleteUserHandlerData, DeleteUserHandlerErrors, DeleteUserHandlerError, DeleteUserHandlerResponses, DeleteUserHandlerResponse, GetUserHandlerData, GetUserHandlerErrors, GetUserHandlerError, GetUserHandlerResponses, GetUserHandlerResponse, UpdateUserHandlerData, UpdateUserHandlerErrors, UpdateUserHandlerError, UpdateUserHandlerResponses, UpdateUserHandlerResponse, LoginHandlerData, LoginHandlerErrors, LoginHandlerError, LoginHandlerResponses, LoginHandlerResponse, LogoutHandlerData, LogoutHandlerResponses, LogoutHandlerResponse, ProfileHandlerData, ProfileHandlerErrors, ProfileHandlerError, ProfileHandlerResponses, ProfileHandlerResponse, RegisterHandlerData, RegisterHandlerErrors, RegisterHandlerError, RegisterHandlerResponses, RegisterHandlerResponse, ClientOptions } from './src/bridge/client/types.gen'
+  export type { AdminLoginRequest, AdminLoginResponse, AuditLogResponse, AuthUser, CreateRoleRequest, CreateUserRequest, DatabasePerformanceResponse, DatabaseTableResponse, ErrorResponse, HealthResponse, LoginRequest, LoginResponse, LogsQueryParams, MessageResponse, PaginatedResponseAuditLogResponse, PaginatedResponseRoleResponse, PaginatedResponseUserResponse, PaginationMeta, PermissionCheckRequest, PermissionCheckResponse, ProfileResponse, RegisterRequest, RegisterResponse, RoleResponse, SessionInvalidationResponse, SessionResponse, TableRecordResponse, TableRecordsQueryParams, UpdateRoleRequest, UpdateUserRequest, UserResponse, UsersQueryParams, GetDatabaseTablesHandlerData, GetDatabaseTablesHandlerErrors, GetDatabaseTablesHandlerError, GetDatabaseTablesHandlerResponses, GetDatabaseTablesHandlerResponse, GetTableRecordsHandlerData, GetTableRecordsHandlerErrors, GetTableRecordsHandlerError, GetTableRecordsHandlerResponses, GetTableRecordsHandlerResponse, HealthHandlerData, HealthHandlerErrors, HealthHandlerError, HealthHandlerResponses, HealthHandlerResponse, AdminLoginHandlerData, AdminLoginHandlerErrors, AdminLoginHandlerError, AdminLoginHandlerResponses, AdminLoginHandlerResponse, AdminLogoutHandlerData, AdminLogoutHandlerErrors, AdminLogoutHandlerError, AdminLogoutHandlerResponses, AdminLogoutHandlerResponse, GetAuditLogsHandlerData, GetAuditLogsHandlerErrors, GetAuditLogsHandlerError, GetAuditLogsHandlerResponses, GetAuditLogsHandlerResponse, CheckPermissionHandlerData, CheckPermissionHandlerErrors, CheckPermissionHandlerError, CheckPermissionHandlerResponses, CheckPermissionHandlerResponse, GetRolesHandlerData, GetRolesHandlerErrors, GetRolesHandlerError, GetRolesHandlerResponses, GetRolesHandlerResponse, CreateRoleHandlerData, CreateRoleHandlerErrors, CreateRoleHandlerError, CreateRoleHandlerResponses, CreateRoleHandlerResponse, DeleteRoleHandlerData, DeleteRoleHandlerErrors, DeleteRoleHandlerError, DeleteRoleHandlerResponses, DeleteRoleHandlerResponse, GetRoleHandlerData, GetRoleHandlerErrors, GetRoleHandlerError, GetRoleHandlerResponses, GetRoleHandlerResponse, UpdateRoleHandlerData, UpdateRoleHandlerErrors, UpdateRoleHandlerError, UpdateRoleHandlerResponses, UpdateRoleHandlerResponse, InvalidateSessionHandlerData, InvalidateSessionHandlerErrors, InvalidateSessionHandlerError, InvalidateSessionHandlerResponses, InvalidateSessionHandlerResponse, GetUsersHandlerData, GetUsersHandlerErrors, GetUsersHandlerError, GetUsersHandlerResponses, GetUsersHandlerResponse, CreateUserHandlerData, CreateUserHandlerErrors, CreateUserHandlerError, CreateUserHandlerResponses, CreateUserHandlerResponse, DeleteUserHandlerData, DeleteUserHandlerErrors, DeleteUserHandlerError, DeleteUserHandlerResponses, DeleteUserHandlerResponse, GetUserHandlerData, GetUserHandlerErrors, GetUserHandlerError, GetUserHandlerResponses, GetUserHandlerResponse, UpdateUserHandlerData, UpdateUserHandlerErrors, UpdateUserHandlerError, UpdateUserHandlerResponses, UpdateUserHandlerResponse, InvalidateAllUserSessionsHandlerData, InvalidateAllUserSessionsHandlerErrors, InvalidateAllUserSessionsHandlerError, InvalidateAllUserSessionsHandlerResponses, InvalidateAllUserSessionsHandlerResponse, GetUserSessionsHandlerData, GetUserSessionsHandlerErrors, GetUserSessionsHandlerError, GetUserSessionsHandlerResponses, GetUserSessionsHandlerResponse, LoginHandlerData, LoginHandlerErrors, LoginHandlerError, LoginHandlerResponses, LoginHandlerResponse, LogoutHandlerData, LogoutHandlerErrors, LogoutHandlerError, LogoutHandlerResponses, LogoutHandlerResponse, ProfileHandlerData, ProfileHandlerErrors, ProfileHandlerError, ProfileHandlerResponses, ProfileHandlerResponse, RegisterHandlerData, RegisterHandlerErrors, RegisterHandlerError, RegisterHandlerResponses, RegisterHandlerResponse, ClientOptions } from './src/bridge/client/types.gen'
   import('./src/bridge/client/types.gen')
   // @ts-ignore
   export type { Options } from './src/bridge/client/sdk.gen'
@@ -241,10 +252,13 @@ declare module 'vue' {
     readonly getRolesHandler: UnwrapRef<typeof import('./src/bridge/client/sdk.gen')['getRolesHandler']>
     readonly getTableRecordsHandler: UnwrapRef<typeof import('./src/bridge/client/sdk.gen')['getTableRecordsHandler']>
     readonly getUserHandler: UnwrapRef<typeof import('./src/bridge/client/sdk.gen')['getUserHandler']>
+    readonly getUserSessionsHandler: UnwrapRef<typeof import('./src/bridge/client/sdk.gen')['getUserSessionsHandler']>
     readonly getUsersHandler: UnwrapRef<typeof import('./src/bridge/client/sdk.gen')['getUsersHandler']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
     readonly healthHandler: UnwrapRef<typeof import('./src/bridge/client/sdk.gen')['healthHandler']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
+    readonly invalidateAllUserSessionsHandler: UnwrapRef<typeof import('./src/bridge/client/sdk.gen')['invalidateAllUserSessionsHandler']>
+    readonly invalidateSessionHandler: UnwrapRef<typeof import('./src/bridge/client/sdk.gen')['invalidateSessionHandler']>
     readonly isProxy: UnwrapRef<typeof import('vue')['isProxy']>
     readonly isReactive: UnwrapRef<typeof import('vue')['isReactive']>
     readonly isReadonly: UnwrapRef<typeof import('vue')['isReadonly']>
@@ -345,11 +359,17 @@ declare module 'vue' {
     readonly zGetTableRecordsHandlerResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zGetTableRecordsHandlerResponse']>
     readonly zGetUserHandlerData: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zGetUserHandlerData']>
     readonly zGetUserHandlerResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zGetUserHandlerResponse']>
+    readonly zGetUserSessionsHandlerData: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zGetUserSessionsHandlerData']>
+    readonly zGetUserSessionsHandlerResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zGetUserSessionsHandlerResponse']>
     readonly zGetUsersHandlerData: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zGetUsersHandlerData']>
     readonly zGetUsersHandlerResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zGetUsersHandlerResponse']>
     readonly zHealthHandlerData: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zHealthHandlerData']>
     readonly zHealthHandlerResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zHealthHandlerResponse']>
     readonly zHealthResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zHealthResponse']>
+    readonly zInvalidateAllUserSessionsHandlerData: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zInvalidateAllUserSessionsHandlerData']>
+    readonly zInvalidateAllUserSessionsHandlerResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zInvalidateAllUserSessionsHandlerResponse']>
+    readonly zInvalidateSessionHandlerData: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zInvalidateSessionHandlerData']>
+    readonly zInvalidateSessionHandlerResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zInvalidateSessionHandlerResponse']>
     readonly zLoginHandlerData: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zLoginHandlerData']>
     readonly zLoginHandlerResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zLoginHandlerResponse']>
     readonly zLoginRequest: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zLoginRequest']>
@@ -372,6 +392,8 @@ declare module 'vue' {
     readonly zRegisterRequest: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zRegisterRequest']>
     readonly zRegisterResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zRegisterResponse']>
     readonly zRoleResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zRoleResponse']>
+    readonly zSessionInvalidationResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zSessionInvalidationResponse']>
+    readonly zSessionResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zSessionResponse']>
     readonly zTableRecordResponse: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zTableRecordResponse']>
     readonly zTableRecordsQueryParams: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zTableRecordsQueryParams']>
     readonly zUpdateRoleHandlerData: UnwrapRef<typeof import('./src/bridge/client/zod.gen')['zUpdateRoleHandlerData']>

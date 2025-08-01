@@ -8,14 +8,14 @@ use sea_orm::DatabaseConnection;
 use uuid::Uuid;
 
 use crate::{
-    bridge::types::{admin::*, auth::AuthUser},
+    bridge::types::{
+        admin::{AdminUser, *},
+        auth::AuthUser,
+        logging::LoggingInfo,
+    },
     check_single_permission,
     control::services::admin_service::AdminService,
-    domain::permissions::Permission::{
-        AdminRead,
-        AdminWrite,
-        AdminDelete,
-    },
+    domain::permissions::Permission::{AdminDelete, AdminRead, AdminWrite},
     infrastructure::app_error::{AppError, ErrorResponse, MessageResponse},
 };
 
@@ -37,10 +37,17 @@ use crate::{
 )]
 pub async fn admin_login_handler(
     State(db): State<DatabaseConnection>,
+    Extension(logging_info): Extension<LoggingInfo>,
     Json(payload): Json<AdminLoginRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     check_single_permission!(&payload.email, &AdminRead, &db);
-    let response = AdminService::authenticate_admin(&db, payload).await?;
+    let response = AdminService::authenticate_admin(
+        &db,
+        payload,
+        logging_info.user_agent,
+        logging_info.ip_address,
+    )
+    .await?;
     Ok((StatusCode::OK, Json(response)))
 }
 
@@ -50,23 +57,41 @@ pub async fn admin_login_handler(
     path = "/logout",
     responses(
         (status = 200, description = "Admin logout successful", body = MessageResponse),
+        (status = 401, description = "Unauthorized - authentication required", body = ErrorResponse),
+        (status = 500, description = "Internal server error", body = ErrorResponse)
     ),
     summary = "Admin logout",
-    description = "Logs out the current admin user",
+    description = "Logs out the current admin user and invalidates their session",
     tag = ADMIN_TAG,
     security(
         ("jwt_token" = [])
     )
 )]
-pub async fn admin_logout_handler() -> impl IntoResponse {
-    // Since JWT is stateless, this just returns a success message
-    // In a real implementation, you might want to blacklist the token
-    (
+pub async fn admin_logout_handler(
+    State(db): State<DatabaseConnection>,
+    request: axum::extract::Request,
+) -> Result<impl IntoResponse, AppError> {
+    // Extract token from Authorization header
+    let token = crate::control::services::token_service::TokenService::extract_token_from_header(&request)?;
+    
+    // Validate token and extract claims to get session_id
+    let claims = crate::control::services::token_service::TokenService::validate_token_claims(&token)?;
+    
+    // Parse session ID
+    let session_id = uuid::Uuid::parse_str(&claims.session_id).map_err(|_| AppError {
+        message: "Invalid session ID in token".to_string(),
+        status_code: StatusCode::UNAUTHORIZED,
+    })?;
+    
+    // Invalidate the session
+    crate::control::services::session_service::SessionService::invalidate_session(&db, session_id).await?;
+    
+    Ok((
         StatusCode::OK,
         Json(MessageResponse {
             message: "Admin logged out successfully".to_string(),
         }),
-    )
+    ))
 }
 
 /// Get audit logs endpoint
@@ -89,7 +114,7 @@ pub async fn admin_logout_handler() -> impl IntoResponse {
 )]
 pub async fn get_audit_logs_handler(
     State(db): State<DatabaseConnection>,
-    Extension(admin_user): Extension<crate::bridge::middleware::admin::AdminUser>,
+    Extension(admin_user): Extension<AdminUser>,
     Query(params): Query<LogsQueryParams>,
 ) -> Result<impl IntoResponse, AppError> {
     check_single_permission!(&admin_user.email, &AdminRead, &db);
@@ -117,7 +142,7 @@ pub async fn get_audit_logs_handler(
 )]
 pub async fn get_users_handler(
     State(db): State<DatabaseConnection>,
-    Extension(admin_user): Extension<crate::bridge::middleware::admin::AdminUser>,
+    Extension(admin_user): Extension<AdminUser>,
     Query(params): Query<UsersQueryParams>,
 ) -> Result<impl IntoResponse, AppError> {
     check_single_permission!(&admin_user.email, &AdminRead, &db);
@@ -148,7 +173,7 @@ pub async fn get_users_handler(
 )]
 pub async fn get_user_handler(
     State(db): State<DatabaseConnection>,
-    Extension(admin_user): Extension<crate::bridge::middleware::admin::AdminUser>,
+    Extension(admin_user): Extension<AdminUser>,
     Path(user_id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     check_single_permission!(&admin_user.email, &AdminRead, &db);
@@ -183,7 +208,7 @@ pub async fn get_user_handler(
 )]
 pub async fn create_user_handler(
     State(db): State<DatabaseConnection>,
-    Extension(admin_user): Extension<crate::bridge::middleware::admin::AdminUser>,
+    Extension(admin_user): Extension<AdminUser>,
     Json(payload): Json<CreateUserRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     check_single_permission!(&admin_user.email, &AdminWrite, &db);
@@ -217,7 +242,7 @@ pub async fn create_user_handler(
 )]
 pub async fn update_user_handler(
     State(db): State<DatabaseConnection>,
-    Extension(admin_user): Extension<crate::bridge::middleware::admin::AdminUser>,
+    Extension(admin_user): Extension<AdminUser>,
     Path(user_id): Path<String>,
     Json(payload): Json<UpdateUserRequest>,
 ) -> Result<impl IntoResponse, AppError> {
@@ -255,7 +280,7 @@ pub async fn update_user_handler(
 )]
 pub async fn delete_user_handler(
     State(db): State<DatabaseConnection>,
-    Extension(admin_user): Extension<crate::bridge::middleware::admin::AdminUser>,
+    Extension(admin_user): Extension<AdminUser>,
     Path(user_id): Path<String>,
     request: axum::extract::Request,
 ) -> Result<impl IntoResponse, AppError> {
@@ -299,7 +324,7 @@ pub async fn delete_user_handler(
 )]
 pub async fn get_database_tables_handler(
     State(db): State<DatabaseConnection>,
-    Extension(admin_user): Extension<crate::bridge::middleware::admin::AdminUser>,
+    Extension(admin_user): Extension<AdminUser>,
 ) -> Result<impl IntoResponse, AppError> {
     check_single_permission!(&admin_user.email, &AdminRead, &db);
     let response = AdminService::get_database_tables(&db).await?;
@@ -329,7 +354,7 @@ pub async fn get_database_tables_handler(
 )]
 pub async fn get_table_records_handler(
     State(db): State<DatabaseConnection>,
-    Extension(admin_user): Extension<crate::bridge::middleware::admin::AdminUser>,
+    Extension(admin_user): Extension<AdminUser>,
     Path(table_name): Path<String>,
     Query(params): Query<TableRecordsQueryParams>,
 ) -> Result<impl IntoResponse, AppError> {
@@ -356,9 +381,132 @@ pub async fn get_table_records_handler(
 )]
 pub async fn health_handler(
     State(db): State<DatabaseConnection>,
-    Extension(admin_user): Extension<crate::bridge::middleware::admin::AdminUser>,
+    Extension(admin_user): Extension<AdminUser>,
 ) -> Result<impl IntoResponse, AppError> {
     check_single_permission!(&admin_user.email, &AdminRead, &db);
     let response = AdminService::get_health_status(&db).await;
+    Ok((StatusCode::OK, Json(response)))
+}
+
+/// Get user sessions endpoint
+#[utoipa::path(
+    get,
+    path = "/users/{user_id}/sessions",
+    params(
+        ("user_id" = String, Path, description = "User ID")
+    ),
+    responses(
+        (status = 200, description = "User sessions retrieved successfully", body = Vec<SessionResponse>),
+        (status = 401, description = "Unauthorized", body = ErrorResponse),
+        (status = 403, description = "Forbidden - admin privileges required", body = ErrorResponse),
+        (status = 404, description = "User not found", body = ErrorResponse),
+        (status = 500, description = "Internal server error", body = ErrorResponse)
+    ),
+    summary = "Get user sessions",
+    description = "Retrieves all active sessions for a specific user",
+    tag = ADMIN_TAG,
+    security(
+        ("jwt_token" = [])
+    )
+)]
+pub async fn get_user_sessions_handler(
+    State(db): State<DatabaseConnection>,
+    Path(user_id): Path<String>,
+    Extension(admin_user): Extension<AdminUser>,
+) -> Result<impl IntoResponse, AppError> {
+    check_single_permission!(&admin_user.email, &AdminRead, &db);
+
+    let user_uuid = Uuid::parse_str(&user_id).map_err(|_| AppError {
+        message: "Invalid user ID format".to_string(),
+        status_code: StatusCode::BAD_REQUEST,
+    })?;
+
+    let sessions = AdminService::get_user_sessions(&db, user_uuid).await?;
+    Ok((StatusCode::OK, Json(sessions)))
+}
+
+/// Invalidate specific session endpoint
+#[utoipa::path(
+    delete,
+    path = "/sessions/{session_id}",
+    params(
+        ("session_id" = String, Path, description = "Session ID")
+    ),
+    responses(
+        (status = 200, description = "Session invalidated successfully", body = SessionInvalidationResponse),
+        (status = 401, description = "Unauthorized", body = ErrorResponse),
+        (status = 403, description = "Forbidden - admin privileges required", body = ErrorResponse),
+        (status = 404, description = "Session not found", body = ErrorResponse),
+        (status = 500, description = "Internal server error", body = ErrorResponse)
+    ),
+    summary = "Invalidate session",
+    description = "Invalidates a specific user session (remote logout)",
+    tag = ADMIN_TAG,
+    security(
+        ("jwt_token" = [])
+    )
+)]
+pub async fn invalidate_session_handler(
+    State(db): State<DatabaseConnection>,
+    Path(session_id): Path<String>,
+    Extension(admin_user): Extension<AdminUser>,
+) -> Result<impl IntoResponse, AppError> {
+    check_single_permission!(&admin_user.email, &AdminDelete, &db);
+
+    let session_uuid = Uuid::parse_str(&session_id).map_err(|_| AppError {
+        message: "Invalid session ID format".to_string(),
+        status_code: StatusCode::BAD_REQUEST,
+    })?;
+
+    AdminService::invalidate_user_session(&db, session_uuid).await?;
+
+    let response = SessionInvalidationResponse {
+        message: "Session invalidated successfully".to_string(),
+        invalidated_count: Some(1),
+    };
+
+    Ok((StatusCode::OK, Json(response)))
+}
+
+/// Invalidate all user sessions endpoint
+#[utoipa::path(
+    delete,
+    path = "/users/{user_id}/sessions",
+    params(
+        ("user_id" = String, Path, description = "User ID")
+    ),
+    responses(
+        (status = 200, description = "All user sessions invalidated successfully", body = SessionInvalidationResponse),
+        (status = 401, description = "Unauthorized", body = ErrorResponse),
+        (status = 403, description = "Forbidden - admin privileges required", body = ErrorResponse),
+        (status = 404, description = "User not found", body = ErrorResponse),
+        (status = 500, description = "Internal server error", body = ErrorResponse)
+    ),
+    summary = "Invalidate all user sessions",
+    description = "Invalidates all sessions for a specific user (force logout from all devices)",
+    tag = ADMIN_TAG,
+    security(
+        ("jwt_token" = [])
+    )
+)]
+pub async fn invalidate_all_user_sessions_handler(
+    State(db): State<DatabaseConnection>,
+    Path(user_id): Path<String>,
+    Extension(admin_user): Extension<AdminUser>,
+) -> Result<impl IntoResponse, AppError> {
+    check_single_permission!(&admin_user.email, &AdminDelete, &db);
+
+    let user_uuid = Uuid::parse_str(&user_id).map_err(|_| AppError {
+        message: "Invalid user ID format".to_string(),
+        status_code: StatusCode::BAD_REQUEST,
+    })?;
+
+    let count = AdminService::invalidate_all_user_sessions(&db, user_uuid).await?;
+
+    let response = SessionInvalidationResponse {
+        message: format!("All user sessions invalidated successfully"),
+        invalidated_count: Some(count),
+    };
+
     Ok((StatusCode::OK, Json(response)))
 }

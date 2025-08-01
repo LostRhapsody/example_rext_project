@@ -9,7 +9,7 @@ This is a simple demo project that showcases all the features Rext *will* incorp
 
 This spins up a Rust server listening on port 3000 and a Vite server running on port 5173.
 
-The Rust server has a CORS bypass that allows these two ports to communicate via HTTP on `localhost`. In a real Rext app, we'll use `letsencrypt` self-signed certificates and domains on local host so we can use HTTPS and avoid CORS issues.
+The Rust server has a CORS bypass that allows these two ports to communicate via HTTP on `localhost`. In a real Rext app, we'll use self-signed certificates and domains on local host so we can use HTTPS and avoid CORS issues.
 
 ## Features
 
@@ -26,37 +26,40 @@ The Rust server has a CORS bypass that allows these two ports to communicate via
 - **Task Scheduler** - A task scheduler built on top of apalis
 - **Job Queue** - A job queue built on top of apalis
 - **Layered Architecture** - A clean separation of concerns between frontend and backend, with clear boundaries between each layer.
+- **Admin Panel** - A dashboard where you can view request logs, manage users, manager user sessions, manage user roles, view database tables and records, monitor system health, and view requests and logs in real time view a real time web socket connection.
+- **Logging** - Middleware logs all HTTP requests in an audit table.
+- **Users and Roles** - Manage users and their permissions via a simple and extensible roles system.
+- **System Metrics** - View system health, uptime, performance, errors, activity, and system resources.
+- **User Sessions** - View all active user sessions and invalidate sessions remotely.
 
 ## How to use
 
 - Navigate to `http://localhost:5173/` in your browser to view the Demo Vue app.
 - Visit `/register` to create an account.
-    - Email needs to be in email format, but it doesn't need to be real. Password is hashed with `argon2` on the backend.
-    - If you get network errors, be sure you're on `localhost`, not `127.0.0.1`, same thing in concept but the CORS bypass is only set up for `localhost`.
+  - Email needs to be in email format, but it doesn't need to be real. Password is hashed with `argon2` on the backend.
+  - If you get network errors, be sure you're on `localhost`, not `127.0.0.1`, same thing in concept but the CORS bypass is only set up for `localhost`.
 - After registering, you can login at `/login`.
-    - This passes you a token that is stored in your browser.
+  - This passes you a token that is stored in your browser.
 - This should route you to `/profile`.
-    - This is a protected route, you can only access it when logged in. Should redirect to `/login` if logged out.
+  - This is a protected route, you can only access it when logged in. Should redirect to `/login` if logged out.
 - Logout using the "Logout" button in the navigation bar, which removes the token from your browser and updates the UI in real-time.
 - Visit the API docs at localhost:3000/scalar
+- Login to the admin panel at `/admin/login`.
+  - From here you can manage users, view logs, view database records, and view system health metrics.
 
 ### Admin Access
 
 **Default Admin User:**
 - **Email**: `admin@localhost.com`
-- **Password**: `admin`
+- **Password**: `admin123`
 - **Note**: This user is automatically created when the application starts for the first time.
 
 **Admin API Endpoints:**
 - Admin login: `POST /api/v1/admin/login`
 - View API documentation: `http://localhost:3000/scalar` (look for "Admin" tag)
-- **Important**: Change the default admin password immediately after first login!
 
 **Admin Panel Access:**
 - **Frontend URL**: `http://localhost:5173/admin/login`
-- **Default Credentials**: `admin@localhost.com` / `admin`
-- **Features**: User management, request logs, database browser, system health
-- **Documentation**: See `ADMIN_PANEL.md` for detailed usage instructions
 
 ## Next Steps
 *A quick outline of the upcoming goals for this project*
@@ -65,105 +68,6 @@ The Rust server has a CORS bypass that allows these two ports to communicate via
 - prepare deployment process
 - Asset optimization - mostly build step, rust just needs to serve the proper headers and files
 - Email Server - https://crates.io/crates/lettre
-- Admin panel
-- Tracing
-- logging
-
-## 🛠️ Admin Panel Implementation Plan
-
-### Overview
-This project implements a comprehensive admin panel with request logging, user management, and database inspection capabilities. The implementation follows the existing layered architecture patterns and provides a Django admin-like experience.
-
-### Progress Summary
-
-**✅ Completed Features:**
-- Request logging middleware and audit_logs table
-- Admin user roles and authentication system
-- Complete admin API endpoints (auth, users, logs, database, health)
-- Full admin frontend with AG Grid integration
-- Admin user seeding with environment configuration
-- Real-time system health monitoring
-
-**🔧 Current Status:** Phase 4 - Advanced Features (In Progress)
-
-### Phase 4: Advanced Features & Analytics
-
-#### 4.1 Enhanced User Analytics
-- [x] **User Activity Tracking**
-  - Add `last_login` timestamp field to users table
-  - Update when a user logs in
-  - Calculate active users (logged in within last 7 days)
-  - New user signup analytics (last 24 hours, 7 days, 30 days)
-
-#### 4.2 System Performance Monitoring
-- [x] **Real-time Request Monitoring**
-  - WebSocket connection for live request streaming
-  - Request rate limiting and throttling detection
-  - Error rate monitoring and alerting
-  - Response time percentiles (p50, p95, p99)
-
-- [x] **Advanced Performance Metrics**
-  - Database query performance analysis
-  - Memory usage tracking
-  - CPU utilization monitoring
-  - Disk I/O statistics
-
-#### 4.3 Infrastructure Health Dashboard
-- [x] **System Information Display**
-  - Environment detection (dev/staging/prod)
-  - Database type and connection status
-  - Server host, port, and protocol information
-  - System uptime and start time
-
-- [x] **Resource Monitoring**
-  - Disk usage (total, used, available)
-  - Network traffic (bytes sent/received)
-  - Memory consumption patterns
-  - Database connection pool status
-
-#### 4.4 Data Export & Reporting
-- [x] **Export Functionality**
-  - CSV export for user data and audit logs
-  - JSON API endpoints for external integrations
-  - Scheduled report generation
-  - Custom date range filtering
-
-#### 4.5 Role-Based Access Control (RBAC)
-- [x] **Enhanced Permission System**
-  - Create roles table with permissions ✅
-  - Assign multiple roles to users ✅
-  - Granular permission controls (read/write/admin)
-  - Permission-based UI rendering
-
-#### 4.6 Advanced Admin Features
-- [ ] **Admin User Management**
-  - Admin user creation/deletion interface
-  - Admin role assignment and management
-  - Admin activity audit trail
-  - Admin session management
-
-### Break Time!
-- Use a better font on the frontend UI. Giest or something.
-- Clean up dead code attributes
-
-**Environment Variables for Phase 4:**
-```env
-# Analytics Configuration
-ENABLE_USER_ANALYTICS=true
-ANALYTICS_RETENTION_DAYS=90
-
-# Performance Monitoring
-ENABLE_PERFORMANCE_MONITORING=true
-METRICS_COLLECTION_INTERVAL=60
-
-# Export Settings
-ENABLE_DATA_EXPORT=true
-MAX_EXPORT_RECORDS=10000
-
-# RBAC Configuration
-ENABLE_RBAC=true
-DEFAULT_ADMIN_ROLE=super_admin
-```
 
 ## Architecture
 

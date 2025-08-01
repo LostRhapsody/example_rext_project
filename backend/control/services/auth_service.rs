@@ -2,8 +2,9 @@ use jsonwebtoken::{EncodingKey, Header, encode};
 use sea_orm::*;
 use std::env;
 use std::time::{SystemTime, UNIX_EPOCH};
+use uuid::Uuid;
 
-use crate::control::services::user_service::UserService;
+use crate::control::services::{session_service::SessionService, user_service::UserService};
 use crate::domain::{auth::*, user::*, validation::*};
 use crate::infrastructure::app_error::AppError;
 use crate::infrastructure::jwt_claims::Claims;
@@ -13,10 +14,12 @@ use axum::http::StatusCode;
 pub struct AuthService;
 
 impl AuthService {
-    /// Authenticates a user and returns a JWT token
+    /// Authenticates a user and returns a JWT token with session tracking
     pub async fn authenticate_user(
         db: &DatabaseConnection,
         login: UserLogin,
+        user_agent: Option<String>,
+        ip_address: Option<String>,
     ) -> Result<AuthToken, AppError> {
         // Validate input
         validate_login_input(&login.email, &login.password)?;
@@ -45,14 +48,27 @@ impl AuthService {
             let _ = UserService::update_last_login(&db_clone, user_id).await;
         });
 
-        // Generate JWT token
-        let token = Self::generate_jwt_token(&user.id)?;
+        // Generate session ID
+        let session_id = Uuid::new_v4();
+
+        // Generate JWT token with session ID
+        let token = Self::generate_jwt_token(&user.id, &session_id)?;
+
+        // Create session record (after successful token generation)
+        SessionService::create_session(
+            db,
+            user.id,
+            user_agent,
+            ip_address,
+            &session_id.to_string(),
+        )
+        .await?;
 
         Ok(token)
     }
 
-    /// Generates a JWT token for a user
-    fn generate_jwt_token(user_id: &uuid::Uuid) -> Result<AuthToken, AppError> {
+    /// Generates a JWT token for a user with session tracking
+    fn generate_jwt_token(user_id: &uuid::Uuid, session_id: &Uuid) -> Result<AuthToken, AppError> {
         let jwt_secret = env::var("JWT_SECRET").unwrap_or_else(|_| "default-secret".to_string());
         let encoding_key = EncodingKey::from_secret(jwt_secret.as_ref());
 
@@ -65,6 +81,7 @@ impl AuthService {
         let claims = Claims {
             sub: user_id.to_string(),
             exp: expiration as usize,
+            session_id: session_id.to_string(),
         };
 
         let token_string =

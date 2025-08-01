@@ -21,6 +21,7 @@
     "client": "openapi-ts"
   },
   "dependencies": {
+    "@fontsource/geist": "^5.2.6",
     "ag-grid-community": "^34.0.2",
     "ag-grid-vue3": "^34.0.2",
     "pinia": "3.0.3",

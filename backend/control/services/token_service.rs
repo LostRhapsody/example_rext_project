@@ -1,18 +1,23 @@
 //! Token service for extracting, decoding, and validating JWT tokens
 use axum::http::{StatusCode, header};
 use jsonwebtoken::{DecodingKey, Validation, decode};
+use sea_orm::DatabaseConnection;
 use std::env;
 use std::time::{SystemTime, UNIX_EPOCH};
 use uuid::Uuid;
 
-use crate::infrastructure::{app_error::AppError, jwt_claims::Claims};
+use crate::{
+    control::services::session_service::SessionService,
+    infrastructure::{app_error::AppError, jwt_claims::Claims},
+};
 
 /// Service for JWT token operations
 pub struct TokenService;
 
 impl TokenService {
     /// Extracts and validates a JWT token from the Authorization header
-    /// Returns the user ID if the token is valid
+    /// Returns the user ID if the token is valid (JWT validation only)
+    #[allow(dead_code)]
     pub fn extract_and_validate_token(
         request: &axum::http::Request<axum::body::Body>,
     ) -> Result<Uuid, AppError> {
@@ -23,6 +28,33 @@ impl TokenService {
         let user_id = Self::validate_token(&token)?;
 
         Ok(user_id)
+    }
+
+    /// Extracts and validates a JWT token with session validation
+    /// Returns the user ID and session ID if both token and session are valid
+    pub async fn extract_and_validate_token_with_session(
+        db: &DatabaseConnection,
+        token: &str,
+    ) -> Result<(Uuid, Uuid), AppError> {
+        // Validate JWT token and extract claims
+        let claims = Self::validate_token_claims(&token)?;
+
+        // Parse user ID
+        let user_id = Uuid::parse_str(&claims.sub).map_err(|_| AppError {
+            message: "Invalid user ID in token".to_string(),
+            status_code: StatusCode::UNAUTHORIZED,
+        })?;
+
+        // Parse session ID
+        let session_id = Uuid::parse_str(&claims.session_id).map_err(|_| AppError {
+            message: "Invalid session ID in token".to_string(),
+            status_code: StatusCode::UNAUTHORIZED,
+        })?;
+
+        // Validate session exists and is active
+        SessionService::validate_session(db, &claims.session_id).await?;
+
+        Ok((user_id, session_id))
     }
 
     /// Extracts JWT token from Authorization header
@@ -136,6 +168,7 @@ mod tests {
         let claims = Claims {
             sub: user_id.to_string(),
             exp: expiration as usize,
+            session_id: "".to_string(),
         };
 
         encode(&Header::default(), &claims, &encoding_key).unwrap()

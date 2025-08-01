@@ -3,6 +3,7 @@ pub mod auth_service;
 pub mod database_service;
 pub mod permission_service;
 pub mod server_config;
+pub mod session_service;
 pub mod startup;
 pub mod system_monitor;
 pub mod token_service;
