@@ -36,7 +36,7 @@ export default defineConfig({
       '@/views': fileURLToPath(new URL('./src/appearance/views', import.meta.url)),
       '@/pages': fileURLToPath(new URL('./src/appearance/pages', import.meta.url)),
       '@/layouts': fileURLToPath(new URL('./src/appearance/layouts', import.meta.url)),
-      '@/styles': fileURLToPath(new URL('./src/appearance/styles', import.meta.url)),
+      '@/styles': fileURLToPath(new URL('./src/styles', import.meta.url)),
       '@/api': fileURLToPath(new URL('./src/bridge/api', import.meta.url)),
       '@/stores': fileURLToPath(new URL('./src/bridge/stores', import.meta.url)),
       '@/types': fileURLToPath(new URL('./src/bridge/types', import.meta.url)),
