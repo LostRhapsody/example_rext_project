@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { client } from '@/bridge/client/client.gen'
 import HomeView from '@/views/HomeView.vue'
 import LoginView from '@/views/LoginView.vue'
 import RegisterView from '@/views/RegisterView.vue'
@@ -109,5 +110,21 @@ router.beforeEach((to, from, next) => {
 
   next()
 })
+
+/**
+ * Interceptor to check for invalid sessions
+ * @param response - The response from the API
+ * @returns The response from the API
+ */
+async function invalidSessionCheckInterceptor(response: any) {
+  if (response.status === 401) {
+    localStorage.removeItem('token')
+    localStorage.removeItem('adminToken')
+    router.push({ name: 'login' })
+  }
+  return response;
+}
+
+client.interceptors.response.use(invalidSessionCheckInterceptor)
 
 export default router
