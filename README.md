@@ -61,10 +61,51 @@ The Rust server has a CORS bypass that allows these two ports to communicate via
 **Admin Panel Access:**
 - **Frontend URL**: `http://localhost:5173/admin/login`
 
+## 🚀 Deployment
+
+The project includes comprehensive deployment options for both development and production environments.
+
+### Quick Deployment Options
+
+#### Docker (Recommended)
+```bash
+# Quick production deployment
+cp example.env .env  # Configure your environment
+docker-compose up -d
+```
+
+#### Bare Metal
+```bash
+# Automated setup and build
+./scripts/dev-setup.sh      # Development setup
+./scripts/build-production.sh # Production build
+```
+
+### Deployment Methods
+
+- **🐳 Docker Deployment**: Single container with multi-stage build
+- **🖥️ Bare Metal Deployment**: Native binary with frontend assets
+- **📦 Build Automation**: Automated frontend building via `build.rs`
+- **🛠️ Development Scripts**: Convenient setup and development workflows
+
+See **[DEPLOYMENT.md](./DEPLOYMENT.md)** for comprehensive deployment instructions.
+
+### Production Features
+
+- ✅ Multi-stage Docker build optimized for production
+- ✅ Automated frontend asset building and bundling
+- ✅ Single binary deployment with embedded static serving
+- ✅ Environment-based configuration
+- ✅ Database migrations included
+- ✅ Health checks and monitoring ready
+- ✅ Security-hardened defaults
+
 ## Next Steps
 *A quick outline of the upcoming goals for this project*
-- prepare deployment process
-  - We just need an example of how a fully-finished Rext app could be deployed. We'll need to build a docker compose file and possibly a build.rs script to prepare a project to be deployed.
+- ✅ ~~prepare deployment process~~ **COMPLETED**
+  - ✅ Docker compose file with multi-stage build
+  - ✅ Build.rs script for automated frontend building
+  - ✅ Bare metal deployment scripts and documentation
 - Email Server 
   - https://crates.io/crates/lettre
   - This crate provides email building, transport systems (SMTP), security features, Unicode and internationalization support.
