@@ -63,8 +63,6 @@ The Rust server has a CORS bypass that allows these two ports to communicate via
 
 ## Next Steps
 *A quick outline of the upcoming goals for this project*
-- Establish sub-domains for local dev
-  - This will be tested in this project, but it cannot be automated 100% by Rext. We can generate templates and self-signed certs, then provide a guide for the remaining steps. That's it.
 - prepare deployment process
   - We just need an example of how a fully-finished Rext app could be deployed. We'll need to build a docker compose file and possibly a build.rs script to prepare a project to be deployed.
 - Email Server 
