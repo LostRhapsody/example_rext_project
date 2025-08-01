@@ -1374,20 +1374,6 @@ onMounted(() => {
   background: #c82333;
 }
 
-.refresh-btn {
-  background: #6c757d;
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.refresh-btn:hover:not(:disabled) {
-  background: #545b62;
-}
-
 .refresh-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
