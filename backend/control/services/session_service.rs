@@ -100,8 +100,26 @@ impl SessionService {
         db: &DatabaseConnection,
         session_id: Uuid,
     ) -> Result<(), AppError> {
+        // Find the session by session_token (not by id) since the session_id from JWT
+        // is stored in the session_token field, while the id field is a different UUID
+        let session = DatabaseService::find_one_with_tracking(
+            db,
+            "user_sessions",
+            UserSessions::find().filter(user_sessions::Column::SessionToken.eq(session_id.to_string())),
+        )
+        .await
+        .map_err(|e| AppError {
+            message: format!("Database error: {}", e),
+            status_code: StatusCode::INTERNAL_SERVER_ERROR,
+        })?
+        .ok_or(AppError {
+            message: "Session not found".to_string(),
+            status_code: StatusCode::UNAUTHORIZED,
+        })?;
+
+        // Update the found session's last activity
         let session_active_model = user_sessions::ActiveModel {
-            id: Set(session_id),
+            id: Set(session.id),
             last_activity: Set(Some(Utc::now().fixed_offset())),
             ..Default::default()
         };
@@ -144,8 +162,26 @@ impl SessionService {
         db: &DatabaseConnection,
         session_id: Uuid,
     ) -> Result<(), AppError> {
+        // Find the session by session_token (not by id) since the session_id from JWT
+        // is stored in the session_token field, while the id field is a different UUID
+        let session = DatabaseService::find_one_with_tracking(
+            db,
+            "user_sessions",
+            UserSessions::find().filter(user_sessions::Column::SessionToken.eq(session_id.to_string())),
+        )
+        .await
+        .map_err(|e| AppError {
+            message: format!("Database error: {}", e),
+            status_code: StatusCode::INTERNAL_SERVER_ERROR,
+        })?
+        .ok_or(AppError {
+            message: "Session not found".to_string(),
+            status_code: StatusCode::UNAUTHORIZED,
+        })?;
+
+        // Update the found session to set is_active = false
         let session_active_model = user_sessions::ActiveModel {
-            id: Set(session_id),
+            id: Set(session.id),
             is_active: Set(false),
             ..Default::default()
         };

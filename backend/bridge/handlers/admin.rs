@@ -57,23 +57,41 @@ pub async fn admin_login_handler(
     path = "/logout",
     responses(
         (status = 200, description = "Admin logout successful", body = MessageResponse),
+        (status = 401, description = "Unauthorized - authentication required", body = ErrorResponse),
+        (status = 500, description = "Internal server error", body = ErrorResponse)
     ),
     summary = "Admin logout",
-    description = "Logs out the current admin user",
+    description = "Logs out the current admin user and invalidates their session",
     tag = ADMIN_TAG,
     security(
         ("jwt_token" = [])
     )
 )]
-pub async fn admin_logout_handler() -> impl IntoResponse {
-    // Since JWT is stateless, this just returns a success message
-    // In a real implementation, you might want to blacklist the token
-    (
+pub async fn admin_logout_handler(
+    State(db): State<DatabaseConnection>,
+    request: axum::extract::Request,
+) -> Result<impl IntoResponse, AppError> {
+    // Extract token from Authorization header
+    let token = crate::control::services::token_service::TokenService::extract_token_from_header(&request)?;
+    
+    // Validate token and extract claims to get session_id
+    let claims = crate::control::services::token_service::TokenService::validate_token_claims(&token)?;
+    
+    // Parse session ID
+    let session_id = uuid::Uuid::parse_str(&claims.session_id).map_err(|_| AppError {
+        message: "Invalid session ID in token".to_string(),
+        status_code: StatusCode::UNAUTHORIZED,
+    })?;
+    
+    // Invalidate the session
+    crate::control::services::session_service::SessionService::invalidate_session(&db, session_id).await?;
+    
+    Ok((
         StatusCode::OK,
         Json(MessageResponse {
             message: "Admin logged out successfully".to_string(),
         }),
-    )
+    ))
 }
 
 /// Get audit logs endpoint

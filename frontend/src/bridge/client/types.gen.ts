@@ -455,6 +455,19 @@ export type AdminLogoutHandlerData = {
     url: '/api/v1/admin/logout';
 };
 
+export type AdminLogoutHandlerErrors = {
+    /**
+     * Unauthorized - authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * Internal server error
+     */
+    500: ErrorResponse;
+};
+
+export type AdminLogoutHandlerError = AdminLogoutHandlerErrors[keyof AdminLogoutHandlerErrors];
+
 export type AdminLogoutHandlerResponses = {
     /**
      * Admin logout successful
@@ -1139,6 +1152,19 @@ export type LogoutHandlerData = {
     query?: never;
     url: '/api/v1/auth/logout';
 };
+
+export type LogoutHandlerErrors = {
+    /**
+     * Unauthorized - authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * Internal server error
+     */
+    500: ErrorResponse;
+};
+
+export type LogoutHandlerError = LogoutHandlerErrors[keyof LogoutHandlerErrors];
 
 export type LogoutHandlerResponses = {
     /**

@@ -143,8 +143,6 @@ This project implements a comprehensive admin panel with request logging, user m
   - Admin session management
 
 #### 4.6 part 2 - Improve Session Management
-- When a user's session is no longer valid, we need to set up vue-router-level redirects. You can access all admin routes at any time... it just doesn't load any records.
-- It seems to work when you log out manually. I guess it's because the token in your browser is no longer there. But in a second session in a new browser, token is still there, it's just no longer valid.
 - After a user logs out manually, the session is still listed as active. This is not the case, they cannot access anything until they log in again, meaning that session does not exist.
 - The refresh button is grey for some reason
 - The last active update doesn't seem to work. It's supposed to be a "fire and forget" process that get's run but doesn't block the thread, because we don't need the result. But it might be broken.
