@@ -8,11 +8,28 @@ fn main() {
     println!("cargo:rerun-if-changed=frontend/package.json");
     println!("cargo:rerun-if-changed=frontend/vite.config.ts");
     println!("cargo:rerun-if-changed=frontend/tsconfig.json");
+    println!("cargo:rerun-if-changed=.env");
+
+    // Load .env file if it exists
+    if let Ok(contents) = fs::read_to_string(".env") {
+        for line in contents.lines() {
+            let line = line.trim();
+            if !line.is_empty() && !line.starts_with('#') {
+                if let Some((key, value)) = line.split_once('=') {
+                    let key = key.trim();
+                    let value = value.trim();
+                    unsafe {
+                        env::set_var(key, value);
+                    }
+                }
+            }
+        }
+    }
 
     // Only build frontend in production mode or when explicitly requested
     let environment = env::var("ENVIRONMENT").unwrap_or_else(|_| "development".to_string());
     let force_build = env::var("BUILD_FRONTEND").unwrap_or_else(|_| "false".to_string());
-    
+
     if environment == "production" || force_build == "true" {
         println!("cargo:warning=Building frontend assets for production...");
         build_frontend();
@@ -25,7 +42,7 @@ fn main() {
 
 fn build_frontend() {
     let frontend_dir = Path::new("frontend");
-    
+
     if !frontend_dir.exists() {
         panic!("Frontend directory not found at ./frontend");
     }
@@ -68,7 +85,7 @@ fn build_frontend() {
 
     if frontend_dist.exists() {
         println!("cargo:warning=Copying frontend assets to ./dist");
-        
+
         // Remove existing dist directory if it exists
         if target_dist.exists() {
             fs::remove_dir_all(target_dist).expect("Failed to remove existing dist directory");
@@ -76,7 +93,7 @@ fn build_frontend() {
 
         // Copy the built frontend
         copy_dir_all(&frontend_dist, target_dist).expect("Failed to copy frontend assets");
-        
+
         println!("cargo:warning=Frontend build completed successfully!");
     } else {
         panic!("Frontend build completed but dist directory not found");
@@ -93,17 +110,17 @@ fn is_command_available(command: &str) -> bool {
 
 fn copy_dir_all(src: &Path, dst: &Path) -> std::io::Result<()> {
     fs::create_dir_all(dst)?;
-    
+
     for entry in fs::read_dir(src)? {
         let entry = entry?;
         let ty = entry.file_type()?;
-        
+
         if ty.is_dir() {
             copy_dir_all(&entry.path(), &dst.join(entry.file_name()))?;
         } else {
             fs::copy(entry.path(), dst.join(entry.file_name()))?;
         }
     }
-    
+
     Ok(())
 }

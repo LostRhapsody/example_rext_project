@@ -1,8 +1,6 @@
 # Docker Compose configuration for Rext Demo Project
 # Provides both development and production deployment options
 
-version: '3.8'
-
 services:
   # Production deployment - single container with frontend and backend
   rext-app:

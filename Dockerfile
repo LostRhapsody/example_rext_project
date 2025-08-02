@@ -23,14 +23,15 @@ RUN npm run build
 # ==============================================================================
 # Rust Build Stage
 # ==============================================================================
-FROM rust:1.82-alpine AS rust-builder
+FROM rust:1.88-alpine AS rust-builder
 
 # Install build dependencies
 RUN apk add --no-cache \
     musl-dev \
     pkgconfig \
     openssl-dev \
-    sqlite-dev
+    sqlite-dev \
+    curl
 
 WORKDIR /app
 
@@ -52,6 +53,8 @@ RUN rm -rf backend/src migration/src
 
 # Copy actual source code
 COPY backend/ ./backend/
+RUN ls -l ./backend
+
 COPY migration/ ./migration/
 
 # Copy frontend dist files from frontend builder
@@ -120,14 +123,15 @@ CMD ["sh", "-c", "\
 # ==============================================================================
 # Development Stage (for development with Docker)
 # ==============================================================================
-FROM rust:1.82-alpine AS development
+FROM rust:1.88-alpine AS development
 
 # Install development dependencies
 RUN apk add --no-cache \
     musl-dev \
     pkgconfig \
     openssl-dev \
-    sqlite-dev
+    sqlite-dev \
+    curl
 
 # Install cargo-watch for hot reload
 RUN cargo install cargo-watch

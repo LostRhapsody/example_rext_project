@@ -31,34 +31,34 @@ print_error() {
 # Check prerequisites
 check_prerequisites() {
     print_status "Checking prerequisites..."
-    
+
     if ! command -v node &> /dev/null; then
         print_error "Node.js is not installed. Please install Node.js 18+ to continue."
         exit 1
     fi
-    
+
     if ! command -v npm &> /dev/null; then
         print_error "npm is not installed. Please install npm to continue."
         exit 1
     fi
-    
+
     if ! command -v cargo &> /dev/null; then
         print_error "Rust/Cargo is not installed. Please install Rust to continue."
         exit 1
     fi
-    
+
     NODE_VERSION=$(node --version | cut -d'v' -f2 | cut -d'.' -f1)
     if [ "$NODE_VERSION" -lt 18 ]; then
         print_warning "Node.js version $NODE_VERSION detected. Version 18+ recommended."
     fi
-    
+
     print_success "Prerequisites satisfied"
 }
 
 # Setup environment
 setup_environment() {
     print_status "Setting up environment..."
-    
+
     if [ ! -f ".env" ]; then
         if [ -f "example.env" ]; then
             cp example.env .env
@@ -76,68 +76,66 @@ setup_environment() {
 # Install backend dependencies
 setup_backend() {
     print_status "Setting up backend dependencies..."
-    
+
     # Check if cargo dependencies need installing
     print_status "Installing Rust dependencies..."
     cargo check
-    
+
     print_success "Backend dependencies installed"
 }
 
 # Install frontend dependencies
 setup_frontend() {
     print_status "Setting up frontend dependencies..."
-    
+
     cd frontend
-    
+
     if [ ! -d "node_modules" ]; then
         print_status "Installing frontend dependencies..."
         npm install
     else
         print_status "Frontend dependencies already installed"
     fi
-    
+
     cd ..
-    
+
     print_success "Frontend dependencies installed"
 }
 
 # Setup database
 setup_database() {
     print_status "Setting up database..."
-    
+
     # Check if sea-orm-cli is available
     if ! command -v sea-orm-cli &> /dev/null; then
         print_status "Installing sea-orm-cli..."
         cargo install sea-orm-cli
     fi
-    
+
     # Run migrations
     print_status "Running database migrations..."
-    cd migration
-    cargo run
-    cd ..
-    
+    sea-orm-cli migrate up
+
     print_success "Database setup completed"
 }
 
 # Install development tools
 install_dev_tools() {
     print_status "Installing development tools..."
-    
+
     # Install cargo-watch for hot reload
     if ! command -v cargo-watch &> /dev/null; then
         print_status "Installing cargo-watch for hot reload..."
         cargo install cargo-watch
     fi
-    
+
     print_success "Development tools installed"
 }
 
 # Create development scripts
 create_dev_scripts() {
     print_status "Creating development convenience scripts..."
-    
+
     # Backend dev script
     cat > "dev-backend.sh" << 'EOF'
 #!/bin/bash
@@ -146,7 +144,7 @@ export ENVIRONMENT=development
 cargo watch -x run
 EOF
     chmod +x dev-backend.sh
-    
+
     # Frontend dev script
     cat > "dev-frontend.sh" << 'EOF'
 #!/bin/bash
@@ -154,7 +152,7 @@ echo "🎨 Starting frontend in development mode..."
 cd frontend && npm run dev
 EOF
     chmod +x dev-frontend.sh
-    
+
     # Full dev script
     cat > "dev-full.sh" << 'EOF'
 #!/bin/bash
@@ -205,7 +203,7 @@ echo "Press Ctrl+C to stop all servers"
 wait $BACKEND_PID $FRONTEND_PID
 EOF
     chmod +x dev-full.sh
-    
+
     print_success "Development scripts created"
 }
 
@@ -214,28 +212,28 @@ main() {
     echo
     print_status "Starting development setup..."
     echo
-    
+
     check_prerequisites
     echo
-    
+
     setup_environment
     echo
-    
+
     setup_backend
     echo
-    
+
     setup_frontend
     echo
-    
+
     setup_database
     echo
-    
+
     install_dev_tools
     echo
-    
+
     create_dev_scripts
     echo
-    
+
     print_success "🎉 Development setup completed!"
     echo
     print_status "To start developing:"

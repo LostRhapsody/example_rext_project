@@ -39,48 +39,48 @@ print_error() {
 # Check prerequisites
 check_prerequisites() {
     print_status "Checking prerequisites..."
-    
+
     if ! command -v node &> /dev/null; then
         print_error "Node.js is not installed. Please install Node.js 18+ to continue."
         exit 1
     fi
-    
+
     if ! command -v npm &> /dev/null; then
         print_error "npm is not installed. Please install npm to continue."
         exit 1
     fi
-    
+
     if ! command -v cargo &> /dev/null; then
         print_error "Rust/Cargo is not installed. Please install Rust to continue."
         exit 1
     fi
-    
+
     print_success "All prerequisites satisfied"
 }
 
 # Build frontend
 build_frontend() {
     print_status "Building frontend..."
-    
+
     if [ ! -d "$FRONTEND_DIR" ]; then
         print_error "Frontend directory not found at ./$FRONTEND_DIR"
         exit 1
     fi
-    
+
     cd "$FRONTEND_DIR"
-    
+
     # Install dependencies if needed
     if [ ! -d "node_modules" ]; then
         print_status "Installing frontend dependencies..."
         npm install
     fi
-    
+
     # Build frontend
     print_status "Running frontend build..."
     npm run build
-    
+
     cd ..
-    
+
     # Copy dist files to root dist directory
     if [ -d "$FRONTEND_DIR/dist" ]; then
         print_status "Copying frontend assets..."
@@ -96,14 +96,14 @@ build_frontend() {
 # Build backend
 build_backend() {
     print_status "Building backend..."
-    
+
     # Set environment for production build
     export ENVIRONMENT=production
     export BUILD_FRONTEND=false  # Frontend already built
-    
+
     # Build with release optimizations
     cargo build --release
-    
+
     if [ -f "$TARGET_DIR/$BINARY_NAME" ]; then
         print_success "Backend build completed"
     else
@@ -115,11 +115,9 @@ build_backend() {
 # Run database migrations
 run_migrations() {
     print_status "Building migration binary..."
-    
-    cd migration
-    cargo build --release
-    cd ..
-    
+
+    sea-orm-cli migrate up
+
     if [ -f "target/release/migration" ]; then
         print_success "Migration binary built"
         print_warning "Run './target/release/migration' before starting the server"
@@ -132,25 +130,25 @@ run_migrations() {
 # Create deployment package
 create_package() {
     print_status "Creating deployment package..."
-    
+
     PACKAGE_DIR="rext-deployment"
-    
+
     # Clean and create package directory
     rm -rf "$PACKAGE_DIR"
     mkdir -p "$PACKAGE_DIR"
-    
+
     # Copy binary
     cp "$TARGET_DIR/$BINARY_NAME" "$PACKAGE_DIR/rext-server"
-    
+
     # Copy migration binary
     cp "target/release/migration" "$PACKAGE_DIR/migration"
-    
+
     # Copy frontend assets
     cp -r "$DIST_DIR" "$PACKAGE_DIR/"
-    
+
     # Copy example environment file
     cp "example.env" "$PACKAGE_DIR/.env.example"
-    
+
     # Create startup script
     cat > "$PACKAGE_DIR/start.sh" << 'EOF'
 #!/bin/bash
@@ -180,9 +178,9 @@ echo "Running database migrations..."
 echo "Starting server..."
 ./rext-server
 EOF
-    
+
     chmod +x "$PACKAGE_DIR/start.sh"
-    
+
     # Create README
     cat > "$PACKAGE_DIR/README.md" << 'EOF'
 # Rext Demo Project - Deployment Package
@@ -212,7 +210,7 @@ See `.env.example` for all available configuration options.
 
 The server will run on port 3000 by default and serve both the API and frontend.
 EOF
-    
+
     print_success "Deployment package created in ./$PACKAGE_DIR"
 }
 
@@ -221,22 +219,22 @@ main() {
     echo
     print_status "Starting production build process..."
     echo
-    
+
     check_prerequisites
     echo
-    
+
     build_frontend
     echo
-    
+
     build_backend
     echo
-    
+
     run_migrations
     echo
-    
+
     create_package
     echo
-    
+
     print_success "🎉 Production build completed!"
     echo
     print_status "Deployment package location: ./rext-deployment"
