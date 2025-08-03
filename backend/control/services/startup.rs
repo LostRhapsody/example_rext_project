@@ -2,6 +2,7 @@ use axum::http::StatusCode;
 use sea_orm::ActiveValue::Set;
 use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 use std::env;
+use std::process::Command;
 
 use crate::control::services::{server_config::ServerConfigService, user_service::UserService};
 use crate::domain::permissions::DefaultPermissions;
@@ -31,6 +32,12 @@ impl StartupService {
         // Create database connection
         let db = DatabaseManager::create_connection().await?;
 
+        // Run migrations
+        println!("Running database migrations...");
+        Self::run_migrations().await?;
+        println!("Migrations completed successfully");
+
+
         // Create pool for job queue
         let pool = DatabaseManager::create_pool().await?;
 
@@ -51,6 +58,48 @@ impl StartupService {
         Self::seed_admin_user(&db).await?;
 
         Ok(db)
+    }
+
+    /// Runs database migrations using sea-orm-cli
+    async fn run_migrations() -> Result<(), Box<dyn std::error::Error>> {
+        let database_url = env::var("DATABASE_URL")
+            .map_err(|_| "DATABASE_URL environment variable is required")?;
+
+        println!("Executing migrations with sea-orm-cli...");
+
+        // Check if sea-orm-cli is available
+        let cli_check = Command::new("sea-orm-cli")
+            .arg("--version")
+            .output();
+
+        if cli_check.is_err() {
+            return Err("sea-orm-cli is not installed. Please install it with: cargo install sea-orm-cli".into());
+        }
+
+        // Execute sea-orm-cli migrate up command
+        let output = Command::new("sea-orm-cli")
+            .args(&["migrate", "up"])
+            .env("DATABASE_URL", database_url)
+            .current_dir(".") // Run from project root
+            .output()
+            .map_err(|e| format!("Failed to execute sea-orm-cli: {}", e))?;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            return Err(format!(
+                "Migration failed with status {}: {}\nStdout: {}",
+                output.status, stderr, stdout
+            ).into());
+        }
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        if !stdout.trim().is_empty() {
+            println!("Migration output: {}", stdout.trim());
+        }
+
+        println!("✅ Database migrations completed successfully");
+        Ok(())
     }
 
     /// Seeds the admin user if it doesn't exist
