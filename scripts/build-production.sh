@@ -114,17 +114,9 @@ build_backend() {
 
 # Run database migrations
 run_migrations() {
-    print_status "Building migration binary..."
-
-    sea-orm-cli migrate up
-
-    if [ -f "target/release/migration" ]; then
-        print_success "Migration binary built"
-        print_warning "Run './target/release/migration' before starting the server"
-    else
-        print_error "Migration build failed"
-        exit 1
-    fi
+    print_status "Database migrations are now handled automatically by the application"
+    print_status "No separate migration step required"
+    print_success "Migration setup completed"
 }
 
 # Create deployment package
@@ -140,8 +132,7 @@ create_package() {
     # Copy binary
     cp "$TARGET_DIR/$BINARY_NAME" "$PACKAGE_DIR/rext-server"
 
-    # Copy migration binary
-    cp "target/release/migration" "$PACKAGE_DIR/migration"
+    # Note: Migration binary no longer needed as migrations run automatically
 
     # Copy frontend assets
     cp -r "$DIST_DIR" "$PACKAGE_DIR/"
@@ -170,11 +161,7 @@ echo "🦖 Starting Rext Server"
 echo "Environment: $ENVIRONMENT"
 echo "Database: $DATABASE_URL"
 
-# Run migrations
-echo "Running database migrations..."
-./migration
-
-# Start server
+# Start server (migrations run automatically)
 echo "Starting server..."
 ./rext-server
 EOF
@@ -193,13 +180,11 @@ EOF
 ## Manual Setup
 
 1. Set environment variables (see `.env.example`)
-2. Run migrations: `./migration`
-3. Start server: `./rext-server`
+2. Start server: `./rext-server` (migrations run automatically)
 
 ## Files
 
-- `rext-server` - Main application binary
-- `migration` - Database migration tool
+- `rext-server` - Main application binary (includes automatic migrations)
 - `dist/` - Frontend assets (served automatically)
 - `start.sh` - Convenience startup script
 - `.env.example` - Environment variables template

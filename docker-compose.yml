@@ -12,7 +12,7 @@ services:
       - "3000:3000"
     environment:
       - ENVIRONMENT=production
-      - DATABASE_URL=sqlite:/app/data/sqlite.db
+      - DATABASE_URL=sqlite:/app/data/sqlite.db?mode=rwc
       - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
       - RUST_LOG=${RUST_LOG:-info}
       - CREATE_ADMIN_USER=${CREATE_ADMIN_USER:-true}
@@ -43,7 +43,7 @@ services:
       - "3000:3000"
     environment:
       - ENVIRONMENT=development
-      - DATABASE_URL=sqlite:/app/data/sqlite.db
+      - DATABASE_URL=sqlite:/app/data/sqlite.db?mode=rwc
       - JWT_SECRET=${JWT_SECRET:-dev-secret-key}
       - RUST_LOG=${RUST_LOG:-debug}
       - CREATE_ADMIN_USER=${CREATE_ADMIN_USER:-true}

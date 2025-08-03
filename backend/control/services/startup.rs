@@ -1,13 +1,14 @@
 use axum::http::StatusCode;
 use sea_orm::ActiveValue::Set;
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
+use sea_orm::{ActiveModelTrait, ColumnTrait, Database, DatabaseConnection, EntityTrait, QueryFilter};
+use sea_orm_migration::prelude::*;
 use std::env;
-use std::process::Command;
 
 use crate::control::services::{server_config::ServerConfigService, user_service::UserService};
 use crate::domain::permissions::DefaultPermissions;
 use crate::entity::models::roles;
 use crate::infrastructure::app_error::AppError;
+use migration;
 use crate::infrastructure::{
     database::DatabaseManager, job_queue::JobQueueManager, scheduler::SchedulerManager,
     server::ServerManager,
@@ -60,43 +61,35 @@ impl StartupService {
         Ok(db)
     }
 
-    /// Runs database migrations using sea-orm-cli
+    /// Runs database migrations using SeaORM Migration API
     async fn run_migrations() -> Result<(), Box<dyn std::error::Error>> {
         let database_url = env::var("DATABASE_URL")
             .map_err(|_| "DATABASE_URL environment variable is required")?;
 
-        println!("Executing migrations with sea-orm-cli...");
+        println!("Executing migrations with SeaORM Migration API...");
 
-        // Check if sea-orm-cli is available
-        let cli_check = Command::new("sea-orm-cli")
-            .arg("--version")
-            .output();
+        // Create database connection for migrations
+        let db = Database::connect(&database_url).await
+            .map_err(|e| format!("Failed to connect to database: {}", e))?;
 
-        if cli_check.is_err() {
-            return Err("sea-orm-cli is not installed. Please install it with: cargo install sea-orm-cli".into());
-        }
+        // Create schema manager to investigate the schema
+        let schema_manager = SchemaManager::new(&db);
 
-        // Execute sea-orm-cli migrate up command
-        let output = Command::new("sea-orm-cli")
-            .args(&["migrate", "up"])
-            .env("DATABASE_URL", database_url)
-            .current_dir(".") // Run from project root
-            .output()
-            .map_err(|e| format!("Failed to execute sea-orm-cli: {}", e))?;
+        // Run migrations using the Migrator
+        migration::Migrator::up(&db, None).await
+            .map_err(|e| format!("Migration failed: {}", e))?;
 
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            let stdout = String::from_utf8_lossy(&output.stdout);
-            return Err(format!(
-                "Migration failed with status {}: {}\nStdout: {}",
-                output.status, stderr, stdout
-            ).into());
-        }
-
-        let stdout = String::from_utf8_lossy(&output.stdout);
-        if !stdout.trim().is_empty() {
-            println!("Migration output: {}", stdout.trim());
-        }
+        // Verify that migrations were applied successfully
+        assert!(schema_manager.has_table("users").await
+            .map_err(|e| format!("Failed to verify users table: {}", e))?);
+        assert!(schema_manager.has_table("roles").await
+            .map_err(|e| format!("Failed to verify roles table: {}", e))?);
+        assert!(schema_manager.has_table("audit_logs").await
+            .map_err(|e| format!("Failed to verify audit_logs table: {}", e))?);
+        assert!(schema_manager.has_table("database_metrics").await
+            .map_err(|e| format!("Failed to verify database_metrics table: {}", e))?);
+        assert!(schema_manager.has_table("user_sessions").await
+            .map_err(|e| format!("Failed to verify user_sessions table: {}", e))?);
 
         println!("✅ Database migrations completed successfully");
         Ok(())
@@ -222,7 +215,7 @@ impl StartupService {
 
                 let role_model = roles::ActiveModel {
                     name: Set(role_name.clone()),
-                    description: Set(Some(description.to_string())),
+                    description: Set(Some(ToString::to_string(description))),
                     permissions: Set(permissions_json),
                     ..Default::default()
                 };

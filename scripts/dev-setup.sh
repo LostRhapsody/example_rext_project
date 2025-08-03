@@ -106,16 +106,9 @@ setup_frontend() {
 setup_database() {
     print_status "Setting up database..."
 
-    # Check if sea-orm-cli is available
-    if ! command -v sea-orm-cli &> /dev/null; then
-        print_status "Installing sea-orm-cli..."
-        cargo install sea-orm-cli
-    fi
-
-    # Run migrations
-    print_status "Running database migrations..."
-    sea-orm-cli migrate up
-
+    # Note: Migrations are now handled automatically by the application
+    # using the SeaORM Migration API on startup
+    print_status "Database migrations will be run automatically on application startup"
     print_success "Database setup completed"
 }
 

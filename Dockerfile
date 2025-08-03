@@ -31,34 +31,24 @@ RUN apk add --no-cache \
     pkgconfig \
     openssl-dev \
     sqlite-dev \
-    curl
+    curl \
+    build-base \
+    gcc \
+    libc-dev
 
 WORKDIR /app
 
-# Copy Cargo files for dependency caching
+# Copy source code
+
+RUN mkdir -p backend migration
 COPY Cargo.toml Cargo.lock ./
-COPY migration/Cargo.toml ./migration/
-
-# Create dummy source files to build dependencies first
-RUN mkdir -p backend/src migration/src && \
-    echo "fn main() {}" > backend/src/main.rs && \
-    echo "fn main() {}" > migration/src/main.rs && \
-    touch backend/src/lib.rs migration/src/lib.rs
-
-# Build dependencies (this layer will be cached)
-RUN cargo build --release
-
-# Remove dummy files
-RUN rm -rf backend/src migration/src
-
-# Copy actual source code
 COPY backend/ ./backend/
-RUN ls -l ./backend
-
 COPY migration/ ./migration/
 
 # Copy frontend dist files from frontend builder
 COPY --from=frontend-builder /app/frontend/dist ./dist
+
+WORKDIR /app/backend
 
 # Build the application
 RUN cargo build --release
@@ -90,12 +80,6 @@ COPY --from=rust-builder /app/target/release/project_rext_1 ./rext-server
 # Copy frontend assets from rust builder (which got them from frontend builder)
 COPY --from=rust-builder /app/dist ./dist
 
-# Copy migration binary for database setup
-COPY --from=rust-builder /app/target/release/migration ./migration
-
-# Make binaries executable
-RUN chmod +x ./rext-server ./migration
-
 # Switch to non-root user
 USER appuser
 
@@ -108,15 +92,12 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 
 # Set default environment
 ENV ENVIRONMENT=production
-ENV DATABASE_URL=sqlite:/app/data/sqlite.db
+ENV DATABASE_URL=sqlite:/app/data/sqlite.db?mode=rwc
 ENV RUST_LOG=info
 
 # Start script that runs migrations then the server
 CMD ["sh", "-c", "\
     echo 'Starting Rext Server...' && \
-    echo 'Running database migrations...' && \
-    DATABASE_URL=${DATABASE_URL} ./migration && \
-    echo 'Starting server...' && \
     ./rext-server \
 "]
 
@@ -131,7 +112,10 @@ RUN apk add --no-cache \
     pkgconfig \
     openssl-dev \
     sqlite-dev \
-    curl
+    curl \
+    build-base \
+    gcc \
+    libc-dev
 
 # Install cargo-watch for hot reload
 RUN cargo install cargo-watch
@@ -140,18 +124,17 @@ WORKDIR /app
 
 # Copy Cargo files
 COPY Cargo.toml Cargo.lock ./
-COPY migration/Cargo.toml ./migration/
 
-# Create directory structure
-RUN mkdir -p backend migration/src && \
+# Create directory structure for dependency caching
+RUN mkdir -p backend && \
     echo "fn main() {}" > backend/main.rs && \
-    echo "fn main() {}" > migration/src/main.rs
+    touch backend/lib.rs
 
 # Pre-build dependencies
 RUN cargo build
 
 # Remove dummy files
-RUN rm -rf backend/main.rs migration/src/main.rs
+RUN rm -rf backend/main.rs backend/lib.rs
 
 EXPOSE 3000
 

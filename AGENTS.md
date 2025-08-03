@@ -170,7 +170,7 @@ This project is beyond a basic template - it includes:
    ```
 
 3. **Database setup:**
-   use the sea-orm-cli to setup and run migrations, never the native migration runner
+   The application automatically runs migrations using the SeaORM Migration API on startup
 
 4. **Frontend setup:**
    ```bash
@@ -303,22 +303,15 @@ npm run build
 
 ### Database (Sea-ORM Migrations)
 
-#### Migration Commands
+#### Migration Management
+The project uses the SeaORM Migration API for database migrations. Migrations are automatically run on application startup.
+
 ```bash
-# Create a new migration
+# Create a new migration (if using sea-orm-cli for development)
 sea-orm-cli migrate generate create_table_name
 
-# Apply pending migrations
-sea-orm-cli migrate up
-
-# Check migration status
-sea-orm-cli migrate status
-
-# Rollback last migration
-sea-orm-cli migrate down
-
-# Fresh database (reset and run all migrations)
-sea-orm-cli migrate fresh
+# Note: Migrations are automatically applied on startup using the Migration API
+# No manual migration commands are needed for production
 ```
 
 #### Entity Generation
