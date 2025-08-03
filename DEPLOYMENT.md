@@ -62,19 +62,19 @@ DEFAULT_ROLES=admin,user
 
 ```bash
 # Start services
-docker-compose up -d
+docker compose up -d
 
 # View logs
-docker-compose logs -f
+docker compose logs -f
 
 # Stop services
-docker-compose down
+docker compose down
 
 # Rebuild and restart
-docker-compose up -d --build
+docker compose up -d --build
 
 # Development mode with hot reload
-docker-compose --profile dev up -d
+docker compose --profile dev up -d
 ```
 
 ### Docker Production Considerations
@@ -151,18 +151,7 @@ export BUILD_FRONTEND=false
 cargo build --release
 ```
 
-#### 4. Setup Database
-
-```bash
-cd migration
-cargo build --release
-cd ..
-
-# Run migrations
-./target/release/migration
-```
-
-#### 5. Deploy
+#### 4. Deploy
 
 ```bash
 # Start the server
