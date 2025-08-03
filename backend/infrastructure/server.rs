@@ -24,11 +24,6 @@ use crate::infrastructure::openapi::ApiDoc;
 pub struct ServerManager;
 
 impl ServerManager {
-    /// Root handler
-    pub async fn root_handler() -> &'static str {
-        "Rext Example Server Root, API docs at /scalar, frontend at http://localhost:5173"
-    }
-
     /// Creates the main router with all endpoints
     pub fn create_router(db: DatabaseConnection) -> Router {
         let environment = env::var("ENVIRONMENT").unwrap_or_else(|_| "development".to_string());
@@ -52,7 +47,6 @@ impl ServerManager {
             .merge(Redoc::with_url("/redoc", api.clone()))
             .merge(RapiDoc::new("/api-docs/openapi.json").path("/rapidoc"))
             .merge(Scalar::with_url("/scalar", api))
-            .route("/", get(Self::root_handler))
             .merge(websocket_router)
             .route_layer(middleware::from_fn_with_state(
                 db.clone(),
@@ -70,6 +64,7 @@ impl ServerManager {
             router = router.fallback_service(ServeDir::new("dist"));
         } else {
             println!("Development mode - static files not served by backend");
+            println!("Frontend running on http://localhost:5173");
         }
 
         router
@@ -81,7 +76,6 @@ impl ServerManager {
         let listener = TcpListener::bind(&address).await?;
 
         println!("Server running on http://localhost:{}", address.port());
-        println!("Frontend running on http://localhost:5173");
         println!("View API docs at:");
         println!(
             "  http://localhost:{}/swagger-ui 📱 Swagger UI",

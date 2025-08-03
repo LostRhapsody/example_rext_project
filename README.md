@@ -106,7 +106,7 @@ See **[DEPLOYMENT.md](./DEPLOYMENT.md)** for comprehensive deployment instructio
   - ✅ Docker compose file with multi-stage build
   - ✅ Build.rs script for automated frontend building
   - ✅ Bare metal deployment scripts and documentation
-- Email Server 
+- Email Server
   - https://crates.io/crates/lettre
   - This crate provides email building, transport systems (SMTP), security features, Unicode and internationalization support.
   - Due to how emailing works, this will not be an SMTP server, just forward emails to one, then the SMTP server provider (i.e. Google) can take care of the heavy lifting.

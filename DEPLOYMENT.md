@@ -307,7 +307,7 @@ docker-compose logs -f
 server {
     listen 80;
     server_name yourdomain.com;
-    
+
     location / {
         proxy_pass http://localhost:3000;
         proxy_set_header Host $host;
@@ -315,7 +315,7 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
-    
+
     # WebSocket support for admin panel
     location /api/v1/admin/ws {
         proxy_pass http://localhost:3000;
