@@ -13,7 +13,10 @@ use crate::bridge::types::{
     },
     logging::LoggingInfo,
 };
-use crate::control::services::{auth_service::AuthService, session_service::SessionService, token_service::TokenService, user_service::UserService};
+use crate::control::services::{
+    auth_service::AuthService, session_service::SessionService, token_service::TokenService,
+    user_service::UserService,
+};
 use crate::domain::user::*;
 use crate::infrastructure::app_error::{AppError, ErrorResponse, MessageResponse};
 
@@ -128,19 +131,19 @@ pub async fn logout_handler(
 ) -> Result<impl IntoResponse, AppError> {
     // Extract token from Authorization header
     let token = TokenService::extract_token_from_header(&request)?;
-    
+
     // Validate token and extract claims to get session_id
     let claims = TokenService::validate_token_claims(&token)?;
-    
+
     // Parse session ID
     let session_id = uuid::Uuid::parse_str(&claims.session_id).map_err(|_| AppError {
         message: "Invalid session ID in token".to_string(),
         status_code: StatusCode::UNAUTHORIZED,
     })?;
-    
+
     // Invalidate the session
     SessionService::invalidate_session(&db, session_id).await?;
-    
+
     Ok(Json(MessageResponse {
         message: "Logged out successfully".to_string(),
     }))
