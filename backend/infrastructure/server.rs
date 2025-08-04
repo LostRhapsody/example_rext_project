@@ -6,7 +6,7 @@ use std::{
     net::{Ipv4Addr, SocketAddr},
 };
 use tokio::net::TcpListener;
-use tower_http::services::ServeDir;
+use tower_http::services::{ServeDir, ServeFile};
 use utoipa::OpenApi;
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_rapidoc::RapiDoc;
@@ -28,7 +28,7 @@ impl ServerManager {
     pub fn create_router(db: DatabaseConnection) -> Router {
         let environment = env::var("ENVIRONMENT").unwrap_or_else(|_| "development".to_string());
 
-        // Create the OpenAPI Router
+        // Create the OpenAPI Router and nested routes
         let (router, api) = OpenApiRouter::with_openapi(ApiDoc::openapi())
             .nest("/api/v1/auth", auth_router(db.clone()))
             .nest("/api/v1/admin", admin_router(db.clone()))
@@ -42,6 +42,7 @@ impl ServerManager {
             )
             .with_state(db.clone());
 
+        // Merge routes with OpenAPI documentation and websocket and middleware
         let mut router = router
             .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", api.clone()))
             .merge(Redoc::with_url("/redoc", api.clone()))
@@ -61,7 +62,9 @@ impl ServerManager {
         // Check if we're in production mode and serve static files
         if environment == "production" {
             println!("Production mode detected - serving static files from /dist directory");
-            router = router.fallback_service(ServeDir::new("dist"));
+            router = router.fallback_service(
+                ServeDir::new("dist").fallback(ServeFile::new("dist/index.html")),
+            );
         } else {
             println!("Development mode - static files not served by backend");
             println!("Frontend running on http://localhost:5173");
