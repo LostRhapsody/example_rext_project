@@ -1,4 +1,26 @@
+//! Email service
+//!
+//! Module to handle sending emails. Configurable via .env file.
+//! Currently supports SMTP and templates made in handlers, not file-based templates.
+//!
+//! Example usage:
+//! ```rust_no_run
+//! // Initialize the service
+//! let email_service = EmailService::from_env()?;
+//!
+//! // Send a welcome email (1-line function call!)
+//! let result = email_service.send_welcome_email(
+//!     "example_to_email@gmail.com",
+//!     "Example User",
+//!     "Example App Name"
+//! ).await;
+//!
+//! println!("Email result: {:?}", result);
+//! ```
+
 use std::env;
+use std::fmt::Display;
+use std::str::FromStr;
 use lettre::message::header::ContentType;
 use lettre::message::Mailbox;
 use lettre::transport::smtp::authentication::Credentials;
@@ -7,11 +29,31 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use tracing::{info, error};
 
+/// Represents all supported email services
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum EmailServiceType {
+    SMTP,
+}
+
+impl Display for EmailServiceType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+impl FromStr for EmailServiceType {
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self::SMTP)
+    }
+
+    type Err = String;
+}
+
 /// Email service configuration
 #[derive(Debug, Clone)]
 pub struct EmailConfig {
     /// SMTP service provider (currently only "smtp" is supported)
-    pub service_type: String,
+    pub service_type: EmailServiceType,
     /// SMTP server hostname
     pub smtp_host: String,
     /// SMTP server port
@@ -82,7 +124,7 @@ impl EmailService {
 
     /// Create SMTP transport based on configuration
     fn create_transport(config: &EmailConfig) -> Result<SmtpTransport, String> {
-        if config.service_type.to_lowercase() != "smtp" {
+        if config.service_type.to_string().to_lowercase() != "smtp" {
             return Err(format!("Unsupported email service type: {}", config.service_type));
         }
 
@@ -91,11 +133,22 @@ impl EmailService {
             config.smtp_password.clone(),
         );
 
-        let transport = SmtpTransport::relay(&config.smtp_host)
-            .map_err(|e| format!("Failed to create SMTP relay: {}", e))?
-            .port(config.smtp_port)
-            .credentials(credentials)
-            .build();
+        // Configure transport with proper TLS settings
+        let transport = if config.smtp_port == 465 {
+            // Port 465 uses implicit TLS (SSL)
+            SmtpTransport::relay(&config.smtp_host)
+                .map_err(|e| format!("Failed to create SMTP relay: {}", e))?
+                .port(config.smtp_port)
+                .credentials(credentials)
+                .build()
+        } else {
+            // Port 587 and others use STARTTLS
+            SmtpTransport::starttls_relay(&config.smtp_host)
+                .map_err(|e| format!("Failed to create SMTP STARTTLS relay: {}", e))?
+                .port(config.smtp_port)
+                .credentials(credentials)
+                .build()
+        };
 
         Ok(transport)
     }
@@ -325,7 +378,7 @@ impl EmailConfig {
         }
 
         Ok(Self {
-            service_type,
+            service_type: EmailServiceType::from_str(&service_type).map_err(|e| e.to_string())?,
             smtp_host,
             smtp_port,
             smtp_username,
