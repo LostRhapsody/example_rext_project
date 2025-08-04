@@ -97,7 +97,6 @@ impl SystemMonitorService {
 
         // Get temperature information if available
         let components = Components::new_with_refreshed_list();
-        println!("components: {:?}", components);
         let temperature = components
             .iter()
             .find(|component| component.label().to_lowercase().contains("cpu"))
