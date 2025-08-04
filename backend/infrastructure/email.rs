@@ -18,16 +18,16 @@
 //! println!("Email result: {:?}", result);
 //! ```
 
-use std::env;
-use std::fmt::Display;
-use std::str::FromStr;
-use lettre::message::header::ContentType;
 use lettre::message::Mailbox;
+use lettre::message::header::ContentType;
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::{Message, SmtpTransport, Transport};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use tracing::{info, error};
+use std::env;
+use std::fmt::Display;
+use std::str::FromStr;
+use tracing::{error, info};
 
 /// Represents all supported email services
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -42,7 +42,7 @@ impl Display for EmailServiceType {
 }
 
 impl FromStr for EmailServiceType {
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(_s: &str) -> Result<Self, Self::Err> {
         Ok(Self::SMTP)
     }
 
@@ -51,6 +51,7 @@ impl FromStr for EmailServiceType {
 
 /// Email service configuration
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct EmailConfig {
     /// SMTP service provider (currently only "smtp" is supported)
     pub service_type: EmailServiceType,
@@ -89,12 +90,14 @@ pub enum EmailContentType {
 
 /// Email sending result
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum EmailResult {
     Success,
     Failed(String),
 }
 
 /// Main email service struct
+#[allow(dead_code)]
 pub struct EmailService {
     config: EmailConfig,
     transport: SmtpTransport,
@@ -102,36 +105,34 @@ pub struct EmailService {
 
 impl EmailService {
     /// Initialize the email service from environment variables
+    #[allow(dead_code)]
     pub fn from_env() -> Result<Self, String> {
         let config = EmailConfig::from_env()?;
         let transport = Self::create_transport(&config)?;
 
-        Ok(Self {
-            config,
-            transport,
-        })
+        Ok(Self { config, transport })
     }
 
     /// Create a new email service with custom configuration
+    #[allow(dead_code)]
     pub fn new(config: EmailConfig) -> Result<Self, String> {
         let transport = Self::create_transport(&config)?;
 
-        Ok(Self {
-            config,
-            transport,
-        })
+        Ok(Self { config, transport })
     }
 
     /// Create SMTP transport based on configuration
+    #[allow(dead_code)]
     fn create_transport(config: &EmailConfig) -> Result<SmtpTransport, String> {
         if config.service_type.to_string().to_lowercase() != "smtp" {
-            return Err(format!("Unsupported email service type: {}", config.service_type));
+            return Err(format!(
+                "Unsupported email service type: {}",
+                config.service_type
+            ));
         }
 
-        let credentials = Credentials::new(
-            config.smtp_username.clone(),
-            config.smtp_password.clone(),
-        );
+        let credentials =
+            Credentials::new(config.smtp_username.clone(), config.smtp_password.clone());
 
         // Configure transport with proper TLS settings
         let transport = if config.smtp_port == 465 {
@@ -154,6 +155,7 @@ impl EmailService {
     }
 
     /// Send a templated email to a single recipient
+    #[allow(dead_code)]
     pub async fn send_template_email(
         &self,
         to_email: &str,
@@ -169,10 +171,12 @@ impl EmailService {
             }
         };
 
-        self.send_email(to_email, to_name, &template, variables).await
+        self.send_email(to_email, to_name, &template, variables)
+            .await
     }
 
     /// Send an email with a custom template
+    #[allow(dead_code)]
     pub async fn send_email(
         &self,
         to_email: &str,
@@ -215,6 +219,7 @@ impl EmailService {
     }
 
     /// Build the email message
+    #[allow(dead_code)]
     fn build_message(
         &self,
         to_email: &str,
@@ -226,13 +231,16 @@ impl EmailService {
         // Parse email addresses
         let from_mailbox = Mailbox::new(
             Some(self.config.from_name.clone()),
-            self.config.from_email.parse()
+            self.config
+                .from_email
+                .parse()
                 .map_err(|e| format!("Invalid from email address: {}", e))?,
         );
 
         let to_mailbox = Mailbox::new(
             to_name.map(|s| s.to_owned()),
-            to_email.parse()
+            to_email
+                .parse()
                 .map_err(|e| format!("Invalid to email address: {}", e))?,
         );
 
@@ -243,17 +251,21 @@ impl EmailService {
             .subject(subject);
 
         // Add reply-to if configured
-        if let (Some(reply_email), Some(reply_name)) = (&self.config.reply_to_email, &self.config.reply_to_name) {
+        if let (Some(reply_email), Some(reply_name)) =
+            (&self.config.reply_to_email, &self.config.reply_to_name)
+        {
             let reply_mailbox = Mailbox::new(
                 Some(reply_name.clone()),
-                reply_email.parse()
+                reply_email
+                    .parse()
                     .map_err(|e| format!("Invalid reply-to email address: {}", e))?,
             );
             builder = builder.reply_to(reply_mailbox);
         } else if let Some(reply_email) = &self.config.reply_to_email {
             let reply_mailbox = Mailbox::new(
                 None,
-                reply_email.parse()
+                reply_email
+                    .parse()
                     .map_err(|e| format!("Invalid reply-to email address: {}", e))?,
             );
             builder = builder.reply_to(reply_mailbox);
@@ -261,23 +273,23 @@ impl EmailService {
 
         // Set content type and body
         let message = match content_type {
-            EmailContentType::Text => {
-                builder
-                    .header(ContentType::TEXT_PLAIN)
-                    .body(body.to_string())
-            }
-            EmailContentType::Html => {
-                builder
-                    .header(ContentType::TEXT_HTML)
-                    .body(body.to_string())
-            }
+            EmailContentType::Text => builder
+                .header(ContentType::TEXT_PLAIN)
+                .body(body.to_string()),
+            EmailContentType::Html => builder
+                .header(ContentType::TEXT_HTML)
+                .body(body.to_string()),
         };
 
         message.map_err(|e| format!("Failed to build message: {}", e))
     }
 
     /// Process template variables in content
-    fn process_template_variables(content: &str, variables: &Option<HashMap<String, String>>) -> String {
+    #[allow(dead_code)]
+    fn process_template_variables(
+        content: &str,
+        variables: &Option<HashMap<String, String>>,
+    ) -> String {
         if let Some(vars) = variables {
             let mut processed = content.to_string();
             for (key, value) in vars {
@@ -291,6 +303,7 @@ impl EmailService {
     }
 
     /// Get a predefined email template by name
+    #[allow(dead_code)]
     fn get_email_template(template_name: &str) -> Result<EmailTemplate, String> {
         match template_name {
             "welcome" => Ok(EmailTemplate {
@@ -318,6 +331,7 @@ impl EmailService {
     }
 
     /// Test the email service configuration
+    #[allow(dead_code)]
     pub async fn test_connection(&self) -> EmailResult {
         info!("Testing email service connection...");
 
@@ -333,15 +347,16 @@ impl EmailService {
             Some("Test Recipient"),
             &test_template,
             None,
-        ).await
+        )
+        .await
     }
 }
 
 impl EmailConfig {
     /// Load email configuration from environment variables
+    #[allow(dead_code)]
     pub fn from_env() -> Result<Self, String> {
-        let service_type = env::var("EMAIL_SERVICE_TYPE")
-            .unwrap_or_else(|_| "smtp".to_string());
+        let service_type = env::var("EMAIL_SERVICE_TYPE").unwrap_or_else(|_| "smtp".to_string());
 
         let smtp_host = env::var("EMAIL_SMTP_HOST")
             .map_err(|_| "EMAIL_SMTP_HOST environment variable is required".to_string())?;
@@ -360,8 +375,8 @@ impl EmailConfig {
         let from_email = env::var("EMAIL_FROM_ADDRESS")
             .map_err(|_| "EMAIL_FROM_ADDRESS environment variable is required".to_string())?;
 
-        let from_name = env::var("EMAIL_FROM_NAME")
-            .unwrap_or_else(|_| "Rext Application".to_string());
+        let from_name =
+            env::var("EMAIL_FROM_NAME").unwrap_or_else(|_| "Rext Application".to_string());
 
         let reply_to_email = env::var("EMAIL_REPLY_TO_ADDRESS").ok();
         let reply_to_name = env::var("EMAIL_REPLY_TO_NAME").ok();
@@ -394,6 +409,7 @@ impl EmailConfig {
 /// Convenience functions for common email operations
 impl EmailService {
     /// Send a welcome email to a new user
+    #[allow(dead_code)]
     pub async fn send_welcome_email(
         &self,
         user_email: &str,
@@ -404,15 +420,12 @@ impl EmailService {
         variables.insert("user_name".to_string(), user_name.to_string());
         variables.insert("app_name".to_string(), app_name.to_string());
 
-        self.send_template_email(
-            user_email,
-            Some(user_name),
-            "welcome",
-            Some(variables),
-        ).await
+        self.send_template_email(user_email, Some(user_name), "welcome", Some(variables))
+            .await
     }
 
     /// Send a password reset email
+    #[allow(dead_code)]
     pub async fn send_password_reset_email(
         &self,
         user_email: &str,
@@ -430,10 +443,12 @@ impl EmailService {
             Some(user_name),
             "password_reset",
             Some(variables),
-        ).await
+        )
+        .await
     }
 
     /// Send an email verification email
+    #[allow(dead_code)]
     pub async fn send_verification_email(
         &self,
         user_email: &str,
@@ -443,18 +458,18 @@ impl EmailService {
     ) -> EmailResult {
         let mut variables = HashMap::new();
         variables.insert("user_name".to_string(), user_name.to_string());
-        variables.insert("verification_link".to_string(), verification_link.to_string());
+        variables.insert(
+            "verification_link".to_string(),
+            verification_link.to_string(),
+        );
         variables.insert("app_name".to_string(), app_name.to_string());
 
-        self.send_template_email(
-            user_email,
-            Some(user_name),
-            "verification",
-            Some(variables),
-        ).await
+        self.send_template_email(user_email, Some(user_name), "verification", Some(variables))
+            .await
     }
 
     /// Send a notification email
+    #[allow(dead_code)]
     pub async fn send_notification_email(
         &self,
         user_email: &str,
@@ -466,11 +481,7 @@ impl EmailService {
         variables.insert("subject".to_string(), subject.to_string());
         variables.insert("message".to_string(), message.to_string());
 
-        self.send_template_email(
-            user_email,
-            user_name,
-            "notification",
-            Some(variables),
-        ).await
+        self.send_template_email(user_email, user_name, "notification", Some(variables))
+            .await
     }
 }

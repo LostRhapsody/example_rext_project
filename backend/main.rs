@@ -7,7 +7,6 @@ mod infrastructure;
 use control::services::startup::StartupService;
 use infrastructure::{logging::LoggingManager, websocket::start_metrics_broadcaster};
 
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize logging first
