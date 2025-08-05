@@ -1,7 +1,7 @@
 mod bridge;
 mod control;
 mod domain;
-pub mod entity;
+mod entity;
 mod infrastructure;
 
 use control::services::startup::StartupService;
