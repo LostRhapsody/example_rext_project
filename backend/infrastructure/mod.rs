@@ -1,6 +1,7 @@
 pub mod app_error;
 pub mod cors;
 pub mod database;
+pub mod email;
 pub mod job_queue;
 pub mod jwt_claims;
 pub mod logging;

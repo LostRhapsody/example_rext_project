@@ -41,6 +41,14 @@ impl AuthService {
             });
         }
 
+        // Verify email
+        if !user.email_verified {
+            return Err(AppError {
+                message: "Email not verified".to_string(),
+                status_code: StatusCode::UNAUTHORIZED,
+            });
+        }
+
         // Update last login timestamp (non-blocking)
         let db_clone = db.clone();
         let user_id = user.id;

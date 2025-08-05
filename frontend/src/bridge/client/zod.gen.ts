@@ -454,6 +454,15 @@ export const zUsersQueryParams = z.object({
     ]))
 });
 
+export const zVerifyEmailRequest = z.object({
+    user_id: z.string()
+});
+
+export const zVerifyEmailResponse = z.object({
+    message: z.string(),
+    success: z.boolean()
+});
+
 export const zGetDatabaseTablesHandlerData = z.object({
     body: z.optional(z.never()),
     path: z.optional(z.never()),
@@ -777,3 +786,14 @@ export const zRegisterHandlerData = z.object({
  * User created successfully
  */
 export const zRegisterHandlerResponse = zRegisterResponse;
+
+export const zVerifyEmailHandlerData = z.object({
+    body: zVerifyEmailRequest,
+    path: z.optional(z.never()),
+    query: z.optional(z.never())
+});
+
+/**
+ * Email verified successfully
+ */
+export const zVerifyEmailHandlerResponse = zVerifyEmailResponse;

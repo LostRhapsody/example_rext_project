@@ -72,20 +72,23 @@ pub async fn admin_logout_handler(
     request: axum::extract::Request,
 ) -> Result<impl IntoResponse, AppError> {
     // Extract token from Authorization header
-    let token = crate::control::services::token_service::TokenService::extract_token_from_header(&request)?;
-    
+    let token =
+        crate::control::services::token_service::TokenService::extract_token_from_header(&request)?;
+
     // Validate token and extract claims to get session_id
-    let claims = crate::control::services::token_service::TokenService::validate_token_claims(&token)?;
-    
+    let claims =
+        crate::control::services::token_service::TokenService::validate_token_claims(&token)?;
+
     // Parse session ID
     let session_id = uuid::Uuid::parse_str(&claims.session_id).map_err(|_| AppError {
         message: "Invalid session ID in token".to_string(),
         status_code: StatusCode::UNAUTHORIZED,
     })?;
-    
+
     // Invalidate the session
-    crate::control::services::session_service::SessionService::invalidate_session(&db, session_id).await?;
-    
+    crate::control::services::session_service::SessionService::invalidate_session(&db, session_id)
+        .await?;
+
     Ok((
         StatusCode::OK,
         Json(MessageResponse {

@@ -35,7 +35,9 @@ fn main() {
         build_frontend();
     } else {
         println!("cargo:warning=Skipping frontend build in development mode");
-        println!("cargo:warning=Set ENVIRONMENT=production or BUILD_FRONTEND=true to build frontend");
+        println!(
+            "cargo:warning=Set ENVIRONMENT=production or BUILD_FRONTEND=true to build frontend"
+        );
         return;
     }
 }

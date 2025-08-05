@@ -9,7 +9,8 @@ pub fn auth_router(db: DatabaseConnection) -> OpenApiRouter {
     let public_routes = OpenApiRouter::new()
         .routes(routes!(crate::bridge::handlers::auth::register_handler))
         .routes(routes!(crate::bridge::handlers::auth::login_handler))
-        .routes(routes!(crate::bridge::handlers::auth::logout_handler));
+        .routes(routes!(crate::bridge::handlers::auth::logout_handler))
+        .routes(routes!(crate::bridge::handlers::auth::verify_email_handler));
 
     // Routes that need authentication
     let protected_routes = OpenApiRouter::new()

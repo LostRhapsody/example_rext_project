@@ -308,6 +308,15 @@ export type UsersQueryParams = {
     search?: string | null;
 };
 
+export type VerifyEmailRequest = {
+    user_id: string;
+};
+
+export type VerifyEmailResponse = {
+    message: string;
+    success: boolean;
+};
+
 export type GetDatabaseTablesHandlerData = {
     body?: never;
     path?: never;
@@ -1240,6 +1249,31 @@ export type RegisterHandlerResponses = {
 };
 
 export type RegisterHandlerResponse = RegisterHandlerResponses[keyof RegisterHandlerResponses];
+
+export type VerifyEmailHandlerData = {
+    body: VerifyEmailRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/verify-email';
+};
+
+export type VerifyEmailHandlerErrors = {
+    /**
+     * Internal server error
+     */
+    500: ErrorResponse;
+};
+
+export type VerifyEmailHandlerError = VerifyEmailHandlerErrors[keyof VerifyEmailHandlerErrors];
+
+export type VerifyEmailHandlerResponses = {
+    /**
+     * Email verified successfully
+     */
+    200: VerifyEmailResponse;
+};
+
+export type VerifyEmailHandlerResponse = VerifyEmailHandlerResponses[keyof VerifyEmailHandlerResponses];
 
 export type ClientOptions = {
     baseUrl: 'http://localhost:3000' | (string & {});

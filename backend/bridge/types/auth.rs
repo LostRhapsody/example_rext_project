@@ -61,3 +61,14 @@ pub struct AuthUser {
     #[schema(value_type = String)]
     pub user_id: uuid::Uuid,
 }
+
+#[derive(Deserialize, ToSchema)]
+pub struct VerifyEmailRequest {
+    pub user_id: String,
+}
+
+#[derive(Serialize, ToSchema)]
+pub struct VerifyEmailResponse {
+    pub message: String,
+    pub success: bool,
+}

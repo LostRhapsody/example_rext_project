@@ -105,7 +105,8 @@ impl SessionService {
         let session = DatabaseService::find_one_with_tracking(
             db,
             "user_sessions",
-            UserSessions::find().filter(user_sessions::Column::SessionToken.eq(session_id.to_string())),
+            UserSessions::find()
+                .filter(user_sessions::Column::SessionToken.eq(session_id.to_string())),
         )
         .await
         .map_err(|e| AppError {
@@ -167,7 +168,8 @@ impl SessionService {
         let session = DatabaseService::find_one_with_tracking(
             db,
             "user_sessions",
-            UserSessions::find().filter(user_sessions::Column::SessionToken.eq(session_id.to_string())),
+            UserSessions::find()
+                .filter(user_sessions::Column::SessionToken.eq(session_id.to_string())),
         )
         .await
         .map_err(|e| AppError {

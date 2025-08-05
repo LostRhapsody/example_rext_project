@@ -1,6 +1,8 @@
 use axum::http::StatusCode;
 use sea_orm::ActiveValue::Set;
-use sea_orm::{ActiveModelTrait, ColumnTrait, Database, DatabaseConnection, EntityTrait, QueryFilter};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, Database, DatabaseConnection, EntityTrait, QueryFilter,
+};
 use sea_orm_migration::prelude::*;
 use std::env;
 
@@ -8,11 +10,11 @@ use crate::control::services::{server_config::ServerConfigService, user_service:
 use crate::domain::permissions::DefaultPermissions;
 use crate::entity::models::roles;
 use crate::infrastructure::app_error::AppError;
-use migration;
 use crate::infrastructure::{
     database::DatabaseManager, job_queue::JobQueueManager, scheduler::SchedulerManager,
     server::ServerManager,
 };
+use migration;
 
 /// Application startup orchestrator
 pub struct StartupService;
@@ -37,7 +39,6 @@ impl StartupService {
         println!("Running database migrations...");
         Self::run_migrations().await?;
         println!("Migrations completed successfully");
-
 
         // Create pool for job queue
         let pool = DatabaseManager::create_pool().await?;
@@ -69,27 +70,49 @@ impl StartupService {
         println!("Executing migrations with SeaORM Migration API...");
 
         // Create database connection for migrations
-        let db = Database::connect(&database_url).await
+        let db = Database::connect(&database_url)
+            .await
             .map_err(|e| format!("Failed to connect to database: {}", e))?;
 
         // Create schema manager to investigate the schema
         let schema_manager = SchemaManager::new(&db);
 
         // Run migrations using the Migrator
-        migration::Migrator::up(&db, None).await
+        migration::Migrator::up(&db, None)
+            .await
             .map_err(|e| format!("Migration failed: {}", e))?;
 
         // Verify that migrations were applied successfully
-        assert!(schema_manager.has_table("users").await
-            .map_err(|e| format!("Failed to verify users table: {}", e))?);
-        assert!(schema_manager.has_table("roles").await
-            .map_err(|e| format!("Failed to verify roles table: {}", e))?);
-        assert!(schema_manager.has_table("audit_logs").await
-            .map_err(|e| format!("Failed to verify audit_logs table: {}", e))?);
-        assert!(schema_manager.has_table("database_metrics").await
-            .map_err(|e| format!("Failed to verify database_metrics table: {}", e))?);
-        assert!(schema_manager.has_table("user_sessions").await
-            .map_err(|e| format!("Failed to verify user_sessions table: {}", e))?);
+        assert!(
+            schema_manager
+                .has_table("users")
+                .await
+                .map_err(|e| format!("Failed to verify users table: {}", e))?
+        );
+        assert!(
+            schema_manager
+                .has_table("roles")
+                .await
+                .map_err(|e| format!("Failed to verify roles table: {}", e))?
+        );
+        assert!(
+            schema_manager
+                .has_table("audit_logs")
+                .await
+                .map_err(|e| format!("Failed to verify audit_logs table: {}", e))?
+        );
+        assert!(
+            schema_manager
+                .has_table("database_metrics")
+                .await
+                .map_err(|e| format!("Failed to verify database_metrics table: {}", e))?
+        );
+        assert!(
+            schema_manager
+                .has_table("user_sessions")
+                .await
+                .map_err(|e| format!("Failed to verify user_sessions table: {}", e))?
+        );
 
         println!("✅ Database migrations completed successfully");
         Ok(())

@@ -78,7 +78,11 @@ impl WebSocketManager {
     /// Broadcast a message to all connected clients
     pub async fn broadcast(&self, message: WebSocketMessage) {
         if let Err(e) = self.tx.send(message) {
-            tracing::warn!("Failed to broadcast message: {}", e);
+            // Don't particularly care if the channel is closed, this is normal if no one is connected
+            // log all other errors
+            if !e.to_string().contains("channel closed") {
+                tracing::warn!("Failed to broadcast message: {}", e);
+            }
         }
     }
 
