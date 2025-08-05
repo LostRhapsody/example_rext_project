@@ -9,7 +9,7 @@ use sea_orm::DatabaseConnection;
 use crate::bridge::types::{
     auth::{
         AUTH_TAG, AuthUser, LoginRequest, LoginResponse, ProfileResponse, RegisterRequest,
-        RegisterResponse,
+        RegisterResponse, VerifyEmailRequest, VerifyEmailResponse,
     },
     logging::LoggingInfo,
 };
@@ -192,5 +192,37 @@ pub async fn profile_handler(
         id: user.id.to_string(),
         email: user.email,
         created_at: user.created_at,
+    }))
+}
+
+/// Gets the current user's profile information
+#[utoipa::path(
+    post,
+    path = "/verify-email",
+    request_body = VerifyEmailRequest,
+    responses(
+        (status = 200, description = "Email verified successfully", body = VerifyEmailResponse),
+        (status = 500, description = "Internal server error", body = ErrorResponse)
+    ),
+    summary = "Verify email",
+    description = "Verifies a user's email address.",
+    tag = AUTH_TAG,
+    security(
+        ("jwt_token" = [])
+    )
+)]
+pub async fn verify_email_handler(
+    State(db): State<DatabaseConnection>,
+    Json(payload): Json<VerifyEmailRequest>,
+) -> Result<impl IntoResponse, AppError> {
+    let user_id = uuid::Uuid::parse_str(&payload.user_id).map_err(|_| AppError {
+        message: "Invalid user ID".to_string(),
+        status_code: StatusCode::BAD_REQUEST,
+    })?;
+    UserService::verify_email(&db, user_id).await?;
+
+    Ok(Json(VerifyEmailResponse {
+        message: "Email verified successfully".to_string(),
+        success: true,
     }))
 }

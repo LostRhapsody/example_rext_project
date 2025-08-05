@@ -170,6 +170,13 @@
     "UserResponse": true,
     "UsersQueryParams": true,
     "VNode": true,
+    "VerifyEmailHandlerData": true,
+    "VerifyEmailHandlerError": true,
+    "VerifyEmailHandlerErrors": true,
+    "VerifyEmailHandlerResponse": true,
+    "VerifyEmailHandlerResponses": true,
+    "VerifyEmailRequest": true,
+    "VerifyEmailResponse": true,
     "WritableComputedRef": true,
     "acceptHMRUpdate": true,
     "adminLoginHandler": true,
@@ -264,6 +271,7 @@
     "useRouter": true,
     "useSlots": true,
     "useTemplateRef": true,
+    "verifyEmailHandler": true,
     "watch": true,
     "watchEffect": true,
     "watchPostEffect": true,
@@ -347,6 +355,10 @@
     "zUpdateUserHandlerResponse": true,
     "zUpdateUserRequest": true,
     "zUserResponse": true,
-    "zUsersQueryParams": true
+    "zUsersQueryParams": true,
+    "zVerifyEmailHandlerData": true,
+    "zVerifyEmailHandlerResponse": true,
+    "zVerifyEmailRequest": true,
+    "zVerifyEmailResponse": true
   }
 }

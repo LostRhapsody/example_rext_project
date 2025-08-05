@@ -5,6 +5,7 @@ mod m20250720_000001_create_users;
 mod m20250101_000004_create_database_metrics;
 mod m20250101_000005_create_user_sessions;
 mod m20250727_055016_user_roles;
+mod m20250804_233749_user_validate_email;
 
 pub struct Migrator;
 
@@ -12,11 +13,12 @@ pub struct Migrator;
 impl MigratorTrait for Migrator {
     fn migrations() -> Vec<Box<dyn MigrationTrait>> {
         vec![
-            Box::new(m20250727_055016_user_roles::Migration),
-            Box::new(m20250720_000001_create_users::Migration),
             Box::new(m20250101_000002_create_audit_logs::Migration),
+            Box::new(m20250720_000001_create_users::Migration),
             Box::new(m20250101_000004_create_database_metrics::Migration),
             Box::new(m20250101_000005_create_user_sessions::Migration),
+            Box::new(m20250727_055016_user_roles::Migration),
+            Box::new(m20250804_233749_user_validate_email::Migration),
         ]
     }
 }

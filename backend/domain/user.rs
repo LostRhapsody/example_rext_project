@@ -11,6 +11,7 @@ pub struct User {
     #[allow(dead_code)]
     pub last_login: Option<DateTime<Utc>>,
     pub role_id: Option<i32>,
+    pub email_verified: bool,
 }
 
 impl User {
@@ -22,6 +23,7 @@ impl User {
         created_at: Option<DateTime<Utc>>,
         last_login: Option<DateTime<Utc>>,
         role_id: Option<i32>,
+        email_verified: bool,
     ) -> Self {
         Self {
             id,
@@ -30,6 +32,7 @@ impl User {
             created_at,
             last_login,
             role_id,
+            email_verified,
         }
     }
 
@@ -42,6 +45,7 @@ impl User {
             created_at: Some(Utc::now()),
             last_login: None,
             role_id: None,
+            email_verified: false,
         }
     }
 }

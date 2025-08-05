@@ -6,10 +6,12 @@ use sea_orm::prelude::Expr;
 use sea_orm::*;
 use uuid::Uuid;
 
-use crate::control::services::database_service::DatabaseService;
 use crate::domain::{user::*, validation::*};
 use crate::entity::models::{prelude::*, *};
-use crate::infrastructure::app_error::AppError;
+use crate::infrastructure::{app_error::AppError, email::EmailService};
+use crate::{
+    control::services::database_service::DatabaseService, infrastructure::email::EmailResult,
+};
 use axum::http::StatusCode;
 
 /// Service for user-related business operations
@@ -57,7 +59,38 @@ impl UserService {
             created_at: Set(user.created_at.map(|dt| dt.fixed_offset())),
             last_login: Set(None),
             role_id: Set(None), // Default to no role
+            email_verified: Set(false),
         };
+
+        // Send verification email
+        let email_service = EmailService::from_env();
+        match email_service {
+            Ok(email_service) => {
+                let email_result = email_service
+                    .send_verification_email(
+                        &user.email,
+                        &user.email,
+                        &format!("http://localhost:5173/verify-email?id={}", user.id),
+                        "Rext App",
+                    )
+                    .await;
+                match email_result {
+                    EmailResult::Success => (),
+                    EmailResult::Failed(e) => {
+                        return Err(AppError {
+                            message: format!("Failed to send verification email: {}", e),
+                            status_code: StatusCode::INTERNAL_SERVER_ERROR,
+                        });
+                    }
+                }
+            }
+            Err(e) => {
+                return Err(AppError {
+                    message: format!("Failed to send verification email: {}", e),
+                    status_code: StatusCode::INTERNAL_SERVER_ERROR,
+                });
+            }
+        }
 
         Users::insert(user_active_model)
             .exec(db)
@@ -113,7 +146,38 @@ impl UserService {
             created_at: Set(user.created_at.map(|dt| dt.fixed_offset())),
             last_login: Set(None),
             role_id: Set(role_id),
+            email_verified: Set(false),
         };
+
+        // Send verification email
+        let email_service = EmailService::from_env();
+        match email_service {
+            Ok(email_service) => {
+                let email_result = email_service
+                    .send_verification_email(
+                        &user.email,
+                        &user.email,
+                        &format!("http://localhost:5173/verify-email?id={}", user.id),
+                        "Rext App",
+                    )
+                    .await;
+                match email_result {
+                    EmailResult::Success => (),
+                    EmailResult::Failed(e) => {
+                        return Err(AppError {
+                            message: format!("Failed to send verification email: {}", e),
+                            status_code: StatusCode::INTERNAL_SERVER_ERROR,
+                        });
+                    }
+                }
+            }
+            Err(e) => {
+                return Err(AppError {
+                    message: format!("Failed to send verification email: {}", e),
+                    status_code: StatusCode::INTERNAL_SERVER_ERROR,
+                });
+            }
+        }
 
         Users::insert(user_active_model)
             .exec(db)
@@ -170,6 +234,7 @@ impl UserService {
                 model.created_at.map(|dt| dt.to_utc()),
                 model.last_login.map(|dt| dt.to_utc()),
                 model.role_id,
+                model.email_verified,
             )
         }))
     }
@@ -195,6 +260,7 @@ impl UserService {
                 model.created_at.map(|dt| dt.to_utc()),
                 model.last_login.map(|dt| dt.to_utc()),
                 model.role_id,
+                model.email_verified,
             )
         }))
     }
@@ -273,6 +339,7 @@ impl UserService {
             updated_user.created_at.map(|dt| dt.to_utc()),
             updated_user.last_login.map(|dt| dt.to_utc()),
             updated_user.role_id,
+            updated_user.email_verified,
         ))
     }
 
@@ -325,5 +392,28 @@ impl UserService {
             .to_string();
 
         Ok(password_hash)
+    }
+
+    /// Verify a user's email
+    pub async fn verify_email(db: &DatabaseConnection, user_id: Uuid) -> Result<(), AppError> {
+        let user_model =
+            DatabaseService::find_one_with_tracking(db, "users", Users::find_by_id(user_id))
+                .await
+                .map_err(|_| AppError {
+                    message: "Database error".to_string(),
+                    status_code: StatusCode::INTERNAL_SERVER_ERROR,
+                })?
+                .ok_or(AppError {
+                    message: "User not found".to_string(),
+                    status_code: StatusCode::NOT_FOUND,
+                })?;
+        let mut user_active_model: users::ActiveModel = user_model.into();
+        user_active_model.email_verified = Set(true);
+        user_active_model.update(db).await.map_err(|_| AppError {
+            message: "Failed to verify email".to_string(),
+            status_code: StatusCode::INTERNAL_SERVER_ERROR,
+        })?;
+
+        Ok(())
     }
 }

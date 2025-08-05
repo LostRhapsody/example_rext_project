@@ -4,6 +4,7 @@ import HomeView from '@/views/HomeView.vue'
 import LoginView from '@/views/LoginView.vue'
 import RegisterView from '@/views/RegisterView.vue'
 import ProfileView from '@/views/ProfileView.vue'
+import VerifyEmailView from '@/views/VerifyEmail.vue'
 import AdminLoginView from '@/views/AdminLoginView.vue'
 import AdminLayout from '@/components/AdminLayout.vue'
 import AdminDashboardView from '@/views/AdminDashboardView.vue'
@@ -37,6 +38,11 @@ const router = createRouter({
       name: 'profile',
       component: ProfileView,
       meta: { requiresAuth: true },
+    },
+    {
+      path: '/verify-email',
+      name: 'verify-email',
+      component: VerifyEmailView,
     },
     // Admin routes
     {
